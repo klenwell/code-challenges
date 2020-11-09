@@ -1,3 +1,4 @@
+require 'pry'
 require_relative 'lib/vending_machine'
 
 vm = VendingMachine.new
@@ -12,3 +13,5 @@ vm.stock_tray('D4', doritos)
 vm.deposit_payment(120)
 product = vm.select_product('A1')
 p "VM dispensed: #{product}"
+
+binding.pry
