@@ -18,10 +18,17 @@ class CoinSorter
   end
 
   def load(rolls)
-    # rolls is a dict: coin => count
+    # rolls is a frequency hash: coin => count
     @sorter.each do |value, count|
       @sorter[value] += rolls.fetch(value, 0)
     end
+  end
+
+  def roll(coins)
+    # Convert a list of coins to a frequency hash.
+    rolls = Hash.new(0)
+    coins.each { |value| rolls[value] += 1 }
+    rolls
   end
 
   def make_change(amount)
@@ -36,6 +43,8 @@ class CoinSorter
         return coins if amount == 0
     end
 
+    # If we couldn't make change, replace coins and raise error.
+    load(roll(coins))
     raise InsufficientChangeError.new(amount)
   end
 

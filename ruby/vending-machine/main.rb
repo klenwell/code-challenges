@@ -26,3 +26,4 @@ product, change = vm.select_product('A1')
 
 p "VM dispensed: #{product}; Your change: #{change}"
 print vm.status
+p vm

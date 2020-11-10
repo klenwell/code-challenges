@@ -32,9 +32,10 @@ class VendingMachine
     # Validate payment
     overpaid = @amount_deposited - product_tray.price
     raise PaymentRequiredError.new(overpaid) if overpaid < 0
-    change = @coin_sorter.make_change(overpaid) if overpaid
 
-    # Fetch product
+    # Prepare change and product. Be careful here to rollback any failed actions. That's
+    # why need to make change first.
+    change = @coin_sorter.make_change(overpaid) if overpaid
     product = product_tray.deliver_product
 
     # Reset transaction state
@@ -47,8 +48,8 @@ class VendingMachine
     display_message("Invalid code: #{e.message}. Please try again.")
     nil
   rescue PaymentRequiredError => e
-    amount = -1 * e.message.to_i
-    display_message("Please deposit #{amount}p.")
+    underpaid = -1 * e.message.to_i
+    display_message("Please deposit #{underpaid}p.")
     nil
   rescue CoinSorter::InsufficientChangeError => e
     display_message("Insufficient change: #{e.message}")
