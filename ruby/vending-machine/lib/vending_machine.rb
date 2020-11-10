@@ -7,6 +7,8 @@ class VendingMachine
 
   attr_reader :product_trays, :coin_sorter
 
+  INIT_PRICES = [80, 120, 160]
+
   def initialize
     @product_trays = init_product_trays
     @coin_sorter = CoinSorter.new
@@ -78,6 +80,18 @@ class VendingMachine
     tray.price = new_price
   end
 
+  def product_counts
+    product_counts = Hash.new(0)
+
+    @product_trays.values.each do |tray|
+      tray.products.each do |product, count|
+        product_counts[product] += count
+      end
+    end
+
+    product_counts
+  end
+
   def status
     <<-HDC
 Products: #{product_counts}
@@ -96,23 +110,11 @@ HDC
     rows.each do |row|
       cols.each do |col|
         code = "#{row}#{col}"
-        price = [80, 120, 160].shuffle.first
+        price = INIT_PRICES.shuffle.first
         trays[code] = ProductTray.new(code, price)
       end
     end
 
     trays
-  end
-
-  def product_counts
-    product_counts = Hash.new(0)
-
-    @product_trays.values.each do |tray|
-      tray.products.each do |product, count|
-        product_counts[product] += count
-      end
-    end
-
-    product_counts
   end
 end
