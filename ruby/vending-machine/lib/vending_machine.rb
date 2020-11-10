@@ -1,6 +1,9 @@
 require_relative 'vending_machine/product_tray'
 
 class VendingMachine
+  VALID_COINS = [1, 2, 5, 10, 20, 50, 100, 200]
+
+  InvalidCoinError = Class.new(StandardError)
   InvalidCodeError = Class.new(StandardError)
   PaymentRequiredError = Class.new(StandardError)
 
@@ -14,8 +17,13 @@ class VendingMachine
   #
   # Public Interface
   #
-  def deposit_payment(amount)
-    @amount_deposited += amount
+  def insert_coin(coin)
+    raise InvalidCoinError(coin) unless VALID_COINS.include? coin
+    @amount_deposited += coin
+
+  rescue InvalidCoinError => e
+    display_message("Invalid coin: #{e.message}. Please try again.")
+    nil
   end
 
   def select_product(code)
@@ -25,28 +33,24 @@ class VendingMachine
     raise InvalidCodeError.new(code) if product_tray.nil?
 
     # Validate Payment
-    p product_tray
     change = @amount_deposited - product_tray.price
     raise PaymentRequiredError.new(change) if change < 0
 
-    # Response to user
-    if change
-      message = "Your change is #{change}p. Enjoy your treat!"
-    else
-      message = "Thank you. Enjoy your treat!"
-    end
+    # Fetch product
+    product = product_tray.deliver_product
 
-    display_message(message)
+    # Reset transaction state
+    @amount_deposited = 0
 
-    # TODO: return change, too
-    product_tray.deliver_product
+    # Deliver product and change to user
+    return product, change
 
   rescue InvalidCodeError => e
     display_message("Invalid code: #{e.message}. Please try again.")
     nil
   rescue PaymentRequiredError => e
     amount = -1 * e.message.to_i
-    display_message("Please depost #{amount}p.")
+    display_message("Please deposit #{amount}p.")
     nil
   end
 

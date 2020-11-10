@@ -10,8 +10,8 @@ vm.stock_tray('A1', cheetohs)
 vm.stock_tray('D4', doritos)
 
 # Order
-vm.deposit_payment(120)
-product = vm.select_product('A1')
-p "VM dispensed: #{product}"
+[100, 20].each{|coin| vm.insert_coin(coin)}
+product, change = vm.select_product('A1')
+p "VM dispensed: #{product}; Your change: #{change}"
 
 binding.pry
