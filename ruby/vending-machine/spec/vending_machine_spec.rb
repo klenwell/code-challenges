@@ -15,10 +15,14 @@ RSpec.describe VendingMachine do
   end
 
   context "as a consumer using interface" do
-    it "expects to insert a coin" do; end
-    it "expects to select product" do; end
-    it "expects to receive change with product" do; end
-    it "expects to receive money back when canceling an order" do; end
+    it { is_expected.not_to respond_to(:insert_coin).with(0).argument }
+    it { is_expected.to respond_to(:insert_coin).with(1).arguments }
+
+    it { is_expected.not_to respond_to(:select_product).with(0).argument }
+    it { is_expected.to respond_to(:select_product).with(1).arguments }
+
+    it { is_expected.to respond_to(:cancel_transaction).with(0).argument }
+    it { is_expected.not_to respond_to(:cancel_transaction).with(1).arguments }
   end
 
   context "as a vendor using interface" do
@@ -77,6 +81,25 @@ RSpec.describe VendingMachine do
   end
 
   context "when product is selected and appropriate money is inserted" do
+    it "expects to receive product without change" do
+      # Arrange
+      subject.stock_tray('A1', [:cheetohs] * 4)
+      subject.update_tray_price('A1', 100)
+
+      # Assume
+      expect(subject.product_counts[:cheetohs]).to equal(4)
+      expect(subject.coin_sorter.total).to equal(0)
+
+      # Act
+      subject.insert_coin(100)
+      product, change = subject.select_product('A1')
+
+      # Arrange
+      expect(product).to equal(:cheetohs)
+      expect(change).to be_empty
+      expect(subject.product_counts[:cheetohs]).to equal(3)
+      expect(subject.coin_sorter.total).to equal(100)
+    end
   end
 
   context "when too much money is inserted for product" do
@@ -90,6 +113,4 @@ RSpec.describe VendingMachine do
   context "when machine does not have enough change" do; end
 
   context "when machine is out of requested product" do; end
-
-
 end
