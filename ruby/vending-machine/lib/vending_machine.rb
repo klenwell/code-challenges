@@ -8,7 +8,7 @@ class VendingMachine
   attr_reader :product_trays, :coin_sorter
 
   def initialize
-    @product_trays = initialize_product_trays
+    @product_trays = init_product_trays
     @coin_sorter = CoinSorter.new
     @amount_deposited = 0
   end
@@ -16,6 +16,7 @@ class VendingMachine
   #
   # Public Interface
   #
+  # Consumer Methods
   def insert_coin(coin)
     @amount_deposited += @coin_sorter.deposit(coin)
   rescue CoinSorter::InvalidCoinError => e
@@ -62,6 +63,11 @@ class VendingMachine
     return nil, coins
   end
 
+  def display_message(message)
+    p message
+  end
+
+  # Vendor Methods
   def stock_tray(code, products)
     tray = @product_trays[code]
     tray.stock_product(products)
@@ -70,10 +76,6 @@ class VendingMachine
   def update_tray_price(code, new_price)
     tray = @product_trays[code]
     tray.price = new_price
-  end
-
-  def display_message(message)
-    p message
   end
 
   def status
@@ -86,7 +88,7 @@ HDC
 
   private
 
-  def initialize_product_trays
+  def init_product_trays
     trays = {}
     rows = "ABCD".split('')
     cols = "1234".split('')

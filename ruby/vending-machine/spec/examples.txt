@@ -1,0 +1,4 @@
+example_id                            | status | run_time        |
+------------------------------------- | ------ | --------------- |
+./spec/vending_machine_spec.rb[1:1:1] | passed | 0.00013 seconds |
+./spec/vending_machine_spec.rb[1:1:2] | passed | 0.00241 seconds |

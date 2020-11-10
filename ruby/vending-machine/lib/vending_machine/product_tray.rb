@@ -1,6 +1,10 @@
+# Required to avoid rspec error:
+# NameError: uninitialized constant ProductTray::Forwardable
+require "forwardable"
+
 class ProductTray
   extend Forwardable
-  
+
   SoldOutError = Class.new(StandardError)
   TrayFullError = Class.new(StandardError)
 
