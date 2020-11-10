@@ -32,6 +32,21 @@ class CoinSorter
     raise InsufficientChangeError.new(amount)
   end
 
+  def inventory(coin=nil)
+    return @sorter[coin] unless coin.nil?
+    @sorter
+  end
+
+  def total
+    amount = 0
+
+    VALID_COINS.each do |value|
+      amount += @sorter[value] * value
+    end
+
+    amount
+  end
+
   private
 
   def init_sorter

@@ -13,9 +13,13 @@ vm.stock_tray('D4', doritos)
 vm.update_tray_price('A1', 50)
 vm.insert_coin(100)
 product, change = vm.select_product('A1')
-binding.pry
+vm.insert_coin(50)
+vm.select_product('A1')
+print vm.status
 
 # Order
 [100, 20].each{|coin| vm.insert_coin(coin)}
 product, change = vm.select_product('A1')
+
 p "VM dispensed: #{product}; Your change: #{change}"
+print vm.status

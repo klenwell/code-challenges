@@ -45,11 +45,11 @@ class VendingMachine
 
   rescue InvalidCodeError => e
     display_message("Invalid code: #{e.message}. Please try again.")
-    cancel_transaction
+    nil
   rescue PaymentRequiredError => e
     amount = -1 * e.message.to_i
     display_message("Please deposit #{amount}p.")
-    cancel_transaction
+    nil
   rescue CoinSorter::InsufficientChangeError => e
     display_message("Insufficient change: #{e.message}")
     cancel_transaction
@@ -75,7 +75,13 @@ class VendingMachine
     p message
   end
 
-  def report_status; end
+  def status
+    <<-HDC
+Products: #{product_counts}
+Coins: #{@coin_sorter.inventory}
+Amount: #{@coin_sorter.total}
+HDC
+  end
 
   private
 
@@ -93,5 +99,17 @@ class VendingMachine
     end
 
     trays
+  end
+
+  def product_counts
+    product_counts = Hash.new(0)
+
+    @product_trays.values.each do |tray|
+      tray.products.each do |product, count|
+        product_counts[product] += count
+      end
+    end
+
+    product_counts
   end
 end
