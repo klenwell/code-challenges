@@ -1,8 +1,12 @@
 class ProductTray
+  extend Forwardable
+  
   SoldOutError = Class.new(StandardError)
   TrayFullError = Class.new(StandardError)
 
   attr_accessor :price
+
+  def_delegators :@slots, :empty?
 
   def initialize(code, price, size=8)
     @code = code
@@ -19,7 +23,7 @@ class ProductTray
   end
 
   def deliver_product
-    raise SoldOutError if @slots.empty?
+    raise SoldOutError if empty?
     @slots.shift
   end
 
@@ -27,5 +31,12 @@ class ProductTray
     product_counts = Hash.new(0)
     @slots.each { |product| product_counts[product] += 1 }
     product_counts
+  end
+
+  def empty
+    # Clear slots. Return any products.
+    products = @slots
+    @slots = []
+    products
   end
 end

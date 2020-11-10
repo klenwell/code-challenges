@@ -13,7 +13,10 @@ vm.stock_tray('D4', doritos)
 vm.update_tray_price('A1', 50)
 vm.insert_coin(100)
 product, change = vm.select_product('A1')
-vm.insert_coin(50)
+
+# Reload and Try again
+vm.coin_sorter.load({1 => 40, 2 => 10, 5 => 4, 10 => 2})
+vm.insert_coin(100)
 vm.select_product('A1')
 print vm.status
 

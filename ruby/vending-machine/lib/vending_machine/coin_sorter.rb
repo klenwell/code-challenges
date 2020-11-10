@@ -6,15 +6,22 @@ class CoinSorter
 
   attr_accessor :price
 
-  def initialize(coins=nil)
+  def initialize(rolls=nil)
     @sorter = init_sorter
-    coins.each{|coin| deposit(coin)} if coins
+    load(rolls) unless rolls.nil?
   end
 
   def deposit(coin)
     raise InvalidCoinError.new(coin) unless VALID_COINS.include? coin
     @sorter[coin] += 1
     coin
+  end
+
+  def load(rolls)
+    # rolls is a dict: coin => count
+    @sorter.each do |value, count|
+      @sorter[value] += rolls.fetch(value, 0)
+    end
   end
 
   def make_change(amount)
