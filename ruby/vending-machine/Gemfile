@@ -1,3 +1,7 @@
 source "https://rubygems.org"
 
+# Debugger
 gem 'pry', '~> 0.13.1'
+
+# For BDD tests
+gem 'rspec'
