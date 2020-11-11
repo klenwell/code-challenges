@@ -18,6 +18,10 @@ RSpec.describe VendingMachine do
       expect(subject.product_trays).to have_key('A1')
       expect(subject.product_trays).to have_key('D4')
     end
+
+    it "expects to have a display for messages" do
+      expect(subject).to have_attributes({display: nil})
+    end
   end
 
   context "as a consumer using interface" do

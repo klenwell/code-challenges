@@ -13,7 +13,7 @@ class VendingMachine
     @product_trays = init_product_trays
     @coin_sorter = CoinSorter.new
     @amount_deposited = 0
-    @display = ''
+    @display = nil
   end
 
   #
@@ -44,6 +44,7 @@ class VendingMachine
 
     # Reset transaction state
     @amount_deposited = 0
+    clear_display
 
     # Deliver product and change to user
     return product, change
@@ -67,10 +68,6 @@ class VendingMachine
     coins = @coin_sorter.make_change(@amount_deposited)
     @amount_deposited = 0
     return nil, coins
-  end
-
-  def display_message(message)
-    @display = message
   end
 
   # Vendor Methods
@@ -120,5 +117,13 @@ HDC
     end
 
     trays
+  end
+
+  def display_message(message)
+    @display = message
+  end
+
+  def clear_display
+    @display = nil
   end
 end
