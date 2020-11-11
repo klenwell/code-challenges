@@ -5,3 +5,6 @@ gem 'pry', '~> 0.13.1'
 
 # For BDD tests
 gem 'rspec'
+
+# Static Analysis
+gem 'rubocop', require: false
