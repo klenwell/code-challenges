@@ -1,5 +1,5 @@
 class CoinSorter
-  VALID_COINS = [1, 2, 5, 10, 20, 50, 100, 200]
+  VALID_COINS = [1, 2, 5, 10, 20, 50, 100, 200].freeze
 
   InvalidCoinError = Class.new(StandardError)
   InsufficientChangeError = Class.new(StandardError)
@@ -13,13 +13,14 @@ class CoinSorter
 
   def deposit(coin)
     raise InvalidCoinError.new(coin) unless VALID_COINS.include? coin
+
     @sorter[coin] += 1
     coin
   end
 
   def load(rolls)
     # rolls is a frequency hash: coin => count
-    @sorter.each do |value, count|
+    @sorter.each_key do |value|
       @sorter[value] += rolls.fetch(value, 0)
     end
   end
@@ -36,11 +37,11 @@ class CoinSorter
 
     # Go backwards through the sort to make change
     VALID_COINS.sort.reverse.each do |value|
-        count = amount / value
-        released_coins = release_coins(value, count)
-        coins.concat(released_coins)
-        amount = amount - released_coins.sum
-        return coins if amount == 0
+      count = amount / value
+      released_coins = release_coins(value, count)
+      coins.concat(released_coins)
+      amount -= released_coins.sum
+      return coins if amount == 0
     end
 
     # If we couldn't make change, replace coins and raise error.
@@ -50,6 +51,7 @@ class CoinSorter
 
   def inventory(coin=nil)
     return @sorter[coin] unless coin.nil?
+
     @sorter
   end
 
@@ -67,7 +69,7 @@ class CoinSorter
 
   def init_sorter
     sorter = {}
-    VALID_COINS.each{|value| sorter[value] = 0}
+    VALID_COINS.each { |value| sorter[value] = 0 }
     sorter
   end
 

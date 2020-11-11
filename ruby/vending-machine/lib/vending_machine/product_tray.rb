@@ -22,12 +22,14 @@ class ProductTray
   def stock_product(products)
     products.each do |product|
       raise TrayFullError.new(@code) if @slots.length >= @size
+
       @slots << product
     end
   end
 
   def deliver_product
     raise SoldOutError.new(@code) if empty?
+
     @slots.shift
   end
 
