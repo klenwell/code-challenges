@@ -1,5 +1,6 @@
 require_relative "../lib/vending_machine"
 
+# rubocop: disable Metrics/BlockLength
 RSpec.describe VendingMachine do
   def setup_machine(tray_code='A1', price=50, products=[:cheetohs], coin_rolls={})
     subject.update_tray_price(tray_code, price)
@@ -20,7 +21,7 @@ RSpec.describe VendingMachine do
     end
 
     it "expects to have a display for messages" do
-      expect(subject).to have_attributes({display: nil})
+      expect(subject).to have_attributes({ display: nil })
     end
   end
 
@@ -39,7 +40,7 @@ RSpec.describe VendingMachine do
     before(:each) do
       subject.stock_tray('A1', [:cheetohs] * 4)
       subject.stock_tray('D4', [:doritos] * 4)
-      subject.coin_sorter.load({1 => 50, 2 => 20, 5 => 2})
+      subject.coin_sorter.load({ 1 => 50, 2 => 20, 5 => 2 })
     end
 
     it "expects an initial load of products" do
@@ -54,7 +55,7 @@ RSpec.describe VendingMachine do
       expect(subject.coin_sorter.total).to equal(100)
 
       # Act
-      subject.coin_sorter.load({1 => 50, 100 => 1})
+      subject.coin_sorter.load({ 1 => 50, 100 => 1 })
 
       # Assert
       expect(subject.coin_sorter.inventory(1)).to equal(100)
@@ -114,7 +115,7 @@ RSpec.describe VendingMachine do
   context "when too much money is inserted for product" do
     it "expects to deliver product with change" do
       # Arrange
-      setup_machine('A1', 50, [:cheetohs] * 4, {50 => 1})
+      setup_machine('A1', 50, [:cheetohs] * 4, { 50 => 1 })
 
       # Act
       subject.insert_coin(100)
@@ -152,7 +153,7 @@ RSpec.describe VendingMachine do
 
   context "when machine does not have enough change" do
     before(:each) do
-      setup_machine('A1', 90, [:cheetohs], {1 => 9})
+      setup_machine('A1', 90, [:cheetohs], { 1 => 9 })
       @funds_before = subject.coin_sorter.total
       subject.insert_coin(100)
       @product, @change = subject.select_product('A1')
@@ -166,7 +167,7 @@ RSpec.describe VendingMachine do
 
   context "when machine is out of requested product" do
     before(:each) do
-      setup_machine('A1', 100, [], {1 => 5})
+      setup_machine('A1', 100, [], { 1 => 5 })
       @funds_before = subject.coin_sorter.total
       subject.insert_coin(100)
       @product, @change = subject.select_product('A1')
@@ -191,3 +192,4 @@ RSpec.describe VendingMachine do
     it { expect(subject.coin_sorter.total).to eq(@funds_before) }
   end
 end
+# rubocop: enable Metrics/BlockLength
