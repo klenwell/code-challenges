@@ -4,24 +4,22 @@ class CoinSorter
   InvalidCoinError = Class.new(StandardError)
   InsufficientChangeError = Class.new(StandardError)
 
-  attr_accessor :price
-
   def initialize(rolls=nil)
-    @sorter = init_sorter
+    @bins = init_bins
     load(rolls) unless rolls.nil?
   end
 
   def deposit(coin)
     raise InvalidCoinError.new(coin) unless VALID_COINS.include? coin
 
-    @sorter[coin] += 1
+    @bins[coin] += 1
     coin
   end
 
   def load(rolls)
     # rolls is a frequency hash: coin => count
-    @sorter.each_key do |value|
-      @sorter[value] += rolls.fetch(value, 0)
+    @bins.each_key do |value|
+      @bins[value] += rolls.fetch(value, 0)
     end
   end
 
@@ -50,16 +48,16 @@ class CoinSorter
   end
 
   def inventory(coin=nil)
-    return @sorter[coin] unless coin.nil?
+    return @bins[coin] unless coin.nil?
 
-    @sorter
+    @bins
   end
 
   def total
     amount = 0
 
     VALID_COINS.each do |value|
-      amount += @sorter[value] * value
+      amount += @bins[value] * value
     end
 
     amount
@@ -67,18 +65,18 @@ class CoinSorter
 
   private
 
-  def init_sorter
-    sorter = {}
-    VALID_COINS.each { |value| sorter[value] = 0 }
-    sorter
+  def init_bins
+    bins = {}
+    VALID_COINS.each { |value| bins[value] = 0 }
+    bins
   end
 
   def release_coins(value, count)
     # Release coins at given value up to count
     # If not enough coins, release what you got.
-    count = @sorter[value] if @sorter[value] < count
+    count = @bins[value] if @bins[value] < count
 
-    @sorter[value] = @sorter[value] - count
+    @bins[value] = @bins[value] - count
     [value] * count
   end
 end
