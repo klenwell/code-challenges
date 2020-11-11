@@ -21,6 +21,7 @@ class CoinSorter
     @bins.each_key do |value|
       @bins[value] += rolls.fetch(value, 0)
     end
+    @bins
   end
 
   def roll(coins)
