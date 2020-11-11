@@ -5,7 +5,7 @@ class VendingMachine
   InvalidCodeError = Class.new(StandardError)
   PaymentRequiredError = Class.new(StandardError)
 
-  attr_reader :product_trays, :coin_sorter
+  attr_reader :product_trays, :coin_sorter, :display
 
   INIT_PRICES = [80, 120, 160]
 
@@ -13,6 +13,7 @@ class VendingMachine
     @product_trays = init_product_trays
     @coin_sorter = CoinSorter.new
     @amount_deposited = 0
+    @display = ''
   end
 
   #
@@ -48,12 +49,15 @@ class VendingMachine
     return product, change
 
   rescue InvalidCodeError => e
-    display_message("Invalid code: #{e.message}. Please try again.")
-    nil
+    display_message("Invalid product code: #{e.message}")
+    return nil, []
   rescue PaymentRequiredError => e
     underpaid = -1 * e.message.to_i
-    display_message("Please deposit #{underpaid}p.")
-    nil
+    display_message("Please deposit #{underpaid}p")
+    return nil, []
+  rescue ProductTray::SoldOutError => e
+    display_message("Product sold out: #{e.message}")
+    return nil, []
   rescue CoinSorter::InsufficientChangeError => e
     display_message("Insufficient change: #{e.message}")
     cancel_transaction
@@ -66,7 +70,7 @@ class VendingMachine
   end
 
   def display_message(message)
-    p message
+    @display = message
   end
 
   # Vendor Methods

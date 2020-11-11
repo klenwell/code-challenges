@@ -9,12 +9,18 @@ doritos = ['doritos'] * 3
 vm.stock_tray('A1', cheetohs)
 vm.stock_tray('D4', doritos)
 
-# Insufficient Change
+# Insufficient funds
+vm.insert_coin(10)
+product, change = vm.select_product('A1')
+p product, change, vm.display
+
+# Insufficient change
 vm.update_tray_price('A1', 50)
 vm.insert_coin(100)
 product, change = vm.select_product('A1')
+p vm.display
 
-# Reload and Try again
+# Reload and try again
 vm.coin_sorter.load({1 => 40, 2 => 10, 5 => 4, 10 => 2})
 vm.insert_coin(100)
 vm.select_product('A1')
