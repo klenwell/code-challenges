@@ -7,7 +7,9 @@ class VendingMachine
 
   attr_reader :product_trays, :coin_sorter, :display
 
-  INIT_PRICES = [80, 120, 160]
+  INIT_PRICES = [80, 120, 160].freeze
+  NO_PRODUCT = nil
+  NO_CHANGE = [].freeze
 
   def initialize
     @product_trays = init_product_trays
@@ -27,6 +29,7 @@ class VendingMachine
     nil
   end
 
+  # rubocop: disable Metrics/MethodLength, Metrics/AbcSize
   def select_product(code)
     product_tray = @product_trays[code]
 
@@ -47,27 +50,28 @@ class VendingMachine
     clear_display
 
     # Deliver product and change to user
-    return product, change
+    [product, change]
 
   rescue InvalidCodeError => e
     display_message("Invalid product code: #{e.message}")
-    return nil, []
+    [NO_PRODUCT, NO_CHANGE]
   rescue PaymentRequiredError => e
     underpaid = -1 * e.message.to_i
     display_message("Please deposit #{underpaid}p")
-    return nil, []
+    [NO_PRODUCT, NO_CHANGE]
   rescue ProductTray::SoldOutError => e
     display_message("Product sold out: #{e.message}")
-    return nil, []
+    [NO_PRODUCT, NO_CHANGE]
   rescue CoinSorter::InsufficientChangeError => e
     display_message("Insufficient change: #{e.message}")
     cancel_transaction
   end
+  # rubocop: enable Metrics/MethodLength, Metrics/AbcSize
 
   def cancel_transaction
     coins = @coin_sorter.make_change(@amount_deposited)
     @amount_deposited = 0
-    return nil, coins
+    [nil, coins]
   end
 
   # Vendor Methods
@@ -84,7 +88,7 @@ class VendingMachine
   def product_counts
     product_counts = Hash.new(0)
 
-    @product_trays.values.each do |tray|
+    @product_trays.each_value do |tray|
       tray.products.each do |product, count|
         product_counts[product] += count
       end
@@ -95,10 +99,10 @@ class VendingMachine
 
   def status
     <<-HDC
-Products: #{product_counts}
-Coins: #{@coin_sorter.inventory}
-Amount: #{@coin_sorter.total}
-HDC
+      Products: #{product_counts}
+      Coins: #{@coin_sorter.inventory}
+      Amount: #{@coin_sorter.total}
+    HDC
   end
 
   private
@@ -111,7 +115,7 @@ HDC
     rows.each do |row|
       cols.each do |col|
         code = "#{row}#{col}"
-        price = INIT_PRICES.shuffle.first
+        price = INIT_PRICES.sample
         trays[code] = ProductTray.new(code, price)
       end
     end
