@@ -146,6 +146,8 @@ RSpec.describe VendingMachine do
   end
 
   describe "vendor interface" do
+    before(:each) { setup_machine }
+
     describe '#stock_tray' do
       it { is_expected.to respond_to(:stock_tray).with(2).arguments }
 
@@ -171,65 +173,60 @@ RSpec.describe VendingMachine do
       end
     end
 
-    describe '#update_tray_price' do; end
+    describe '#update_tray_price' do
+      it { is_expected.to respond_to(:update_tray_price).with(2).arguments }
 
-    describe '#count_products' do; end
+      it 'updates tray price' do
+        # Arrange
+        price_before = subject.product_trays['A1'].price
+        products_before = subject.product_trays['A1'].products
 
-    describe '#status' do; end
-  end
+        # Assume
+        expect(price_before).to eq(50)
 
-  context "as a vendor using interface" do
-    before(:each) do
-      subject.stock_tray('A1', [:cheetohs] * 4)
-      subject.stock_tray('D4', [:doritos] * 4)
-      subject.coin_sorter.load({ 1 => 50, 2 => 20, 5 => 2 })
+        # Act
+        new_price = subject.update_tray_price('A1', 100)
+
+        # Assert
+        expect(new_price).to eq(subject.product_trays['A1'].price)
+        expect(subject.product_trays['A1'].price).to eq(100)
+        expect(subject.product_trays['A1'].products).to eq(products_before)
+      end
     end
 
-    it "expects an initial load of products" do
-      expect(subject.count_products[:cheetohs]).to equal(4)
-      expect(subject.count_products[:doritos]).to equal(4)
+    describe '#count_products' do
+      it { is_expected.to respond_to(:count_products).with(0).arguments }
+
+      it 'counts all products in machine' do
+        # Arrange
+        subject.stock_tray('A1', [:cheetohs, :cheetohs])
+        subject.stock_tray('B1', [:doritos, :doritos, :doritos])
+        subject.stock_tray('D4', [:cheetohs, :doritos])
+
+        # Assume
+        # A1 already had on bag of cheetohs
+        expect(subject.product_trays['A1'].products).to eq({ cheetohs: 3 })
+
+        # Act
+        counts = subject.count_products
+
+        # Assert
+        expect(counts).to eq({ cheetohs: 4, doritos: 4 })
+      end
     end
 
-    it "expects to reload change" do
-      # Assume
-      expect(subject.coin_sorter.select(1)).to equal(50)
-      expect(subject.coin_sorter.select(100)).to equal(0)
-      expect(subject.coin_sorter.sum).to equal(100)
+    describe '#status' do
+      it { is_expected.to respond_to(:status).with(0).arguments }
 
-      # Act
-      subject.coin_sorter.load({ 1 => 50, 100 => 1 })
+      it 'outputs a report of products, coins, and total coin amount' do
+        # Act
+        report = subject.status
 
-      # Assert
-      expect(subject.coin_sorter.select(1)).to equal(100)
-      expect(subject.coin_sorter.select(100)).to equal(1)
-      expect(subject.coin_sorter.sum).to equal(250)
-    end
-
-    it "expects to update price of product tray" do
-      # Arrange
-      tray_a1 = subject.product_trays['A1']
-      new_tray_price = 25
-
-      # Assume
-      expect(described_class::INIT_PRICES).to include(tray_a1.price)
-      expect(tray_a1.price).not_to equal(new_tray_price)
-
-      # Act
-      subject.update_tray_price('A1', new_tray_price)
-
-      # Assert
-      expect(tray_a1.price).to equal(new_tray_price)
-    end
-
-    it "expects to keep track of products" do
-      expect(subject.count_products[:cheetohs]).to equal(4)
-      expect(subject.count_products[:doritos]).to equal(4)
-    end
-
-    it "expects to keep track of change" do
-      expect(subject.coin_sorter.select(1)).to equal(50)
-      expect(subject.coin_sorter.select(100)).to equal(0)
-      expect(subject.coin_sorter.sum).to equal(100)
+        # Assert
+        expect(report).to match(/Products/)
+        expect(report).to match(/Coins/)
+        expect(report).to match(/Amount/)
+      end
     end
   end
 end
