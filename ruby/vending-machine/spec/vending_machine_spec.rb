@@ -8,6 +8,23 @@ RSpec.describe VendingMachine do
     subject.coin_sorter.load(coin_rolls)
   end
 
+  context "when instantiated" do
+    it "includes a coin sorter" do
+      expect(subject).to respond_to(:coin_sorter)
+    end
+
+    it "includes a 4x4 grid of product trays" do
+      expect(subject).to respond_to(:product_trays)
+      expect(subject.product_trays.length).to equal(16)
+      expect(subject.product_trays).to have_key('A1')
+      expect(subject.product_trays).to have_key('D4')
+    end
+
+    it "includes a display for messages" do
+      expect(subject).to have_attributes({ display: nil })
+    end
+  end
+
   describe "consumer interface" do
     describe '#insert_coin' do
       it { is_expected.to respond_to(:insert_coin).with(1).argument }
@@ -57,6 +74,41 @@ RSpec.describe VendingMachine do
             it { expect(subject.display).to eq('Invalid product code: ZZ') }
           end
         end
+
+        context 'when overpayment is made' do
+          before(:each) do
+            subject.insert_coin(100)
+            subject.insert_coin(10)
+            @product, @change = subject.select_product('A1')
+          end
+
+          it { expect(@product).to eq(:cheetohs) }
+          it { expect(@change).to eq([10]) }
+        end
+
+        context 'when insufficient payment is made' do
+          before(:each) do
+            subject.insert_coin(50)
+            @product, @change = subject.select_product('A1')
+          end
+
+          it { expect(@product).to be_nil }
+          it { expect(@change).to be_empty }
+          it { expect(subject.display).to eq('Please deposit 50p') }
+        end
+
+        context "when machine does not have enough change" do
+          before(:each) do
+            @funds_before = subject.coin_sorter.sum
+            subject.insert_coin(200)
+            @product, @change = subject.select_product('A1')
+          end
+
+          it { expect(@product).to be_nil }
+          it { expect(@change).to eq([200]) }
+          it { expect(subject.display).to eq('Insufficient change: 100') }
+          it { expect(subject.coin_sorter.sum).to eq(@funds_before) }
+        end
       end
 
       context 'when product is unavailable' do
@@ -70,28 +122,6 @@ RSpec.describe VendingMachine do
         it { expect(@product).to eq(nil) }
         it { expect(@change).to be_empty }
         it { expect(subject.display).to eq('Product sold out: A1') }
-      end
-
-      context 'when overpayment is made' do
-        before(:each) do
-          subject.insert_coin(100)
-          subject.insert_coin(10)
-          @product, @change = subject.select_product('A1')
-        end
-
-        it { expect(@product).to eq(:cheetohs) }
-        it { expect(@change).to eq([10]) }
-      end
-
-      context 'when insufficient payment is made' do
-        before(:each) do
-          subject.insert_coin(50)
-          @product, @change = subject.select_product('A1')
-        end
-
-        it { expect(@product).to be_nil }
-        it { expect(@change).to be_empty }
-        it { expect(subject.display).to eq('Please deposit 50p') }
       end
     end
 
@@ -148,23 +178,6 @@ RSpec.describe VendingMachine do
     describe '#status' do; end
   end
 
-  context "when first created" do
-    it "expects to include a coin sorter" do
-      expect(subject).to respond_to(:coin_sorter)
-    end
-
-    it "expects to have 4x4 grid of product trays" do
-      expect(subject).to respond_to(:product_trays)
-      expect(subject.product_trays.length).to equal(16)
-      expect(subject.product_trays).to have_key('A1')
-      expect(subject.product_trays).to have_key('D4')
-    end
-
-    it "expects to have a display for messages" do
-      expect(subject).to have_attributes({ display: nil })
-    end
-  end
-
   context "as a vendor using interface" do
     before(:each) do
       subject.stock_tray('A1', [:cheetohs] * 4)
@@ -218,107 +231,6 @@ RSpec.describe VendingMachine do
       expect(subject.coin_sorter.select(100)).to equal(0)
       expect(subject.coin_sorter.sum).to equal(100)
     end
-  end
-
-  context "when product is selected and appropriate money is inserted" do
-    it "expects to deliver product without change" do
-      # Arrange
-      setup_machine('A1', 100, [:cheetohs] * 4)
-
-      # Assume
-      expect(subject.count_products[:cheetohs]).to equal(4)
-      expect(subject.coin_sorter.sum).to equal(0)
-
-      # Act
-      subject.insert_coin(100)
-      product, change = subject.select_product('A1')
-
-      # Assert
-      expect(product).to equal(:cheetohs)
-      expect(change).to be_empty
-      expect(subject.count_products[:cheetohs]).to equal(3)
-      expect(subject.coin_sorter.sum).to equal(100)
-    end
-  end
-
-  context "when too much money is inserted for product" do
-    it "expects to deliver product with change" do
-      # Arrange
-      setup_machine('A1', 50, [:cheetohs] * 4, { 50 => 1 })
-
-      # Act
-      subject.insert_coin(100)
-      product, change = subject.select_product('A1')
-
-      # Assert
-      expect(product).to eq(:cheetohs)
-      expect(change).to eq([50])
-    end
-  end
-
-  context "when insufficient funds have been inserted for product" do
-    before(:each) do
-      setup_machine('A1', 100, [:cheetohs])
-      subject.insert_coin(50)
-      @product, @change = subject.select_product('A1')
-    end
-
-    it { expect(@product).to be_nil }
-    it { expect(@change).to be_empty }
-    it { expect(subject.display).to eq('Please deposit 50p') }
-  end
-
-  context "when wrong product code is entered" do
-    before(:each) do
-      setup_machine('A1', 100, [:cheetohs])
-      subject.insert_coin(100)
-      @product, @change = subject.select_product('ZZ')
-    end
-
-    it { expect(@product).to be_nil }
-    it { expect(@change).to be_empty }
-    it { expect(subject.display).to eq('Invalid product code: ZZ') }
-  end
-
-  context "when machine does not have enough change" do
-    before(:each) do
-      setup_machine('A1', 90, [:cheetohs], { 1 => 9 })
-      @funds_before = subject.coin_sorter.sum
-      subject.insert_coin(100)
-      @product, @change = subject.select_product('A1')
-    end
-
-    it { expect(@product).to be_nil }
-    it { expect(@change).to eq([100]) }
-    it { expect(subject.display).to eq('Insufficient change: 1') }
-    it { expect(subject.coin_sorter.sum).to eq(@funds_before) }
-  end
-
-  context "when machine is out of requested product" do
-    before(:each) do
-      setup_machine('A1', 100, [], { 1 => 5 })
-      @funds_before = subject.coin_sorter.sum
-      subject.insert_coin(100)
-      @product, @change = subject.select_product('A1')
-    end
-
-    it { expect(@product).to be_nil }
-    it { expect(@change).to eq([]) }
-    it { expect(subject.display).to eq('Product sold out: A1') }
-    it { expect(subject.coin_sorter.sum).to eq(@funds_before + 100) }
-  end
-
-  context "when transaction is cancelled" do
-    before(:each) do
-      setup_machine('A1', 100)
-      @funds_before = subject.coin_sorter.sum
-      subject.insert_coin(100)
-      @product, @change = subject.cancel_transaction
-    end
-
-    it { expect(@product).to be_nil }
-    it { expect(@change).to eq([100]) }
-    it { expect(subject.coin_sorter.sum).to eq(@funds_before) }
   end
 end
 # rubocop: enable Metrics/BlockLength
