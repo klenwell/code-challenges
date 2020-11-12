@@ -50,16 +50,16 @@ RSpec.describe VendingMachine do
 
     it "expects to reload change" do
       # Assume
-      expect(subject.coin_sorter.inventory(1)).to equal(50)
-      expect(subject.coin_sorter.inventory(100)).to equal(0)
+      expect(subject.coin_sorter.select(1)).to equal(50)
+      expect(subject.coin_sorter.select(100)).to equal(0)
       expect(subject.coin_sorter.total).to equal(100)
 
       # Act
       subject.coin_sorter.load({ 1 => 50, 100 => 1 })
 
       # Assert
-      expect(subject.coin_sorter.inventory(1)).to equal(100)
-      expect(subject.coin_sorter.inventory(100)).to equal(1)
+      expect(subject.coin_sorter.select(1)).to equal(100)
+      expect(subject.coin_sorter.select(100)).to equal(1)
       expect(subject.coin_sorter.total).to equal(250)
     end
 
@@ -85,8 +85,8 @@ RSpec.describe VendingMachine do
     end
 
     it "expects to keep track of change" do
-      expect(subject.coin_sorter.inventory(1)).to equal(50)
-      expect(subject.coin_sorter.inventory(100)).to equal(0)
+      expect(subject.coin_sorter.select(1)).to equal(50)
+      expect(subject.coin_sorter.select(100)).to equal(0)
       expect(subject.coin_sorter.total).to equal(100)
     end
   end

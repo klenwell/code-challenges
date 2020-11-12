@@ -105,10 +105,10 @@ RSpec.describe CoinSorter do
       it { expect(subject.make_change(35)).to eq([10, 10, 5, 5, 2, 2, 1]) }
       it { expect(subject.make_change(50)).to eq([10, 10, 5, 5] + ([2] * 5) + ([1] * 10)) }
 
-      it 'will update coin inventory correctly' do
+      it 'will update coin bins correctly' do
         # Assume
-        expect(subject.inventory(10)).to eq(2)
-        expect(subject.inventory(5)).to eq(2)
+        expect(subject.select(10)).to eq(2)
+        expect(subject.select(5)).to eq(2)
         expect(subject.total).to eq(50)
 
         # Act
@@ -116,8 +116,8 @@ RSpec.describe CoinSorter do
 
         # Assert
         expect(coins).to eq([10, 10, 5])
-        expect(subject.inventory(10)).to eq(0)
-        expect(subject.inventory(5)).to eq(1)
+        expect(subject.select(10)).to eq(0)
+        expect(subject.select(5)).to eq(1)
         expect(subject.total).to eq(25)
       end
     end
@@ -125,21 +125,63 @@ RSpec.describe CoinSorter do
     context 'when exact change is not available' do
       it 'will throw error and replace any released coins' do
         # Arrange
-        num_coins_before = subject.inventory.values.sum
+        num_coins_before = subject.sort.values.sum
         total_funds_before = subject.total
 
         # Act
         expect { subject.make_change(51) }.to raise_error(described_class::InsufficientChangeError)
 
         # Assert
-        expect(subject.inventory.values.sum).to eq(num_coins_before)
+        expect(subject.sort.values.sum).to eq(num_coins_before)
         expect(subject.total).to eq(total_funds_before)
       end
     end
   end
 
-  # TODO: inventory to sort
-  describe '#inventory' do; end
+  describe '#sort' do
+    it { is_expected.to respond_to(:sort).with(0).arguments }
+
+    context 'when bins have coins' do
+      let(:rolls) { { 1 => 100, 100 => 1 } }
+      let(:sorter) { described_class.new(rolls) }
+      it { expect(sorter.sort).to eq(empty_bins.merge(rolls)) }
+    end
+
+    context 'when bins are empty' do
+      it { expect(subject.sort).to eq(empty_bins) }
+    end
+  end
+
+  describe '#select' do
+    it { is_expected.to respond_to(:select).with(1).argument }
+
+    context 'when the bin for the requested coin has coins' do
+      it 'returns the number of coins in bin' do
+        # Arrange
+        rolls = { 1 => 100 }
+        subject.load(rolls)
+
+        # Act
+        num_coins = subject.select(1)
+
+        # Assert
+        expect(num_coins).to eq(100)
+      end
+    end
+
+    context 'when the bin for the requested coin is empty' do
+      it 'returns the 0 coins' do
+        # Assume
+        expect(subject.sort).to eq(empty_bins)
+
+        # Act
+        num_coins = subject.select(1)
+
+        # Assert
+        expect(num_coins).to eq(0)
+      end
+    end
+  end
 
   # TODO: total to sum
   describe '#total' do; end

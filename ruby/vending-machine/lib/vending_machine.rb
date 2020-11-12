@@ -100,7 +100,7 @@ class VendingMachine
   def status
     <<-HDC
       Products: #{product_counts}
-      Coins: #{@coin_sorter.inventory}
+      Coins: #{@coin_sorter.sort}
       Amount: #{@coin_sorter.total}
     HDC
   end

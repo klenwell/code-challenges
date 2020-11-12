@@ -48,10 +48,13 @@ class CoinSorter
     raise InsufficientChangeError.new(amount)
   end
 
-  def inventory(coin=nil)
-    return @bins[coin] unless coin.nil?
-
+  def sort
+    # Sort into bins.
     @bins
+  end
+
+  def select(coin)
+    return @bins[coin]
   end
 
   def total
