@@ -52,7 +52,7 @@ RSpec.describe VendingMachine do
       # Assume
       expect(subject.coin_sorter.select(1)).to equal(50)
       expect(subject.coin_sorter.select(100)).to equal(0)
-      expect(subject.coin_sorter.total).to equal(100)
+      expect(subject.coin_sorter.sum).to equal(100)
 
       # Act
       subject.coin_sorter.load({ 1 => 50, 100 => 1 })
@@ -60,7 +60,7 @@ RSpec.describe VendingMachine do
       # Assert
       expect(subject.coin_sorter.select(1)).to equal(100)
       expect(subject.coin_sorter.select(100)).to equal(1)
-      expect(subject.coin_sorter.total).to equal(250)
+      expect(subject.coin_sorter.sum).to equal(250)
     end
 
     it "expects to update price of product tray" do
@@ -87,7 +87,7 @@ RSpec.describe VendingMachine do
     it "expects to keep track of change" do
       expect(subject.coin_sorter.select(1)).to equal(50)
       expect(subject.coin_sorter.select(100)).to equal(0)
-      expect(subject.coin_sorter.total).to equal(100)
+      expect(subject.coin_sorter.sum).to equal(100)
     end
   end
 
@@ -98,7 +98,7 @@ RSpec.describe VendingMachine do
 
       # Assume
       expect(subject.product_counts[:cheetohs]).to equal(4)
-      expect(subject.coin_sorter.total).to equal(0)
+      expect(subject.coin_sorter.sum).to equal(0)
 
       # Act
       subject.insert_coin(100)
@@ -108,7 +108,7 @@ RSpec.describe VendingMachine do
       expect(product).to equal(:cheetohs)
       expect(change).to be_empty
       expect(subject.product_counts[:cheetohs]).to equal(3)
-      expect(subject.coin_sorter.total).to equal(100)
+      expect(subject.coin_sorter.sum).to equal(100)
     end
   end
 
@@ -154,7 +154,7 @@ RSpec.describe VendingMachine do
   context "when machine does not have enough change" do
     before(:each) do
       setup_machine('A1', 90, [:cheetohs], { 1 => 9 })
-      @funds_before = subject.coin_sorter.total
+      @funds_before = subject.coin_sorter.sum
       subject.insert_coin(100)
       @product, @change = subject.select_product('A1')
     end
@@ -162,13 +162,13 @@ RSpec.describe VendingMachine do
     it { expect(@product).to be_nil }
     it { expect(@change).to eq([100]) }
     it { expect(subject.display).to eq('Insufficient change: 1') }
-    it { expect(subject.coin_sorter.total).to eq(@funds_before) }
+    it { expect(subject.coin_sorter.sum).to eq(@funds_before) }
   end
 
   context "when machine is out of requested product" do
     before(:each) do
       setup_machine('A1', 100, [], { 1 => 5 })
-      @funds_before = subject.coin_sorter.total
+      @funds_before = subject.coin_sorter.sum
       subject.insert_coin(100)
       @product, @change = subject.select_product('A1')
     end
@@ -176,20 +176,20 @@ RSpec.describe VendingMachine do
     it { expect(@product).to be_nil }
     it { expect(@change).to eq([]) }
     it { expect(subject.display).to eq('Product sold out: A1') }
-    it { expect(subject.coin_sorter.total).to eq(@funds_before + 100) }
+    it { expect(subject.coin_sorter.sum).to eq(@funds_before + 100) }
   end
 
   context "when transaction is cancelled" do
     before(:each) do
       setup_machine('A1', 100)
-      @funds_before = subject.coin_sorter.total
+      @funds_before = subject.coin_sorter.sum
       subject.insert_coin(100)
       @product, @change = subject.cancel_transaction
     end
 
     it { expect(@product).to be_nil }
     it { expect(@change).to eq([100]) }
-    it { expect(subject.coin_sorter.total).to eq(@funds_before) }
+    it { expect(subject.coin_sorter.sum).to eq(@funds_before) }
   end
 end
 # rubocop: enable Metrics/BlockLength

@@ -49,7 +49,6 @@ class CoinSorter
   end
 
   def sort
-    # Sort into bins.
     @bins
   end
 
@@ -57,7 +56,7 @@ class CoinSorter
     return @bins[coin]
   end
 
-  def total
+  def sum
     amount = 0
 
     VALID_COINS.each do |value|

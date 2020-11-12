@@ -109,7 +109,7 @@ RSpec.describe CoinSorter do
         # Assume
         expect(subject.select(10)).to eq(2)
         expect(subject.select(5)).to eq(2)
-        expect(subject.total).to eq(50)
+        expect(subject.sum).to eq(50)
 
         # Act
         coins = subject.make_change(25)
@@ -118,7 +118,7 @@ RSpec.describe CoinSorter do
         expect(coins).to eq([10, 10, 5])
         expect(subject.select(10)).to eq(0)
         expect(subject.select(5)).to eq(1)
-        expect(subject.total).to eq(25)
+        expect(subject.sum).to eq(25)
       end
     end
 
@@ -126,14 +126,14 @@ RSpec.describe CoinSorter do
       it 'will throw error and replace any released coins' do
         # Arrange
         num_coins_before = subject.sort.values.sum
-        total_funds_before = subject.total
+        total_funds_before = subject.sum
 
         # Act
         expect { subject.make_change(51) }.to raise_error(described_class::InsufficientChangeError)
 
         # Assert
         expect(subject.sort.values.sum).to eq(num_coins_before)
-        expect(subject.total).to eq(total_funds_before)
+        expect(subject.sum).to eq(total_funds_before)
       end
     end
   end
@@ -181,9 +181,26 @@ RSpec.describe CoinSorter do
         expect(num_coins).to eq(0)
       end
     end
+
+    context 'when an invalid coin is requested' do
+      it { expect(subject.select(:invalid)).to be_nil }
+    end
   end
 
-  # TODO: total to sum
-  describe '#total' do; end
+  describe '#sum' do
+    it { is_expected.to respond_to(:sum).with(0).arguments }
+
+    it 'expects to return the sum of all coins in sorter' do
+      # Arrange
+      rolls = { 1 => 10, 2 => 5, 5 => 2, 10 => 2 }
+      subject.load(rolls)
+
+      # Act
+      total = subject.sum
+
+      # Assert
+      expect(total).to eq(50)
+    end
+  end
 end
 # rubocop: enable Metrics/BlockLength
