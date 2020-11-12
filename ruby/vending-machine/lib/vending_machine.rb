@@ -101,7 +101,7 @@ class VendingMachine
     <<-HDC
       Products: #{count_products}
       Coins: #{@coin_sorter.sort}
-      Amount: #{@coin_sorter.total}
+      Amount: #{@coin_sorter.sum}
     HDC
   end
 

@@ -10,10 +10,10 @@ RSpec.describe VendingMachine do
 
   describe "consumer interface" do
     describe '#insert_coin' do
-      it { is_expected.to respond_to(:insert_coin).with(1).arguments }
+      it { is_expected.to respond_to(:insert_coin).with(1).argument }
 
       context 'when a valid coin is inserted' do
-        it 'returns the amount deposited' do
+        it 'returns the total amount deposited' do
           expect(subject.insert_coin(1)).to eq(1)
           expect(subject.insert_coin(1)).to eq(2)
           expect(subject.insert_coin(100)).to eq(102)
@@ -27,16 +27,92 @@ RSpec.describe VendingMachine do
             .to('Invalid coin: invalid.')
         end
 
-        it 'returns the amount deposited' do
+        it 'returns the existing amount deposited' do
           expect(subject.insert_coin(1)).to eq(1)
           expect(subject.insert_coin(:invalid)).to eq(1)
         end
       end
     end
 
-    describe '#select_product' do; end
+    describe '#select_product' do
+      it { is_expected.to respond_to(:select_product).with(1).argument }
 
-    describe '#cancel_transaction' do; end
+      before(:each) { setup_machine('A1', 100, [:cheetohs] * 4) }
+
+      context 'when product is available' do
+        context 'when sufficient payment is made' do
+          before(:each) { subject.insert_coin(100) }
+
+          context 'when a valid product code is entered' do
+            before(:each) { @product, @change = subject.select_product('A1') }
+            it { expect(@product).to eq(:cheetohs) }
+            it { expect(@change).to be_empty }
+          end
+
+          context 'when an invalid product code is entered' do
+            before(:each) { @product, @change = subject.select_product('ZZ') }
+
+            it { expect(@product).to eq(nil) }
+            it { expect(@change).to be_empty }
+            it { expect(subject.display).to eq('Invalid product code: ZZ') }
+          end
+        end
+      end
+
+      context 'when product is unavailable' do
+        before(:each) do
+          subject.product_trays['A1'].empty
+          expect(subject.product_trays['A1']).to be_empty
+          subject.insert_coin(100)
+          @product, @change = subject.select_product('A1')
+        end
+
+        it { expect(@product).to eq(nil) }
+        it { expect(@change).to be_empty }
+        it { expect(subject.display).to eq('Product sold out: A1') }
+      end
+
+      context 'when overpayment is made' do
+        before(:each) do
+          subject.insert_coin(100)
+          subject.insert_coin(10)
+          @product, @change = subject.select_product('A1')
+        end
+
+        it { expect(@product).to eq(:cheetohs) }
+        it { expect(@change).to eq([10]) }
+      end
+
+      context 'when insufficient payment is made' do
+        before(:each) do
+          subject.insert_coin(50)
+          @product, @change = subject.select_product('A1')
+        end
+
+        it { expect(@product).to be_nil }
+        it { expect(@change).to be_empty }
+        it { expect(subject.display).to eq('Please deposit 50p') }
+      end
+    end
+
+    describe '#cancel_transaction' do
+      it { is_expected.to respond_to(:cancel_transaction).with(0).arguments }
+
+      before(:each) do
+        setup_machine('A1', 100, [:cheetohs] * 4)
+        subject.insert_coin(50)
+        @product, @change = subject.cancel_transaction
+      end
+
+      it { expect(@product).to be_nil }
+      it { expect(@change).to eq([50]) }
+
+      it 'resets the amount deposited' do
+        subject.insert_coin(50)
+        subject.select_product('A1')
+        expect(subject.display).to eq('Please deposit 50p')
+      end
+    end
   end
 
   describe "vendor interface" do
