@@ -155,3 +155,7 @@ Style/ClassAndModuleChildren:
 # I like empty lines before rescue block somtimes.
 Layout/EmptyLinesAroundExceptionHandlingKeywords:
   Enabled: false
+
+# I like arrays of symbols
+Style/SymbolArray:
+  Enabled: false

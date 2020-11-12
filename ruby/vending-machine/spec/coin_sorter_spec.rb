@@ -2,11 +2,8 @@ require_relative "../lib/vending_machine/coin_sorter"
 
 # rubocop: disable Metrics/BlockLength
 RSpec.describe CoinSorter do
-  # For bins comparisons, this sets up an empty bin
+  # For bins comparisons, this sets up a sorter with empty bins.
   let(:empty_bins) { subject.load({}) }
-
-  describe '.new' do
-  end
 
   describe '#deposit' do
     it { is_expected.to respond_to(:deposit).with(1).argument }

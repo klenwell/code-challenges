@@ -25,8 +25,8 @@ class VendingMachine
   def insert_coin(coin)
     @amount_deposited += @coin_sorter.deposit(coin)
   rescue CoinSorter::InvalidCoinError => e
-    display_message("Invalid coin: #{e.message}. Please try again.")
-    nil
+    display_message("Invalid coin: #{e.message}.")
+    @amount_deposited
   end
 
   # rubocop: disable Metrics/MethodLength, Metrics/AbcSize
@@ -85,7 +85,7 @@ class VendingMachine
     tray.price = new_price
   end
 
-  def product_counts
+  def count_products
     product_counts = Hash.new(0)
 
     @product_trays.each_value do |tray|
@@ -99,7 +99,7 @@ class VendingMachine
 
   def status
     <<-HDC
-      Products: #{product_counts}
+      Products: #{count_products}
       Coins: #{@coin_sorter.sort}
       Amount: #{@coin_sorter.total}
     HDC

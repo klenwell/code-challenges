@@ -53,7 +53,7 @@ class CoinSorter
   end
 
   def select(coin)
-    return @bins[coin]
+    @bins[coin]
   end
 
   def sum

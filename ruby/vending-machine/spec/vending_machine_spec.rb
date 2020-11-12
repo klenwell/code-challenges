@@ -8,6 +8,70 @@ RSpec.describe VendingMachine do
     subject.coin_sorter.load(coin_rolls)
   end
 
+  describe "consumer interface" do
+    describe '#insert_coin' do
+      it { is_expected.to respond_to(:insert_coin).with(1).arguments }
+
+      context 'when a valid coin is inserted' do
+        it 'returns the amount deposited' do
+          expect(subject.insert_coin(1)).to eq(1)
+          expect(subject.insert_coin(1)).to eq(2)
+          expect(subject.insert_coin(100)).to eq(102)
+        end
+      end
+
+      context 'when an invalid coin is inserted' do
+        it 'displays an error message' do
+          expect { subject.insert_coin(:invalid) }.to change { subject.display }
+            .from(nil)
+            .to('Invalid coin: invalid.')
+        end
+
+        it 'returns the amount deposited' do
+          expect(subject.insert_coin(1)).to eq(1)
+          expect(subject.insert_coin(:invalid)).to eq(1)
+        end
+      end
+    end
+
+    describe '#select_product' do; end
+
+    describe '#cancel_transaction' do; end
+  end
+
+  describe "vendor interface" do
+    describe '#stock_tray' do
+      it { is_expected.to respond_to(:stock_tray).with(2).arguments }
+
+      context 'when a valid tray is stocked' do
+        it 'updates the tray contents' do
+          # Arrange
+          tray_b1 = subject.product_trays['B1']
+
+          # Assume
+          expect(tray_b1).to be_empty
+
+          # Act
+          slots = subject.stock_tray('B1', [:gum, :gum, :gum])
+
+          # Assert
+          expect(tray_b1).not_to be_empty
+          expect(slots).to eq([:gum, :gum, :gum])
+        end
+      end
+
+      context 'when an invalid tray is stocked' do
+        it { expect { subject.stock_tray('ZZ', [:top]) }.to raise_error(NoMethodError) }
+      end
+    end
+
+    describe '#update_tray_price' do; end
+
+    describe '#count_products' do; end
+
+    describe '#status' do; end
+  end
+
   context "when first created" do
     it "expects to include a coin sorter" do
       expect(subject).to respond_to(:coin_sorter)
@@ -25,17 +89,6 @@ RSpec.describe VendingMachine do
     end
   end
 
-  context "as a consumer using interface" do
-    it { is_expected.not_to respond_to(:insert_coin).with(0).argument }
-    it { is_expected.to respond_to(:insert_coin).with(1).arguments }
-
-    it { is_expected.not_to respond_to(:select_product).with(0).argument }
-    it { is_expected.to respond_to(:select_product).with(1).arguments }
-
-    it { is_expected.to respond_to(:cancel_transaction).with(0).argument }
-    it { is_expected.not_to respond_to(:cancel_transaction).with(1).arguments }
-  end
-
   context "as a vendor using interface" do
     before(:each) do
       subject.stock_tray('A1', [:cheetohs] * 4)
@@ -44,8 +97,8 @@ RSpec.describe VendingMachine do
     end
 
     it "expects an initial load of products" do
-      expect(subject.product_counts[:cheetohs]).to equal(4)
-      expect(subject.product_counts[:doritos]).to equal(4)
+      expect(subject.count_products[:cheetohs]).to equal(4)
+      expect(subject.count_products[:doritos]).to equal(4)
     end
 
     it "expects to reload change" do
@@ -80,8 +133,8 @@ RSpec.describe VendingMachine do
     end
 
     it "expects to keep track of products" do
-      expect(subject.product_counts[:cheetohs]).to equal(4)
-      expect(subject.product_counts[:doritos]).to equal(4)
+      expect(subject.count_products[:cheetohs]).to equal(4)
+      expect(subject.count_products[:doritos]).to equal(4)
     end
 
     it "expects to keep track of change" do
@@ -97,7 +150,7 @@ RSpec.describe VendingMachine do
       setup_machine('A1', 100, [:cheetohs] * 4)
 
       # Assume
-      expect(subject.product_counts[:cheetohs]).to equal(4)
+      expect(subject.count_products[:cheetohs]).to equal(4)
       expect(subject.coin_sorter.sum).to equal(0)
 
       # Act
@@ -107,7 +160,7 @@ RSpec.describe VendingMachine do
       # Assert
       expect(product).to equal(:cheetohs)
       expect(change).to be_empty
-      expect(subject.product_counts[:cheetohs]).to equal(3)
+      expect(subject.count_products[:cheetohs]).to equal(3)
       expect(subject.coin_sorter.sum).to equal(100)
     end
   end

@@ -25,6 +25,7 @@ class ProductTray
 
       @slots << product
     end
+    @slots
   end
 
   def deliver_product
