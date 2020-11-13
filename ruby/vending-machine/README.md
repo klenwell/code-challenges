@@ -56,12 +56,22 @@ If you want to run this on your own, follow these steps:
 
 ## Notes
 - I started with some research (googling). That led me to the repo above. I also look up some designs like THIS. Mainly to figure out the interface and naming.
+
 - In my last corporate job years ago, we had some vending machines in our breakroom. Every once in a while I would be around making a cup of coffee when the vendor came to service it. The snack machine there was a major inspiration for my design.
+
 - I tried not to slavishly follow other solutions I found, but they were helpful. It was interesting to see where I ended up adopting some of the same concepts and where I did not.
+
 - The main `VendingMachine` class interface is divided between consumer and vendor methods. No authentication is enforced.
-- I wasn't particularly rushing to complete this. This is where I was at the 24 hours mark: [TBA](). No tests and I think I discovered a least a couple major bugs since then. I also ended up renaming a few things.
+
+- I wasn't particularly rushing to complete this. This is where I was at the 24-hour mark:
+
+  - https://github.com/klenwell/code-challenges/tree/24-hour-mark/ruby/vending-machine
+
+  No tests and I think I discovered a least a couple major bugs since then. I also ended up renaming a few things.
+
 - This really became an exercise in RSpec for me. I don't have a lot of experience with RSpec but I really liked the way some developers on my team organized our tests using it at my last gig. I was trying to recreate that. Here are the best references I found:
   - https://relishapp.com/rspec/rspec-core/v/3-9/docs
   - https://relishapp.com/rspec/rspec-expectations/v/3-9/docs
   - https://www.betterspecs.org/
+
 - Styling preference enforced with [RuboCop](https://github.com/rubocop-hq/rubocop).
