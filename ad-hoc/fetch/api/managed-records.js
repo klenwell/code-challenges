@@ -29,7 +29,7 @@ function retrieve (options = {}) {
 
 // Helper methods
 function buildUri (page, colors) {
-  const limit = pageLimit + 1 // Include 1 extra record to test if we're on our page.
+  const limit = pageLimit + 1 // Include 1 extra record to test if we're on our last page.
   const offset = (page - 1) * pageLimit
   const uri = URI(window.path)
 
