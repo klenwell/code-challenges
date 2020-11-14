@@ -71,7 +71,7 @@ class VendingMachine
   def cancel_transaction
     coins = @coin_sorter.make_change(@amount_deposited)
     @amount_deposited = 0
-    [nil, coins]
+    [NO_PRODUCT, coins]
   end
 
   # Vendor Methods
