@@ -8,10 +8,21 @@ window.path = "http://localhost:3000/records";
 const primaryColors = ['red', 'blue', 'yellow'];
 
 // Your retrieve function plus any additional functions go here ...
-function retrieve(options) {
-  let uri = URI(window.path)
+function retrieve(options = {}) {
+  // Options
+  let page = options.page || 1;
+  let colors = options.colors || [];
 
-  uri.search({ page: 1, colors: [] });
+  // Build URI.
+  let limit = 10;
+  let offset = (page - 1) * limit;
+  let uri = URI(window.path);
+  uri.search({ limit: limit, offset: offset });
+
+  if (colors.length > 0) {
+    colors.forEach(color => uri.addSearch('color[]', color));
+  }
+  console.log(uri.toString())
 
   // Docs: https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
   return fetch(uri)
@@ -27,13 +38,14 @@ function retrieve(options) {
     payload.open = records.filter(record => record.disposition == 'open');
     payload.open.forEach(record => record.isPrimary = primaryColors.includes(record.color));
     payload.closedPrimaryCount = records.filter(record => isPrimaryClosed(record)).length;
-    payload.previousPage = null;
-    payload.nextPage = 2;
+    payload.previousPage = page == 1 ? null : page - 1;
+    payload.nextPage = page + 1;
     console.log(payload);
     return payload;
   })
   .catch((error) => {
-    console.error('Error:', error);
+    console.log('Error:', error);
+    return null;
   });
 }
 
