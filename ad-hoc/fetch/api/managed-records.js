@@ -13,11 +13,13 @@ function retrieve(options = {}) {
   let page = options.page || 1;
   let colors = options.colors || [];
 
-  // Build URI.
+  // Build URI
   let limit = 10;
   let offset = (page - 1) * limit;
   let uri = URI(window.path);
-  uri.search({ limit: limit, offset: offset });
+
+  // Get 1 extra record to see if we're on our last page.
+  uri.search({ limit: limit + 1, offset: offset });
 
   if (colors.length > 0) {
     colors.forEach(color => uri.addSearch('color[]', color));
@@ -31,16 +33,19 @@ function retrieve(options = {}) {
     return response.json()
   })
   .then(records => {
+    let isLastPage = records.length <= limit;
     records = records.slice(0, 10);
-    console.log(records.length, records[0]);
+    console.log(records.length, records[0], isLastPage);
+
     let payload = {};
     payload.ids = records.map(record => record.id);
     payload.open = records.filter(record => record.disposition == 'open');
     payload.open.forEach(record => record.isPrimary = primaryColors.includes(record.color));
     payload.closedPrimaryCount = records.filter(record => isPrimaryClosed(record)).length;
     payload.previousPage = page == 1 ? null : page - 1;
-    payload.nextPage = page + 1;
+    payload.nextPage = isLastPage ? null : page + 1;
     console.log(payload);
+
     return payload;
   })
   .catch((error) => {
