@@ -1,5 +1,7 @@
 # Fetch
 
+Original Source: https://homework.adhoc.team/fetch/
+
 At Ad Hoc, our front-end applications often exchange JSON data with various RESTful APIs. We use modern JavaScript
 to interact with these APIs and to transform their responses into a format needed by the client application. In
 this homework, we provide a sample API with a single endpoint and ask you to write some JavaScript to request data from
