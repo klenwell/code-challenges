@@ -55,7 +55,7 @@ If you want to run this on your own, follow these steps:
       ruby main.rb
 
 ## Notes
-- I started with some research (googling). That led me to the repo above. I also look up some designs like THIS. Mainly to figure out the interface and naming.
+- I started with some research (googling). That led me to the repo above. I also look up some designs like [this](http://cargocollective.com/futurehealth/Medication-Vending-Machine). Mainly to figure out the interface and naming.
 
 - In my last corporate job years ago, we had some vending machines in our breakroom. Every once in a while I would be around making a cup of coffee when the vendor came to service it. The snack machine there was a major inspiration for my design.
 

@@ -167,7 +167,7 @@ RSpec.describe CoinSorter do
     end
 
     context 'when the bin for the requested coin is empty' do
-      it 'returns the 0 coins' do
+      it 'returns no coins' do
         # Assume
         expect(subject.sort).to eq(empty_bins)
 
