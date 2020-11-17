@@ -11,6 +11,7 @@ function initHHBuilder () {
   initFormHandler()
   initAddButtonHandler()
   initSubmitButtonHandler()
+  personForm.reset()
 }
 
 function initFormHandler () {
@@ -27,6 +28,7 @@ function initAddButtonHandler () {
     if (person.isValid) {
       addPersonToList(person)
       updateDebugBlock('person added to household')
+      personForm.reset()
     } else {
       updateDebugBlock(buildErrorMessage(person))
     }
