@@ -1,10 +1,64 @@
 // your code goes here ...
+// Models
+class Person {
+  constructor (age, relationship, smokes) {
+    this.age = age
+    this.relationship = relationship
+    this.smokes = smokes === 'on'
+  }
+
+  // Static Methods
+  static fromForm (form) {
+    const formData = new FormData(personForm)
+    const personData = Object.fromEntries(formData.entries())
+    return new Person(personData.age, personData.rel, personData.smoker)
+  }
+
+  // Methods
+  ageIsValid () {
+    return parseInt(this.age) > 0
+  }
+
+  relationshipIsValid () {
+    return validRelations.includes(this.relationship)
+  }
+
+  isValid () {
+    return this.ageIsValid() && this.relationshipIsValid()
+  }
+
+  toJson () {
+    return {
+      age: this.age,
+      relationship: this.relationship,
+      smokes: this.smokes
+    }
+  }
+}
+
+class Household {
+  constructor () {
+    this.people = []
+  }
+
+  // Methods
+  addPerson (person) {
+    this.people.push(person)
+  }
+
+  toJson () {
+    return this.people.map(person => person.toJson())
+  }
+}
+
 // Constants
+const theHousehold = new Household()
 const personForm = document.getElementsByTagName('form')[0]
 const addButton = personForm.querySelector('button.add')
 const submitButton = personForm.querySelector("button[type='submit']")
 const householdList = document.querySelector('ol.household')
 const debugBlock = document.querySelector('pre.debug')
+const validRelations = ['self', 'spouse', 'child', 'parent', 'grandparent', 'other']
 
 // Helper Methods
 function initHHBuilder () {
@@ -22,11 +76,11 @@ function initFormHandler () {
 
 function initAddButtonHandler () {
   addButton.addEventListener('click', function (event) {
-    const formData = new FormData(personForm)
-    const person = formDataToPerson(formData)
+    const person = Person.fromForm(personForm)
 
-    if (person.isValid) {
-      addPersonToList(person)
+    if (person.isValid()) {
+      theHousehold.addPerson(person)
+      renderHouseholdList(theHousehold)
       updateDebugBlock('person added to household')
       personForm.reset()
     } else {
@@ -37,51 +91,36 @@ function initAddButtonHandler () {
 
 function initSubmitButtonHandler () {
   submitButton.addEventListener('click', function (event) {
-    console.debug('submitButton', event)
-    const formData = new FormData(personForm)
-    const formJson = Object.fromEntries(formData.entries())
-    updateDebugBlock(JSON.stringify(formJson))
+    console.debug('submitButton', event, theHousehold.toJson())
+    updateDebugBlock(JSON.stringify(theHousehold.toJson()))
   })
 }
 
-function addPersonToList (person) {
-  console.debug('addPersonToList', person)
-  const li = document.createElement('li')
-  const smokingIcon = '🚬'
-  const noSmokingIcon = '🚭'
-  const smokes = person.smoker === 'on' ? smokingIcon : noSmokingIcon
+function renderHouseholdList (household) {
+  console.debug('renderHouseholdList', household)
+  householdList.childNodes.forEach(child => child.remove())
 
-  li.innerHTML = `${person.rel}: ${person.age} ${smokes}`
-  householdList.appendChild(li)
-  return li
-}
+  household.people.forEach(function (person) {
+    const li = document.createElement('li')
+    const smokingIcon = '🚬'
+    const noSmokingIcon = '🚭'
+    const smokes = person.smokes ? smokingIcon : noSmokingIcon
 
-function formDataToPerson (formData) {
-  // Source: https://stackoverflow.com/a/55874235/1093087
-  const person = Object.fromEntries(formData.entries())
-  person.ageIsValid = validateAge(person.age)
-  person.relIsValid = validateRelationship(person.rel)
-  person.isValid = person.ageIsValid && person.relIsValid
-  return person
-}
+    li.innerHTML = `${person.relationship}: ${person.age} ${smokes}`
+    householdList.appendChild(li)
+  })
 
-function validateAge (age) {
-  return parseInt(age) > 0
-}
-
-function validateRelationship (relation) {
-  const validRelations = ['self', 'spouse', 'child', 'parent', 'grandparent', 'other']
-  return validRelations.includes(relation)
+  return householdList
 }
 
 function buildErrorMessage (person) {
   const messages = ['Form errors:']
 
-  if (!person.ageIsValid) {
+  if (!person.ageIsValid()) {
     messages.push('Age is required and > 0')
   }
 
-  if (!person.relIsValid) {
+  if (!person.relationshipIsValid()) {
     messages.push('relationship is required')
   }
 
