@@ -1,28 +1,69 @@
 // your code goes here ...
-const form = document.getElementsByTagName('form')[0]
-const ageField = form.querySelector("form input[name='age']")
+// Constants
+const personForm = document.getElementsByTagName('form')[0]
+const addButton = personForm.querySelector("button.add")
+const submitButton = personForm.querySelector("button[type='submit']")
+const ageField = personForm.querySelector("input[name='age']")
+const householdList = document.querySelector('ol.household')
 const debugBlock = document.querySelector('pre.debug')
 
-initHHBuilder()
 
 // Helper Methods
 function initHHBuilder () {
-  console.debug(form, ageField, debugBlock)
   initFormHandler()
+  initAddButtonHandler()
+  initSubmitButtonHandler()
 }
 
 function initFormHandler () {
-  form.addEventListener('submit', function (event) {
-    console.debug(event)
+  personForm.addEventListener('submit', function() {
     event.preventDefault()
+  });
+}
 
-    const formJson = formToJson(form)
-    debugBlock.innerHTML = formJson
+function initAddButtonHandler () {
+  addButton.addEventListener('click', function() {
+    const formData = new FormData(personForm)
+    const person = formDataToPerson(formData);
+
+    if ( person.isValid() ) {
+      addPersonToList(person);
+    }
+  });
+}
+
+function initSubmitButtonHandler () {
+  submitButton.addEventListener('click', function() {
+    console.debug('submitButton', event)
+    const formJson = formToJson(personForm)
+    debugBlock.innerHTML = JSON.stringify(formJson)
     debugBlock.style.display = 'block'
-  })
+  });
 }
 
-function formToJson (formElement) {
-  const formData = new FormData(formElement)
-  return JSON.stringify(Object.fromEntries(formData.entries()))
+function addPersonToList(person) {
+  console.debug('addPersonToList', person);
+
+  let li = document.createElement("li");
+  let smoking_icon = '🚬'
+  let no_smoking_icon = '🚭'
+  let smokes = person.smoker === 'on' ? smoking_icon : no_smoking_icon;
+  li.innerHTML = `${person.rel}: ${person.age} ${smokes}`
+  householdList.appendChild(li);
+  return li
 }
+
+function formDataToPerson(formData) {
+  // Source: https://stackoverflow.com/a/55874235/1093087
+  let person = Object.fromEntries(formData.entries())
+
+  person.isValid = function() {
+    return true;
+  }
+
+  return person
+}
+
+
+// Main
+initHHBuilder()
