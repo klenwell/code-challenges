@@ -97,8 +97,11 @@ function initSubmitButtonHandler () {
 }
 
 function renderHouseholdList (household) {
-  console.debug('renderHouseholdList', household)
-  householdList.childNodes.forEach(child => child.remove())
+  console.debug('renderHouseholdList', household, householdList)
+  // Rebuild from scratch
+  // Source: https://stackoverflow.com/questions/3955229
+  while (householdList.firstChild) { householdList.firstChild.remove() }
+  console.debug(householdList)
 
   household.people.forEach(function (person) {
     const li = document.createElement('li')
