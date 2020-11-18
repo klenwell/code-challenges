@@ -14,7 +14,6 @@ class Person {
     return new Person(personData.age, personData.rel, personData.smoker)
   }
 
-  // Methods
   ageIsValid () {
     return parseInt(this.age) > 0
   }
@@ -44,6 +43,12 @@ class Household {
   // Methods
   addPerson (person) {
     this.people.push(person)
+  }
+
+  // Instance Methods
+  removePerson (person) {
+    this.people = this.people.filter(member => member !== person)
+    return this.people
   }
 
   toJson () {
@@ -91,29 +96,50 @@ function initAddButtonHandler () {
 
 function initSubmitButtonHandler () {
   submitButton.addEventListener('click', function (event) {
-    console.debug('submitButton', event, theHousehold.toJson())
     updateDebugBlock(JSON.stringify(theHousehold.toJson()))
   })
 }
 
 function renderHouseholdList (household) {
-  console.debug('renderHouseholdList', household, householdList)
   // Rebuild from scratch
   // Source: https://stackoverflow.com/questions/3955229
   while (householdList.firstChild) { householdList.firstChild.remove() }
-  console.debug(householdList)
 
   household.people.forEach(function (person) {
-    const li = document.createElement('li')
-    const smokingIcon = '🚬'
-    const noSmokingIcon = '🚭'
-    const smokes = person.smokes ? smokingIcon : noSmokingIcon
-
-    li.innerHTML = `${person.relationship}: ${person.age} ${smokes}`
+    const li = buildHouseholdListItem(household, person)
     householdList.appendChild(li)
   })
 
   return householdList
+}
+
+function buildHouseholdListItem (household, person) {
+  const smokingIcon = '🚬'
+  const noSmokingIcon = '🚭'
+  const li = document.createElement('li')
+
+  const personSpan = document.createElement('span')
+  const smokes = person.smokes ? smokingIcon : noSmokingIcon
+  personSpan.innerHTML = `${person.relationship}: ${person.age} ${smokes}`
+  li.appendChild(personSpan)
+
+  const deleteButton = buildDeleteButton(li, household, person)
+  li.appendChild(deleteButton)
+
+  return li
+}
+
+function buildDeleteButton (li, household, person) {
+  const button = document.createElement('button')
+  button.appendChild(document.createTextNode('x'))
+
+  button.addEventListener('click', function (event) {
+    household.removePerson(person)
+    li.remove()
+    updateDebugBlock('removed person from household')
+  })
+
+  return button
 }
 
 function buildErrorMessage (person) {
