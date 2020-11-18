@@ -59,10 +59,6 @@ class Household {
 // Constants
 const theHousehold = new Household()
 const personForm = document.getElementsByTagName('form')[0]
-const addButton = personForm.querySelector('button.add')
-const submitButton = personForm.querySelector("button[type='submit']")
-const householdList = document.querySelector('ol.household')
-const debugBlock = document.querySelector('pre.debug')
 const validRelations = ['self', 'spouse', 'child', 'parent', 'grandparent', 'other']
 
 // Helper Methods
@@ -80,6 +76,8 @@ function initFormHandler () {
 }
 
 function initAddButtonHandler () {
+  const addButton = personForm.querySelector('button.add')
+
   addButton.addEventListener('click', function (event) {
     const person = Person.fromForm(personForm)
 
@@ -95,6 +93,8 @@ function initAddButtonHandler () {
 }
 
 function initSubmitButtonHandler () {
+  const submitButton = personForm.querySelector("button[type='submit']")
+
   submitButton.addEventListener('click', function (event) {
     updateDebugBlock(JSON.stringify(theHousehold.toJson()))
   })
@@ -103,6 +103,8 @@ function initSubmitButtonHandler () {
 function renderHouseholdList (household) {
   // Rebuild from scratch
   // Source: https://stackoverflow.com/questions/3955229
+  const householdList = document.querySelector('ol.household')
+
   while (householdList.firstChild) { householdList.firstChild.remove() }
 
   household.people.forEach(function (person) {
@@ -157,6 +159,7 @@ function buildErrorMessage (person) {
 }
 
 function updateDebugBlock (message) {
+  const debugBlock = document.querySelector('pre.debug')
   debugBlock.style.display = 'block'
   debugBlock.innerHTML = message
 }
