@@ -14,6 +14,7 @@ class Person {
     return new Person(personData.age, personData.rel, personData.smoker)
   }
 
+// Instance Methods
   ageIsValid () {
     return parseInt(this.age) > 0
   }
@@ -40,12 +41,11 @@ class Household {
     this.people = []
   }
 
-  // Methods
+  // Instance Methods
   addPerson (person) {
     this.people.push(person)
   }
 
-  // Instance Methods
   removePerson (person) {
     this.people = this.people.filter(member => member !== person)
     return this.people
@@ -101,10 +101,10 @@ function initSubmitButtonHandler () {
 }
 
 function renderHouseholdList (household) {
-  // Rebuild from scratch
-  // Source: https://stackoverflow.com/questions/3955229
   const householdList = document.querySelector('ol.household')
 
+  // Rebuild from scratch
+  // Source: https://stackoverflow.com/questions/3955229
   while (householdList.firstChild) { householdList.firstChild.remove() }
 
   household.people.forEach(function (person) {
