@@ -14,7 +14,7 @@ class Person {
     return new Person(personData.age, personData.rel, personData.smoker)
   }
 
-// Instance Methods
+  // Instance Methods
   ageIsValid () {
     return parseInt(this.age) > 0
   }
@@ -81,14 +81,15 @@ function initAddButtonHandler () {
   addButton.addEventListener('click', function (event) {
     const person = Person.fromForm(personForm)
 
-    if (person.isValid()) {
-      theHousehold.addPerson(person)
-      renderHouseholdList(theHousehold)
-      updateDebugBlock('person added to household')
-      personForm.reset()
-    } else {
-      updateDebugBlock(buildErrorMessage(person))
+    if (!person.isValid()) {
+      return updateDebugBlock(buildErrorMessage(person))
     }
+
+    theHousehold.addPerson(person)
+    personForm.reset()
+
+    renderHouseholdList(theHousehold)
+    updateDebugBlock('person added to household')
   })
 }
 
