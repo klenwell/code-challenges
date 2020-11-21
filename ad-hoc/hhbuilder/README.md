@@ -6,8 +6,7 @@ individual people.
 
 ## Task
 
-You have been given an HTML page with a form and a placeholder for displaying
-a household.
+You have been given an HTML page with a form and a placeholder for displaying a household.
 
 In the given index.js file, replace the "Your code goes here" comment with JavaScript that can:
 
@@ -32,5 +31,17 @@ After submission, the user should be able to make changes and submit the househo
 
 You don't need to add validations around anything other than the age and relationship requirements described above. It's ok for someone to add 35 parents.
 
-The focus here is on the quality of your JavaScript, not the beauty of your design. The controls you add around viewing and deleting
-household members should be usable but need not be much to look at.
+The focus here is on the quality of your JavaScript, not the beauty of your design. The controls you add around viewing and deleting household members should be usable but need not be much to look at.
+
+## My Notes
+I can't say I especially enjoyed this challenge. It would have been a lot more fun using something like jQuery. When they said, "The focus here is on the quality of your JavaScript, not the beauty of your design," I took them at their word.
+
+To run it, I would just paste the file path in my browser, like so:
+
+  - file:///home/klenwell/projects/code-challenges/ad-hoc/hhbuilder/index.html
+
+There were a couple good things that came out of it:
+
+- I used it as an opportunity to brush up on my vanilla JS and the latest features it offers. Did I stick to the ES5 standard as dictated? I'm not sure. Are arrow function expressions part of the ES5 standard? It looks like: [no](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/Arrow_functions).
+
+- It really made me appreciate the value of a good frontend library or framework.
