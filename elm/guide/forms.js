@@ -5259,21 +5259,22 @@ var $author$project$Forms$viewInput = F4(
 				]),
 			_List_Nil);
 	});
+var $elm$core$Basics$neq = _Utils_notEqual;
 var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $author$project$Forms$viewValidation = function (model) {
-	return _Utils_eq(model.password, model.passwordAgain) ? A2(
+	return ($elm$core$String$length(model.password) < 8) ? A2(
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
-				A2($elm$html$Html$Attributes$style, 'color', 'green')
+				A2($elm$html$Html$Attributes$style, 'color', 'red')
 			]),
 		_List_fromArray(
 			[
-				$elm$html$Html$text('OK')
-			])) : A2(
+				$elm$html$Html$text('Passwords must be at least 8 chars!')
+			])) : ((!_Utils_eq(model.password, model.passwordAgain)) ? A2(
 		$elm$html$Html$div,
 		_List_fromArray(
 			[
@@ -5282,7 +5283,16 @@ var $author$project$Forms$viewValidation = function (model) {
 		_List_fromArray(
 			[
 				$elm$html$Html$text('Passwords do not match!')
-			]));
+			])) : A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'color', 'green')
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text('OK')
+			])));
 };
 var $author$project$Forms$view = function (model) {
 	return A2(
