@@ -4355,11 +4355,12 @@ function _Browser_load(url)
 		}
 	}));
 }
-var $author$project$Forms$Model = F3(
-	function (name, password, passwordAgain) {
-		return {name: name, password: password, passwordAgain: passwordAgain};
+var $author$project$Forms$Model = F4(
+	function (name, password, passwordAgain, validation) {
+		return {name: name, password: password, passwordAgain: passwordAgain, validation: validation};
 	});
-var $author$project$Forms$init = A3($author$project$Forms$Model, '', '', '');
+var $author$project$Forms$None = {$: 'None'};
+var $author$project$Forms$init = A4($author$project$Forms$Model, '', '', '', $author$project$Forms$None);
 var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
@@ -5170,6 +5171,19 @@ var $elm$browser$Browser$sandbox = function (impl) {
 			view: impl.view
 		});
 };
+var $author$project$Forms$Error = function (a) {
+	return {$: 'Error', a: a};
+};
+var $author$project$Forms$Ok = {$: 'Ok'};
+var $elm$core$String$any = _String_any;
+var $elm$core$Basics$neq = _Utils_notEqual;
+var $elm$core$Basics$not = _Basics_not;
+var $author$project$Forms$validateModel = function (model) {
+	var minLength = 8;
+	return (!$elm$core$String$length(model.name)) ? $author$project$Forms$Error('Please enter a name.') : ((_Utils_cmp(
+		$elm$core$String$length(model.password),
+		minLength) < 0) ? $author$project$Forms$Error('Passwords must be at least 8 characters.') : ((!A2($elm$core$String$any, $elm$core$Char$isDigit, model.password)) ? $author$project$Forms$Error('Password must contain at least one digit.') : ((!A2($elm$core$String$any, $elm$core$Char$isUpper, model.password)) ? $author$project$Forms$Error('Password must contain at least one uppercase character.') : ((!A2($elm$core$String$any, $elm$core$Char$isLower, model.password)) ? $author$project$Forms$Error('Password must contain at least one lowercase character.') : ((!_Utils_eq(model.password, model.passwordAgain)) ? $author$project$Forms$Error('Passwords do not match.') : $author$project$Forms$Ok)))));
+};
 var $author$project$Forms$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -5183,11 +5197,17 @@ var $author$project$Forms$update = F2(
 				return _Utils_update(
 					model,
 					{password: password});
-			default:
+			case 'PasswordAgain':
 				var password = msg.a;
 				return _Utils_update(
 					model,
 					{passwordAgain: password});
+			default:
+				return _Utils_update(
+					model,
+					{
+						validation: $author$project$Forms$validateModel(model)
+					});
 		}
 	});
 var $author$project$Forms$Name = function (a) {
@@ -5199,7 +5219,28 @@ var $author$project$Forms$Password = function (a) {
 var $author$project$Forms$PasswordAgain = function (a) {
 	return {$: 'PasswordAgain', a: a};
 };
+var $author$project$Forms$SubmitForm = {$: 'SubmitForm'};
+var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$html$Html$div = _VirtualDom_node('div');
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
+var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$html$Html$input = _VirtualDom_node('input');
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
@@ -5207,7 +5248,6 @@ var $elm$html$Html$Events$alwaysStop = function (x) {
 var $elm$virtual_dom$VirtualDom$MayStopPropagation = function (a) {
 	return {$: 'MayStopPropagation', a: a};
 };
-var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
 var $elm$html$Html$Events$stopPropagationOn = F2(
 	function (event, decoder) {
 		return A2(
@@ -5259,69 +5299,43 @@ var $author$project$Forms$viewInput = F4(
 				]),
 			_List_Nil);
 	});
-var $elm$core$String$any = _String_any;
-var $elm$core$Basics$neq = _Utils_notEqual;
-var $elm$core$Basics$not = _Basics_not;
 var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
-var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
-var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $author$project$Forms$viewValidation = function (model) {
-	return ($elm$core$String$length(model.password) < 8) ? A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				A2($elm$html$Html$Attributes$style, 'color', 'red')
-			]),
-		_List_fromArray(
-			[
-				$elm$html$Html$text('Passwords must be at least 8 chars!')
-			])) : ((!A2($elm$core$String$any, $elm$core$Char$isDigit, model.password)) ? A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				A2($elm$html$Html$Attributes$style, 'color', 'red')
-			]),
-		_List_fromArray(
-			[
-				$elm$html$Html$text('Password must contain at least one digit!')
-			])) : ((!A2($elm$core$String$any, $elm$core$Char$isUpper, model.password)) ? A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				A2($elm$html$Html$Attributes$style, 'color', 'red')
-			]),
-		_List_fromArray(
-			[
-				$elm$html$Html$text('Password must contain at least one uppercase char!')
-			])) : ((!A2($elm$core$String$any, $elm$core$Char$isLower, model.password)) ? A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				A2($elm$html$Html$Attributes$style, 'color', 'red')
-			]),
-		_List_fromArray(
-			[
-				$elm$html$Html$text('Password must contain at least one lowercase char!')
-			])) : ((!_Utils_eq(model.password, model.passwordAgain)) ? A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				A2($elm$html$Html$Attributes$style, 'color', 'red')
-			]),
-		_List_fromArray(
-			[
-				$elm$html$Html$text('Passwords do not match!')
-			])) : A2(
-		$elm$html$Html$div,
-		_List_fromArray(
-			[
-				A2($elm$html$Html$Attributes$style, 'color', 'green')
-			]),
-		_List_fromArray(
-			[
-				$elm$html$Html$text('OK')
-			]))))));
+	var _v0 = model.validation;
+	switch (_v0.$) {
+		case 'Ok':
+			return A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						A2($elm$html$Html$Attributes$style, 'color', 'green')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('OK')
+					]));
+		case 'Error':
+			var message = _v0.a;
+			return A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						A2($elm$html$Html$Attributes$style, 'color', 'red')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text(message)
+					]));
+		default:
+			return A2(
+				$elm$html$Html$div,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Please enter your information.')
+					]));
+	}
 };
 var $author$project$Forms$view = function (model) {
 	return A2(
@@ -5332,6 +5346,16 @@ var $author$project$Forms$view = function (model) {
 				A4($author$project$Forms$viewInput, 'text', 'Name', model.name, $author$project$Forms$Name),
 				A4($author$project$Forms$viewInput, 'password', 'Password', model.password, $author$project$Forms$Password),
 				A4($author$project$Forms$viewInput, 'password', 'Re-enter Password', model.passwordAgain, $author$project$Forms$PasswordAgain),
+				A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Events$onClick($author$project$Forms$SubmitForm)
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Submit')
+					])),
 				$author$project$Forms$viewValidation(model)
 			]));
 };

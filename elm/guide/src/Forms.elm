@@ -7,7 +7,7 @@ module Forms exposing (..)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onInput)
+import Html.Events exposing (onInput, onClick)
 import Char exposing (isDigit, isUpper, isLower)
 
 
@@ -27,12 +27,42 @@ type alias Model =
   { name : String
   , password : String
   , passwordAgain : String
+  , validation : Validation
   }
 
 
 init : Model
 init =
-  Model "" "" ""
+  Model "" "" "" None
+
+
+type Validation
+  = None
+  | Ok
+  | Error String
+
+
+-- Source: https://gist.github.com/moonlightdrive/86b5bcb57df87c45f468a13a326894ad#gistcomment-3089601
+validateModel : Model -> Validation
+validateModel model =
+  let
+    minLength = 8
+  in
+    if String.length model.name == 0 then
+      Error "Please enter a name."
+    else if String.length model.password < minLength then
+      Error "Passwords must be at least 8 characters."
+    else if not (String.any isDigit model.password) then
+      Error "Password must contain at least one digit."
+    else if not (String.any isUpper model.password) then
+      Error "Password must contain at least one uppercase character."
+    else if not (String.any isLower model.password) then
+      Error "Password must contain at least one lowercase character."
+    else if model.password /= model.passwordAgain then
+      Error "Passwords do not match."
+    else
+      Ok
+
 
 
 
@@ -43,6 +73,7 @@ type Msg
   = Name String
   | Password String
   | PasswordAgain String
+  | SubmitForm
 
 
 update : Msg -> Model -> Model
@@ -57,6 +88,9 @@ update msg model =
     PasswordAgain password ->
       { model | passwordAgain = password }
 
+    SubmitForm ->
+      { model | validation = validateModel model }
+
 
 
 -- VIEW
@@ -68,6 +102,7 @@ view model =
     [ viewInput "text" "Name" model.name Name
     , viewInput "password" "Password" model.password Password
     , viewInput "password" "Re-enter Password" model.passwordAgain PasswordAgain
+    , button [ onClick SubmitForm ] [ text "Submit" ]
     , viewValidation model
     ]
 
@@ -77,18 +112,12 @@ viewInput t p v toMsg =
   input [ type_ t, placeholder p, value v, onInput toMsg ] []
 
 
-
 viewValidation : Model -> Html msg
 viewValidation model =
-  if String.length model.password < 8 then
-    div [ style "color" "red" ] [ text "Passwords must be at least 8 chars!" ]
-  else if not (String.any isDigit model.password) then
-    div [ style "color" "red" ] [ text "Password must contain at least one digit!" ]
-  else if not (String.any isUpper model.password) then
-    div [ style "color" "red" ] [ text "Password must contain at least one uppercase char!" ]
-  else if not (String.any isLower model.password) then
-    div [ style "color" "red" ] [ text "Password must contain at least one lowercase char!" ]
-  else if model.password /= model.passwordAgain then
-    div [ style "color" "red" ] [ text "Passwords do not match!" ]
-  else
-    div [ style "color" "green" ] [ text "OK" ]
+  case model.validation of
+    Ok ->
+      div [ style "color" "green" ] [ text "OK" ]
+    Error message ->
+      div [ style "color" "red" ] [ text message ]
+    None ->
+      div [] [ text "Please enter your information."]
