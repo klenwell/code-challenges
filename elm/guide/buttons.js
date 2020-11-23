@@ -5168,14 +5168,21 @@ var $elm$browser$Browser$sandbox = function (impl) {
 };
 var $author$project$Buttons$update = F2(
 	function (msg, model) {
-		if (msg.$ === 'Increment') {
-			return model + 1;
-		} else {
-			return model - 1;
+		switch (msg.$) {
+			case 'Increment':
+				return model + 1;
+			case 'Decrement':
+				return model - 1;
+			case 'IncrementTen':
+				return model + 10;
+			default:
+				return 0;
 		}
 	});
 var $author$project$Buttons$Decrement = {$: 'Decrement'};
 var $author$project$Buttons$Increment = {$: 'Increment'};
+var $author$project$Buttons$IncrementTen = {$: 'IncrementTen'};
+var $author$project$Buttons$Reset = {$: 'Reset'};
 var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$html$Html$div = _VirtualDom_node('div');
 var $elm$virtual_dom$VirtualDom$Normal = function (a) {
@@ -5230,6 +5237,28 @@ var $author$project$Buttons$view = function (model) {
 				_List_fromArray(
 					[
 						$elm$html$Html$text('+')
+					])),
+				A2($elm$html$Html$div, _List_Nil, _List_Nil),
+				A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Events$onClick($author$project$Buttons$IncrementTen)
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('+10')
+					])),
+				A2($elm$html$Html$div, _List_Nil, _List_Nil),
+				A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Events$onClick($author$project$Buttons$Reset)
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('reset')
 					]))
 			]));
 };
