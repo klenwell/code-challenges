@@ -8,6 +8,7 @@ import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput)
+import Char exposing (isDigit, isUpper, isLower)
 
 
 
@@ -76,10 +77,17 @@ viewInput t p v toMsg =
   input [ type_ t, placeholder p, value v, onInput toMsg ] []
 
 
+
 viewValidation : Model -> Html msg
 viewValidation model =
   if String.length model.password < 8 then
     div [ style "color" "red" ] [ text "Passwords must be at least 8 chars!" ]
+  else if not (String.any isDigit model.password) then
+    div [ style "color" "red" ] [ text "Password must contain at least one digit!" ]
+  else if not (String.any isUpper model.password) then
+    div [ style "color" "red" ] [ text "Password must contain at least one uppercase char!" ]
+  else if not (String.any isLower model.password) then
+    div [ style "color" "red" ] [ text "Password must contain at least one lowercase char!" ]
   else if model.password /= model.passwordAgain then
     div [ style "color" "red" ] [ text "Passwords do not match!" ]
   else

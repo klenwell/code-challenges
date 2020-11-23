@@ -5259,7 +5259,9 @@ var $author$project$Forms$viewInput = F4(
 				]),
 			_List_Nil);
 	});
+var $elm$core$String$any = _String_any;
 var $elm$core$Basics$neq = _Utils_notEqual;
+var $elm$core$Basics$not = _Basics_not;
 var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
@@ -5274,6 +5276,33 @@ var $author$project$Forms$viewValidation = function (model) {
 		_List_fromArray(
 			[
 				$elm$html$Html$text('Passwords must be at least 8 chars!')
+			])) : ((!A2($elm$core$String$any, $elm$core$Char$isDigit, model.password)) ? A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'color', 'red')
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text('Password must contain at least one digit!')
+			])) : ((!A2($elm$core$String$any, $elm$core$Char$isUpper, model.password)) ? A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'color', 'red')
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text('Password must contain at least one uppercase char!')
+			])) : ((!A2($elm$core$String$any, $elm$core$Char$isLower, model.password)) ? A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				A2($elm$html$Html$Attributes$style, 'color', 'red')
+			]),
+		_List_fromArray(
+			[
+				$elm$html$Html$text('Password must contain at least one lowercase char!')
 			])) : ((!_Utils_eq(model.password, model.passwordAgain)) ? A2(
 		$elm$html$Html$div,
 		_List_fromArray(
@@ -5292,7 +5321,7 @@ var $author$project$Forms$viewValidation = function (model) {
 		_List_fromArray(
 			[
 				$elm$html$Html$text('OK')
-			])));
+			]))))));
 };
 var $author$project$Forms$view = function (model) {
 	return A2(
