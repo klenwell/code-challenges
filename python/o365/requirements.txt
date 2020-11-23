@@ -1,0 +1,10 @@
+#
+# To install:
+# pip install -r requirements.txt
+#
+
+# Microsoft Azure API: https://github.com/O365/python-o365
+O365
+
+# Flake8
+flake8
