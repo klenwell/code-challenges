@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 from secrets import CLIENT_ID, SECRET_ID
+from services.business_activity_service import BusinessActivityService
 from models.billable_event import BillableEvent
 
 
@@ -15,6 +16,22 @@ SCOPES = ['Calendars.Read', 'Mail.Read']
 #
 # Commands
 #
+def main():
+    api = BusinessActivityService(CLIENT_ID, SECRET_ID)
+    activities = api.fetch_activities()
+    print(len(activities))
+    breakpoint()
+
+def deprecated():
+    events = calendar_events()
+    messages = email_messages()
+    billable_events = [BillableEvent.from_calendar_event(event) for event in events]
+    billable_messages = [BillableEvent.from_email_message(message) for message in messages]
+    billables = billable_events + billable_messages
+    print(billables)
+    print(len(billables))
+    breakpoint()
+
 def calendar_events():
     """Based on
     https://medium.com/@pietrowicz.eric/how-to-read-microsoft-outlook-calendars-with-python-bdf257132318
@@ -85,11 +102,4 @@ def authenticate():
 #
 # Main Block
 #
-events = calendar_events()
-messages = email_messages()
-billable_events = [BillableEvent.from_calendar_event(event) for event in events]
-billable_messages = [BillableEvent.from_email_message(message) for message in messages]
-billables = billable_events + billable_messages
-print(billables)
-print(len(billables))
-breakpoint()
+main()
