@@ -1,7 +1,15 @@
 from O365 import Account, MSGraphProtocol
-from secrets import CLIENT_ID, SECRET_ID
 from datetime import datetime
 from pathlib import Path
+
+from secrets import CLIENT_ID, SECRET_ID
+from models.billable_event import BillableEvent
+
+
+#
+# Constants
+#
+SCOPES = ['Calendars.Read', 'Mail.Read']
 
 
 #
@@ -11,9 +19,7 @@ def calendar_events():
     """Based on
     https://medium.com/@pietrowicz.eric/how-to-read-microsoft-outlook-calendars-with-python-bdf257132318
     """
-    scopes = ['Calendars.Read']
-    account = authenticate(scopes)
-
+    account = authenticate()
     schedule = account.schedule()
     calendar = schedule.get_default_calendar()
 
@@ -29,7 +35,6 @@ def calendar_events():
     print(len(events))
     print(events)
     #print(event.attendees[0].address)
-    breakpoint()
 
     return events
 
@@ -38,9 +43,7 @@ def email_messages():
     """Based on
     https://github.com/O365/python-o365#mailbox
     """
-    scopes = ['Mail.Read']
-    account = authenticate(scopes)
-
+    account = authenticate()
     mailbox = account.mailbox()
     inbox = mailbox.inbox_folder()
     inbox_messages = list(inbox.get_messages())
@@ -51,13 +54,12 @@ def email_messages():
     print(len(sent_messages))
 
     messages = inbox_messages + sent_messages
-    message = message[0]
+    message = messages[0]
 
     print(len(messages))
     print(messages)
     print(message.to_api_data().keys())
     #print(message.to[0].address)
-    breakpoint()
 
     return messages
 
@@ -65,7 +67,7 @@ def email_messages():
 #
 # Helper Methods
 #
-def authenticate(scopes):
+def authenticate():
     credentials = (CLIENT_ID, SECRET_ID)
     protocol = MSGraphProtocol()
     account = Account(credentials, protocol=protocol)
@@ -74,18 +76,20 @@ def authenticate(scopes):
         print("Token file exists!")
         # account.connection.refresh_token()
     else:
-        account.authenticate(scopes=scopes)
+        account.authenticate(scopes=SCOPES)
         print('Authenticated!')
 
     return account
-
-def token_file_exists():
-    TOKEN_FILE = 'o365_token.txt'
-    token_path = Path(TOKEN_FILE)
-    return token_path.is_file()
 
 
 #
 # Main Block
 #
-calendar_events()
+events = calendar_events()
+messages = email_messages()
+billable_events = [BillableEvent.from_calendar_event(event) for event in events]
+billable_messages = [BillableEvent.from_email_message(message) for message in messages]
+billables = billable_events + billable_messages
+print(billables)
+print(len(billables))
+breakpoint()
