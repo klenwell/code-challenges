@@ -12,7 +12,7 @@
 module TempConverter exposing (..)
 
 import Browser
-import Html exposing (Html, Attribute, span, input, text)
+import Html exposing (Html, Attribute, span, input, text, div, h2)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput)
 
@@ -28,15 +28,17 @@ main =
 
 -- MODEL
 
-
 type alias Model =
-  { input : String
+  { celsius : String
+  , farenheit : String
+  , inches : String
+  , conversion : String
   }
 
 
 init : Model
 init =
-  { input = "" }
+  Model "" "" "" ""
 
 
 
@@ -44,15 +46,43 @@ init =
 
 
 type Msg
-  = Change String
-
+  = ConvertCelsius String
+  | ConvertFahrenheit String
+  | ConvertInches String
 
 update : Msg -> Model -> Model
 update msg model =
   case msg of
-    Change newInput ->
-      { model | input = newInput }
+    ConvertCelsius newInput ->
+      { model | celsius = newInput, conversion = convertCelsius newInput }
+    ConvertFahrenheit newInput ->
+      { model | farenheit = newInput, conversion = convertFahrenheit newInput }
+    ConvertInches newInput ->
+      { model | inches = newInput, conversion = convertInches newInput }
 
+convertCelsius : String -> String
+convertCelsius input =
+  case String.toFloat input of
+    Just celsius ->
+      String.fromFloat (celsius * 1.8 + 32) ++ " °F"
+    Nothing ->
+      "???"
+
+convertFahrenheit : String -> String
+convertFahrenheit input =
+    case String.toFloat input of
+      Just fahrenheit ->
+        String.fromFloat ((fahrenheit - 32) * 5 / 9) ++ " °C"
+      Nothing ->
+        "???"
+
+convertInches : String -> String
+convertInches input =
+    case String.toFloat input of
+      Just inches ->
+        String.fromFloat (inches * 2.54) ++ " cm"
+      Nothing ->
+        "???"
 
 
 -- VIEW
@@ -60,20 +90,25 @@ update msg model =
 
 view : Model -> Html Msg
 view model =
-  case String.toFloat model.input of
-    Just celsius ->
-      viewConverter model.input "blue" (String.fromFloat (celsius * 1.8 + 32))
+  div []
+    [ viewInput model.celsius ConvertCelsius "°C"
+    , viewInput model.farenheit ConvertFahrenheit "°F"
+    , viewInput model.inches ConvertInches "inches"
+    , viewOutput model.conversion
+    ]
 
-    Nothing ->
-      viewConverter model.input "red" "???"
+viewInput : String -> (String -> Msg) -> String -> Html Msg
+viewInput userInput onInputMsg label =
+  div []
+    [ input [ value userInput, onInput onInputMsg, style "width" "40px"] []
+    , text label
+    ]
 
-
-viewConverter : String -> String -> String -> Html Msg
-viewConverter userInput color equivalentTemp =
-  span []
-    [ input [ value userInput, onInput Change, style "width" "40px",
-              style "border-color" color ] []
-    , text "°C = "
-    , span [ style "color" color ] [ text equivalentTemp ]
-    , text "°F"
+viewOutput : String -> Html Msg
+viewOutput output =
+  div []
+    [ h2 []
+      [ text "Conversion: "
+      , span [] [ text output ]
+      ]
     ]

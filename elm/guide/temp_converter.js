@@ -4355,7 +4355,11 @@ function _Browser_load(url)
 		}
 	}));
 }
-var $author$project$TempConverter$init = {input: ''};
+var $author$project$TempConverter$Model = F4(
+	function (celsius, farenheit, inches, conversion) {
+		return {celsius: celsius, conversion: conversion, farenheit: farenheit, inches: inches};
+	});
+var $author$project$TempConverter$init = A4($author$project$TempConverter$Model, '', '', '', '');
 var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
@@ -5166,18 +5170,74 @@ var $elm$browser$Browser$sandbox = function (impl) {
 			view: impl.view
 		});
 };
-var $author$project$TempConverter$update = F2(
-	function (msg, model) {
-		var newInput = msg.a;
-		return _Utils_update(
-			model,
-			{input: newInput});
-	});
 var $elm$core$String$fromFloat = _String_fromNumber;
 var $elm$core$String$toFloat = _String_toFloat;
-var $author$project$TempConverter$Change = function (a) {
-	return {$: 'Change', a: a};
+var $author$project$TempConverter$convertCelsius = function (input) {
+	var _v0 = $elm$core$String$toFloat(input);
+	if (_v0.$ === 'Just') {
+		var celsius = _v0.a;
+		return $elm$core$String$fromFloat((celsius * 1.8) + 32) + ' °F';
+	} else {
+		return '???';
+	}
 };
+var $author$project$TempConverter$convertFahrenheit = function (input) {
+	var _v0 = $elm$core$String$toFloat(input);
+	if (_v0.$ === 'Just') {
+		var fahrenheit = _v0.a;
+		return $elm$core$String$fromFloat(((fahrenheit - 32) * 5) / 9) + ' °C';
+	} else {
+		return '???';
+	}
+};
+var $author$project$TempConverter$convertInches = function (input) {
+	var _v0 = $elm$core$String$toFloat(input);
+	if (_v0.$ === 'Just') {
+		var inches = _v0.a;
+		return $elm$core$String$fromFloat(inches * 2.54) + ' cm';
+	} else {
+		return '???';
+	}
+};
+var $author$project$TempConverter$update = F2(
+	function (msg, model) {
+		switch (msg.$) {
+			case 'ConvertCelsius':
+				var newInput = msg.a;
+				return _Utils_update(
+					model,
+					{
+						celsius: newInput,
+						conversion: $author$project$TempConverter$convertCelsius(newInput)
+					});
+			case 'ConvertFahrenheit':
+				var newInput = msg.a;
+				return _Utils_update(
+					model,
+					{
+						conversion: $author$project$TempConverter$convertFahrenheit(newInput),
+						farenheit: newInput
+					});
+			default:
+				var newInput = msg.a;
+				return _Utils_update(
+					model,
+					{
+						conversion: $author$project$TempConverter$convertInches(newInput),
+						inches: newInput
+					});
+		}
+	});
+var $author$project$TempConverter$ConvertCelsius = function (a) {
+	return {$: 'ConvertCelsius', a: a};
+};
+var $author$project$TempConverter$ConvertFahrenheit = function (a) {
+	return {$: 'ConvertFahrenheit', a: a};
+};
+var $author$project$TempConverter$ConvertInches = function (a) {
+	return {$: 'ConvertInches', a: a};
+};
+var $elm$html$Html$div = _VirtualDom_node('div');
 var $elm$html$Html$input = _VirtualDom_node('input');
 var $elm$html$Html$Events$alwaysStop = function (x) {
 	return _Utils_Tuple2(x, true);
@@ -5213,7 +5273,6 @@ var $elm$html$Html$Events$onInput = function (tagger) {
 			$elm$html$Html$Events$alwaysStop,
 			A2($elm$json$Json$Decode$map, tagger, $elm$html$Html$Events$targetValue)));
 };
-var $elm$html$Html$span = _VirtualDom_node('span');
 var $elm$virtual_dom$VirtualDom$style = _VirtualDom_style;
 var $elm$html$Html$Attributes$style = $elm$virtual_dom$VirtualDom$style;
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
@@ -5227,10 +5286,10 @@ var $elm$html$Html$Attributes$stringProperty = F2(
 			$elm$json$Json$Encode$string(string));
 	});
 var $elm$html$Html$Attributes$value = $elm$html$Html$Attributes$stringProperty('value');
-var $author$project$TempConverter$viewConverter = F3(
-	function (userInput, color, equivalentTemp) {
+var $author$project$TempConverter$viewInput = F3(
+	function (userInput, onInputMsg, label) {
 		return A2(
-			$elm$html$Html$span,
+			$elm$html$Html$div,
 			_List_Nil,
 			_List_fromArray(
 				[
@@ -5239,37 +5298,48 @@ var $author$project$TempConverter$viewConverter = F3(
 					_List_fromArray(
 						[
 							$elm$html$Html$Attributes$value(userInput),
-							$elm$html$Html$Events$onInput($author$project$TempConverter$Change),
-							A2($elm$html$Html$Attributes$style, 'width', '40px'),
-							A2($elm$html$Html$Attributes$style, 'border-color', color)
+							$elm$html$Html$Events$onInput(onInputMsg),
+							A2($elm$html$Html$Attributes$style, 'width', '40px')
 						]),
 					_List_Nil),
-					$elm$html$Html$text('°C = '),
-					A2(
-					$elm$html$Html$span,
-					_List_fromArray(
-						[
-							A2($elm$html$Html$Attributes$style, 'color', color)
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text(equivalentTemp)
-						])),
-					$elm$html$Html$text('°F')
+					$elm$html$Html$text(label)
 				]));
 	});
+var $elm$html$Html$h2 = _VirtualDom_node('h2');
+var $elm$html$Html$span = _VirtualDom_node('span');
+var $author$project$TempConverter$viewOutput = function (output) {
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$h2,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Conversion: '),
+						A2(
+						$elm$html$Html$span,
+						_List_Nil,
+						_List_fromArray(
+							[
+								$elm$html$Html$text(output)
+							]))
+					]))
+			]));
+};
 var $author$project$TempConverter$view = function (model) {
-	var _v0 = $elm$core$String$toFloat(model.input);
-	if (_v0.$ === 'Just') {
-		var celsius = _v0.a;
-		return A3(
-			$author$project$TempConverter$viewConverter,
-			model.input,
-			'blue',
-			$elm$core$String$fromFloat((celsius * 1.8) + 32));
-	} else {
-		return A3($author$project$TempConverter$viewConverter, model.input, 'red', '???');
-	}
+	return A2(
+		$elm$html$Html$div,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A3($author$project$TempConverter$viewInput, model.celsius, $author$project$TempConverter$ConvertCelsius, '°C'),
+				A3($author$project$TempConverter$viewInput, model.farenheit, $author$project$TempConverter$ConvertFahrenheit, '°F'),
+				A3($author$project$TempConverter$viewInput, model.inches, $author$project$TempConverter$ConvertInches, 'inches'),
+				$author$project$TempConverter$viewOutput(model.conversion)
+			]));
 };
 var $author$project$TempConverter$main = $elm$browser$Browser$sandbox(
 	{init: $author$project$TempConverter$init, update: $author$project$TempConverter$update, view: $author$project$TempConverter$view});
