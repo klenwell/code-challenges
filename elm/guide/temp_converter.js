@@ -5240,7 +5240,8 @@ var $author$project$TempConverter$viewConverter = F3(
 						[
 							$elm$html$Html$Attributes$value(userInput),
 							$elm$html$Html$Events$onInput($author$project$TempConverter$Change),
-							A2($elm$html$Html$Attributes$style, 'width', '40px')
+							A2($elm$html$Html$Attributes$style, 'width', '40px'),
+							A2($elm$html$Html$Attributes$style, 'border-color', color)
 						]),
 					_List_Nil),
 					$elm$html$Html$text('°C = '),
