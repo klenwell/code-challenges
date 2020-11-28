@@ -51,6 +51,17 @@ class BusinessActivity:
     #
     # Instance Methods
     #
+    def to_csv(self):
+        return [
+            self.date,
+            self.resource,
+            self.started_at,
+            self.ended_at,
+            self.title,
+            self.owner,
+            self.description
+        ]
+
     def __repr__(self):
         f_ = '<BusinessActivity ({}) title="{}" date={}>'
         return f_.format(self.resource, self.title, self.date)
