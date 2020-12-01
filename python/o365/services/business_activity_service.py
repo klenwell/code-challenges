@@ -87,7 +87,10 @@ class BusinessActivityService:
         if account.is_authenticated:
             print("Token file exists!")
         else:
-            account.authenticate(scopes=SCOPES)
-            print('Authenticated!')
+            authenticated = account.authenticate(scopes=SCOPES)
+            if authenticated:
+                print('Authenticated!')
+            else:
+                print('Failed to authenticate.')
 
         return account
