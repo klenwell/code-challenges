@@ -79,6 +79,17 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
   div []
-    [ h1 [] [ text (String.fromInt model.dieFace) ]
+    [ h1 [] [ text (viewDie model.dieFace) ]
     , button [ onClick Roll ] [ text "Roll" ]
     ]
+
+viewDie : Int -> String
+viewDie dieFace =
+  case dieFace of
+    1 -> "⚀"
+    2 -> "⚁"
+    3 -> "⚂"
+    4 -> "⚃"
+    5 -> "⚄"
+    6 -> "⚅"
+    _ -> "?"

@@ -5433,6 +5433,24 @@ var $elm$html$Html$Events$onClick = function (msg) {
 };
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
+var $author$project$RandomDice$viewDie = function (dieFace) {
+	switch (dieFace) {
+		case 1:
+			return '⚀';
+		case 2:
+			return '⚁';
+		case 3:
+			return '⚂';
+		case 4:
+			return '⚃';
+		case 5:
+			return '⚄';
+		case 6:
+			return '⚅';
+		default:
+			return '?';
+	}
+};
 var $author$project$RandomDice$view = function (model) {
 	return A2(
 		$elm$html$Html$div,
@@ -5445,7 +5463,7 @@ var $author$project$RandomDice$view = function (model) {
 				_List_fromArray(
 					[
 						$elm$html$Html$text(
-						$elm$core$String$fromInt(model.dieFace))
+						$author$project$RandomDice$viewDie(model.dieFace))
 					])),
 				A2(
 				$elm$html$Html$button,
