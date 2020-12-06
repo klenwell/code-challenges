@@ -5633,6 +5633,7 @@ var $author$project$TimeKeeper$subscriptions = function (model) {
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
+var $elm$core$Basics$not = _Basics_not;
 var $author$project$TimeKeeper$update = F2(
 	function (msg, model) {
 		switch (msg.$) {
@@ -5650,21 +5651,15 @@ var $author$project$TimeKeeper$update = F2(
 						model,
 						{zone: newZone}),
 					$elm$core$Platform$Cmd$none);
-			case 'PauseClock':
-				return _Utils_Tuple2(
-					_Utils_update(
-						model,
-						{paused: true}),
-					$elm$core$Platform$Cmd$none);
 			default:
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{paused: false}),
+						{paused: !model.paused}),
 					$elm$core$Platform$Cmd$none);
 		}
 	});
-var $author$project$TimeKeeper$PauseClock = {$: 'PauseClock'};
+var $author$project$TimeKeeper$Toggle = {$: 'Toggle'};
 var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$html$Html$div = _VirtualDom_node('div');
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
@@ -5766,6 +5761,7 @@ var $author$project$TimeKeeper$view = function (model) {
 		A2($elm$time$Time$toMinute, model.zone, model.time));
 	var hour = $elm$core$String$fromInt(
 		A2($elm$time$Time$toHour, model.zone, model.time));
+	var btnText = model.paused ? 'Unpause' : 'Pause';
 	return A2(
 		$elm$html$Html$div,
 		_List_Nil,
@@ -5782,11 +5778,11 @@ var $author$project$TimeKeeper$view = function (model) {
 				$elm$html$Html$button,
 				_List_fromArray(
 					[
-						$elm$html$Html$Events$onClick($author$project$TimeKeeper$PauseClock)
+						$elm$html$Html$Events$onClick($author$project$TimeKeeper$Toggle)
 					]),
 				_List_fromArray(
 					[
-						$elm$html$Html$text('Pause')
+						$elm$html$Html$text(btnText)
 					]))
 			]));
 };

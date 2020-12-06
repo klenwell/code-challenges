@@ -49,8 +49,7 @@ init _ =
 type Msg
   = Tick Time.Posix
   | AdjustTimeZone Time.Zone
-  | PauseClock
-  | UnpauseClock
+  | Toggle
 
 
 
@@ -67,13 +66,8 @@ update msg model =
       , Cmd.none
       )
 
-    PauseClock ->
-      ( { model | paused = True }
-      , Cmd.none
-      )
-
-    UnpauseClock ->
-      ( { model | paused = False }
+    Toggle ->
+      ( { model | paused = not model.paused }
       , Cmd.none
       )
 
@@ -99,8 +93,13 @@ view model =
     hour   = String.fromInt (Time.toHour   model.zone model.time)
     minute = String.fromInt (Time.toMinute model.zone model.time)
     second = String.fromInt (Time.toSecond model.zone model.time)
+    btnText =
+      if model.paused then
+        "Unpause"
+      else
+        "Pause"
   in
   div [] [
     h1 [] [ text (hour ++ ":" ++ minute ++ ":" ++ second) ],
-    button [ onClick PauseClock ] [ text "Pause" ]
+    button [ onClick Toggle ] [ text btnText ]
   ]
