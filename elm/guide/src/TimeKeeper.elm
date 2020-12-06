@@ -78,6 +78,7 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
+    -- Source: https://stackoverflow.com/questions/38708911/cancel-subscriptions-in-elm
     if model.paused
     then Sub.none
     else Time.every 1000 Tick
