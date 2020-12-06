@@ -5193,9 +5193,9 @@ var $elm$browser$Browser$element = _Browser_element;
 var $author$project$TimeKeeper$AdjustTimeZone = function (a) {
 	return {$: 'AdjustTimeZone', a: a};
 };
-var $author$project$TimeKeeper$Model = F2(
-	function (zone, time) {
-		return {time: time, zone: zone};
+var $author$project$TimeKeeper$Model = F3(
+	function (zone, time, paused) {
+		return {paused: paused, time: time, zone: zone};
 	});
 var $elm$time$Time$Name = function (a) {
 	return {$: 'Name', a: a};
@@ -5216,10 +5216,11 @@ var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
 var $elm$time$Time$utc = A2($elm$time$Time$Zone, 0, _List_Nil);
 var $author$project$TimeKeeper$init = function (_v0) {
 	return _Utils_Tuple2(
-		A2(
+		A3(
 			$author$project$TimeKeeper$Model,
 			$elm$time$Time$utc,
-			$elm$time$Time$millisToPosix(0)),
+			$elm$time$Time$millisToPosix(0),
+			false),
 		A2($elm$core$Task$perform, $author$project$TimeKeeper$AdjustTimeZone, $elm$time$Time$here));
 };
 var $author$project$TimeKeeper$Tick = function (a) {
@@ -5625,30 +5626,65 @@ var $elm$time$Time$every = F2(
 		return $elm$time$Time$subscription(
 			A2($elm$time$Time$Every, interval, tagger));
 	});
+var $elm$core$Platform$Sub$batch = _Platform_batch;
+var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
 var $author$project$TimeKeeper$subscriptions = function (model) {
-	return A2($elm$time$Time$every, 1000, $author$project$TimeKeeper$Tick);
+	return model.paused ? $elm$core$Platform$Sub$none : A2($elm$time$Time$every, 1000, $author$project$TimeKeeper$Tick);
 };
 var $elm$core$Platform$Cmd$batch = _Platform_batch;
 var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$TimeKeeper$update = F2(
 	function (msg, model) {
-		if (msg.$ === 'Tick') {
-			var newTime = msg.a;
-			return _Utils_Tuple2(
-				_Utils_update(
-					model,
-					{time: newTime}),
-				$elm$core$Platform$Cmd$none);
-		} else {
-			var newZone = msg.a;
-			return _Utils_Tuple2(
-				_Utils_update(
-					model,
-					{zone: newZone}),
-				$elm$core$Platform$Cmd$none);
+		switch (msg.$) {
+			case 'Tick':
+				var newTime = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{time: newTime}),
+					$elm$core$Platform$Cmd$none);
+			case 'AdjustTimeZone':
+				var newZone = msg.a;
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{zone: newZone}),
+					$elm$core$Platform$Cmd$none);
+			case 'PauseClock':
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{paused: true}),
+					$elm$core$Platform$Cmd$none);
+			default:
+				return _Utils_Tuple2(
+					_Utils_update(
+						model,
+						{paused: false}),
+					$elm$core$Platform$Cmd$none);
 		}
 	});
+var $author$project$TimeKeeper$PauseClock = {$: 'PauseClock'};
+var $elm$html$Html$button = _VirtualDom_node('button');
+var $elm$html$Html$div = _VirtualDom_node('div');
 var $elm$html$Html$h1 = _VirtualDom_node('h1');
+var $elm$virtual_dom$VirtualDom$Normal = function (a) {
+	return {$: 'Normal', a: a};
+};
+var $elm$virtual_dom$VirtualDom$on = _VirtualDom_on;
+var $elm$html$Html$Events$on = F2(
+	function (event, decoder) {
+		return A2(
+			$elm$virtual_dom$VirtualDom$on,
+			event,
+			$elm$virtual_dom$VirtualDom$Normal(decoder));
+	});
+var $elm$html$Html$Events$onClick = function (msg) {
+	return A2(
+		$elm$html$Html$Events$on,
+		'click',
+		$elm$json$Json$Decode$succeed(msg));
+};
 var $elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var $elm$html$Html$text = $elm$virtual_dom$VirtualDom$text;
 var $elm$time$Time$flooredDiv = F2(
@@ -5731,11 +5767,27 @@ var $author$project$TimeKeeper$view = function (model) {
 	var hour = $elm$core$String$fromInt(
 		A2($elm$time$Time$toHour, model.zone, model.time));
 	return A2(
-		$elm$html$Html$h1,
+		$elm$html$Html$div,
 		_List_Nil,
 		_List_fromArray(
 			[
-				$elm$html$Html$text(hour + (':' + (minute + (':' + second))))
+				A2(
+				$elm$html$Html$h1,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(hour + (':' + (minute + (':' + second))))
+					])),
+				A2(
+				$elm$html$Html$button,
+				_List_fromArray(
+					[
+						$elm$html$Html$Events$onClick($author$project$TimeKeeper$PauseClock)
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Pause')
+					]))
 			]));
 };
 var $author$project$TimeKeeper$main = $elm$browser$Browser$element(
