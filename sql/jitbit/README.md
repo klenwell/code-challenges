@@ -7,7 +7,7 @@ I happened to stumble across it recently. Since I'm looking for a job, I figured
 
 I've teed up a DB Fiddle for the challenge on Postgres 12 here:
 
-- https://www.db-fiddle.com/f/ssMticE9sZKS6ugmtVMW5f/3
+- https://www.db-fiddle.com/f/ssMticE9sZKS6ugmtVMW5f/4
 
 
 ## Challenge
@@ -30,3 +30,4 @@ From the Jitbit article:
 ## Solution
 
 1. https://www.db-fiddle.com/f/3t83rr49nzg8nRbaH9TAhN/1
+2. https://www.db-fiddle.com/f/b7qoctibhMuji75ZNHX5tz/1

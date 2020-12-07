@@ -7,9 +7,3 @@ SELECT employees.name, boss.name AS boss_name
 FROM employees
 LEFT JOIN employees AS boss ON boss.employee_id = employees.boss_id
 WHERE employees.salary > boss.salary;
-
--- https://thoughtbot.com/blog/reading-an-explain-analyze-query-plan
-EXPLAIN ANALYZE SELECT employees.name, boss.name AS boss_name
-FROM employees
-LEFT JOIN employees AS boss ON boss.employee_id = employees.boss_id
-WHERE employees.salary > boss.salary;
