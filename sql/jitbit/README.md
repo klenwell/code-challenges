@@ -30,4 +30,5 @@ From the Jitbit article:
 ## Solution
 
 1. https://www.db-fiddle.com/f/3t83rr49nzg8nRbaH9TAhN/1
-2. https://www.db-fiddle.com/f/b7qoctibhMuji75ZNHX5tz/1
+2. https://www.db-fiddle.com/f/b7qoctibhMuji75ZNHX5tz/2
+3. https://www.db-fiddle.com/f/iHq8ZLBeNHVXSR7XLMv1fs/1
