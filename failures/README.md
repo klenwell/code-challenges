@@ -10,4 +10,4 @@ This was presented by an e-commerce site as a kind of online whiteboard problem 
 
 A pretty simple question and they tried to be helpful (correct answer is 6, 12). I just really flopped on it. I felt bad for wasting their time (there were four of us in the interview).
 
-In actually coding the solution, I find it's actually a bit trickier than it looks. I imagine there are ways they could have screened me more effectively. Perhaps making a timed coding challenge the first step after application.
+In coding the solution, I find it's actually a bit trickier than it looks. I imagine there are ways the hiring company could have screened me more effectively. Perhaps making a timed online coding challenge the first step after application.
