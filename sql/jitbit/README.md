@@ -27,9 +27,10 @@ From the Jitbit article:
 >Feel free to use it in your interviews. And if you do, a link back would be much appreciated ;)
 
 
-## Solution
+## Solutions
 
 1. https://www.db-fiddle.com/f/3t83rr49nzg8nRbaH9TAhN/1
 2. https://www.db-fiddle.com/f/b7qoctibhMuji75ZNHX5tz/2
 3. https://www.db-fiddle.com/f/iHq8ZLBeNHVXSR7XLMv1fs/1
 4. https://www.db-fiddle.com/f/kNDPCj4TkSG3YhoyNM9FDy/1
+5. https://www.db-fiddle.com/f/8ni6pVfJStRYGQnaUcwLiT/1
