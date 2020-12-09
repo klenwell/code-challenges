@@ -34,3 +34,4 @@ From the Jitbit article:
 3. https://www.db-fiddle.com/f/iHq8ZLBeNHVXSR7XLMv1fs/1
 4. https://www.db-fiddle.com/f/kNDPCj4TkSG3YhoyNM9FDy/1
 5. https://www.db-fiddle.com/f/8ni6pVfJStRYGQnaUcwLiT/1
+6. https://www.db-fiddle.com/f/rdGXwMCUzB8rk1YcTQmK4s/1
