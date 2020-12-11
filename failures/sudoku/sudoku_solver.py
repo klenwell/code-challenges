@@ -16,7 +16,7 @@ EMPTY_CELL = 0
 #
 class GameBoard:
     def __init__(self, *cell_values):
-        # cell_values will be 80 item tuple representing board.
+        # cell_values will be 81 item tuple representing board.
         self.cell_values = cell_values
 
     #
@@ -38,7 +38,8 @@ class GameBoard:
         return boards
 
     def is_solved(self):
-        return not any(cv == EMPTY_CELL for cv in self.cell_values)
+        # Does not verify it's the correct solution.
+        return self.first_open_cell_position() == None
 
     #
     # Private Methods
