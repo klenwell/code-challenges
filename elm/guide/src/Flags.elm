@@ -6,7 +6,8 @@ module Flags exposing (..)
 
 
 import Browser
-import Html exposing (Html, text)
+import Html exposing (Html, text, span, div)
+import Time
 
 
 -- MAIN
@@ -45,7 +46,16 @@ update _ model =
 
 view : Model -> Html Msg
 view model =
-  text (String.fromInt model.currentTime)
+  let
+    loadTime = Time.millisToPosix model.currentTime
+    hour   = String.fromInt (Time.toHour   Time.utc loadTime)
+    minute = String.fromInt (Time.toMinute Time.utc loadTime)
+    second = String.fromInt (Time.toSecond Time.utc loadTime)
+  in
+  div []
+  [ span [] [ text "Time at page load:" ]
+  , span [] [ text (hour ++ ":" ++ minute ++ ":" ++ second) ]
+  ]
 
 
 -- SUBSCRIPTIONS
