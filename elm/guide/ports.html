@@ -1,0 +1,46 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Elm: Ports</title>
+  <script src="javascript/ports.js"></script>
+</head>
+
+<body>
+  <div id="myapp"></div>
+
+  <script>
+  var app = Elm.Ports.init({
+    node: document.getElementById('myapp'),
+    flags: Date.now()
+  });
+
+  // Create your WebSocket.
+  var socket = new WebSocket('wss://echo.websocket.org');
+
+  // When a command goes to the `sendMessage` port, we pass the message
+  // along to the WebSocket.
+  app.ports.sendMessage.subscribe(function(message) {
+    socket.send(message);
+  });
+
+  // When a message comes into our WebSocket, we pass the message along
+  // to the `messageReceiver` port.
+  socket.addEventListener("message", function(event) {
+    console.log('socket event:', event)
+    app.ports.messageReceiver.send(event.data);
+  });
+
+  // If you want to use a JavaScript library to manage your WebSocket
+  // connection, replace the code in JS with the alternate implementation.
+  </script>
+
+  <hr>
+
+  <div class="source">
+    <a href="https://guide.elm-lang.org/interop/ports.html">
+      https://guide.elm-lang.org/interop/ports.html
+    </a>
+  </div>
+</body>
+</html>
