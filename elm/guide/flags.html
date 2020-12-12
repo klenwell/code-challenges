@@ -1,0 +1,27 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Elm: Flags</title>
+  <script src="javascript/flags.js"></script>
+</head>
+
+<body>
+  <div id="myapp"></div>
+
+  <script>
+  var app = Elm.Flags.init({
+    node: document.getElementById('myapp'),
+    flags: Date.now()
+  });
+  </script>
+
+  <hr>
+
+  <div class="source">
+    <a href="https://guide.elm-lang.org/interop/flags.html">
+      https://guide.elm-lang.org/interop/flags.html
+    </a>
+  </div>
+</body>
+</html>
