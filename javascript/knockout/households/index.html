@@ -15,7 +15,10 @@
     <body>
         <h1>Household Builder</h1>
         <div class="builder">
-            <ol class="household"></ol>
+            <ol data-bind="foreach: members">
+              <li data-bind="text: asListItem"></td>
+            </ol>
+
             <form>
                 <div>
                     <label>Age
@@ -41,13 +44,14 @@
                     </label>
                 </div>
                 <div>
-                    <button class="add">add</button>
+                    <button data-bind="click: addMember">add</button>
                 </div>
                 <div>
-                    <button type="submit">submit</button>
+                    <button data-bind="click: submit">submit</button>
                 </div>
             </form>
         </div>
+
         <pre class="debug"></pre>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.1/knockout-latest.js"
