@@ -17,15 +17,24 @@ function HouseholdMember(age, relationship, smokes) {
 function HouseholdsViewModel() {
   let model = this
 
-  const validRelationships = ['self', 'spouse', 'child', 'parent', 'grandparent', 'other']
+  model.validRelationships = ['self', 'spouse', 'child', 'parent', 'grandparent', 'other']
 
-  model.members = ko.observableArray([
-    new HouseholdMember(40, validRelationships[0], false)
-  ])
+  model.memberAge = ko.observable();
+  model.memberRelationship = ko.observable();
+  model.memberSmokes = ko.observable();
+  model.members = ko.observableArray([new HouseholdMember(40, 'self', false)])
 
-  model.addMember = () => { console.log("TODO: addMember") }
+  model.addMember = () => {
+    let age = model.memberAge()
+    let rel = model.memberRelationship()
+    let smokes = model.memberSmokes()
+    let newMember = new HouseholdMember(age, rel, smokes)
+    model.members.push(newMember)
+  }
 
-  model.submit = () => { console.log("TODO: submit") }
+  model.submitForm = () => {
+    console.log("TODO: submit", model.members())
+  }
 }
 
 ko.applyBindings(new HouseholdsViewModel());

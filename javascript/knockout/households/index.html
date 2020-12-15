@@ -19,35 +19,27 @@
               <li data-bind="text: asListItem"></td>
             </ol>
 
-            <form>
+            <form data-bind="submit: submitForm">
                 <div>
                     <label>Age
-                        <input type="text" name="age">
+                        <input data-bind="value: memberAge">
                     </label>
                 </div>
                 <div>
                     <label>Relationship
-                        <select name="rel">
-                            <option value="">---</option>
-                            <option value="self">Self</option>
-                            <option value="spouse">Spouse</option>
-                            <option value="child">Child</option>
-                            <option value="parent">Parent</option>
-                            <option value="grandparent">Grandparent</option>
-                            <option value="other">Other</option>
-                        </select>
+                        <select data-bind="options: $root.validRelationships, value: memberRelationship, optionsCaption: '---'"></select>
                     </label>
                 </div>
                 <div>
                     <label>Smoker?
-                        <input type="checkbox" name="smoker">
+                        <input type="checkbox" data-bind="checked: memberSmokes" />
                     </label>
                 </div>
                 <div>
                     <button data-bind="click: addMember">add</button>
                 </div>
                 <div>
-                    <button data-bind="click: submit">submit</button>
+                    <button type="submit">submit</button>
                 </div>
             </form>
         </div>
