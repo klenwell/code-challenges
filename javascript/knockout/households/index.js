@@ -68,5 +68,5 @@ function HouseholdsViewModel() {
   model.clearErrors = () => { model.validation.showAllMessages(false) }
 }
 
-ko.validation.init();
-ko.applyBindings(new HouseholdsViewModel());
+ko.validation.init()
+ko.applyBindings(new HouseholdsViewModel())

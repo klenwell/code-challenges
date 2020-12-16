@@ -21,7 +21,7 @@ In the given index.js file, replace the "Your code goes here" comment with JavaS
 
 ## Additional Requirements
 
-- Don't modify the given index.html file in any way. You're of course still allowed to modify the DOM through Javascript.
+- You can modify the index.html file but try to keep changes minimal.
 - You must write JavaScript using the Knockout.js framework.
 - The display of the household list is up to you.
 - On submission, put the serialized JSON in the provided "debug" DOM element and display that element.
@@ -31,6 +31,6 @@ In the given index.js file, replace the "Your code goes here" comment with JavaS
 The focus here is on the quality of your JavaScript, not the beauty of your design. The controls you add around viewing and deleting household members should be usable but need not be much to look at.
 
 ## My Solution
-To run it, I would just paste the file path in my browser, like so:
+To run it, I simply paste the file path in my browser, like so:
 
 - file:///home/klenwell/projects/code-challenges/javascript/knockout/households/index.html
