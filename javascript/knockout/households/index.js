@@ -19,13 +19,18 @@ function HouseholdsViewModel() {
 
   model.validRelationships = ['self', 'spouse', 'child', 'parent', 'grandparent', 'other']
   model.members = ko.observableArray([new HouseholdMember(40, 'self', false)])
-  model.memberAge = ko.observable()
-  model.memberRelationship = ko.observable()
+  model.memberAge = ko.observable().extend({required: true, min: 1})
+  model.memberRelationship = ko.observable().extend({required: true})
   model.memberSmokes = ko.observable()
   model.debugText = ko.observable()
   model.toggleDebug = ko.observable(false)
 
   model.addMember = (el, event) => {
+    if ( ! model.isValid() ) {
+      model.displayErrors()
+      return
+    }
+
     let age = model.memberAge()
     let rel = model.memberRelationship()
     let smokes = model.memberSmokes()
@@ -52,7 +57,16 @@ function HouseholdsViewModel() {
     model.memberAge('')
     model.memberRelationship('')
     model.memberSmokes(false)
+    model.clearErrors()
   }
+
+  // Knockout-Validation: https://github.com/Knockout-Contrib/Knockout-Validation/wiki
+  model.validation = ko.validation.group(model)
+  model.errors = () => { return model.validation() }
+  model.isValid = () => { return model.errors().length === 0 }
+  model.displayErrors = () => { model.validation.showAllMessages() }
+  model.clearErrors = () => { model.validation.showAllMessages(false) }
 }
 
+ko.validation.init();
 ko.applyBindings(new HouseholdsViewModel());
