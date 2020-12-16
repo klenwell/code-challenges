@@ -6,7 +6,7 @@ function HouseholdMember (age, relationship, smokes) {
   member.relationship = relationship
   member.smokes = smokes
 
-  member.asListItem = ko.computed(function () {
+  member.asListItem = ko.computed(() => {
     const smokingIcon = '🚬'
     const noSmokingIcon = '🚭'
     const smokesIcon = member.smokes ? smokingIcon : noSmokingIcon
@@ -15,57 +15,57 @@ function HouseholdMember (age, relationship, smokes) {
 }
 
 function HouseholdsViewModel () {
-  const model = this
+  const vm = this
 
-  model.validRelationships = ['self', 'spouse', 'child', 'parent', 'grandparent', 'other']
-  model.members = ko.observableArray([new HouseholdMember(40, 'self', false)])
-  model.memberAge = ko.observable().extend({ required: true, min: 1 })
-  model.memberRelationship = ko.observable().extend({ required: true })
-  model.memberSmokes = ko.observable()
-  model.debugText = ko.observable()
-  model.toggleDebug = ko.observable(false)
+  vm.validRelationships = ['self', 'spouse', 'child', 'parent', 'grandparent', 'other']
+  vm.members = ko.observableArray([new HouseholdMember(40, 'self', false)])
+  vm.memberAge = ko.observable().extend({ required: true, min: 1 })
+  vm.memberRelationship = ko.observable().extend({ required: true })
+  vm.memberSmokes = ko.observable()
+  vm.debugText = ko.observable()
+  vm.toggleDebug = ko.observable(false)
 
-  model.addMember = (el, event) => {
-    if (!model.isValid()) {
-      model.displayErrors()
+  vm.addMember = (el, event) => {
+    if (!vm.isValid()) {
+      vm.displayErrors()
       return
     }
 
-    const age = model.memberAge()
-    const rel = model.memberRelationship()
-    const smokes = model.memberSmokes()
+    const age = vm.memberAge()
+    const rel = vm.memberRelationship()
+    const smokes = vm.memberSmokes()
     const newMember = new HouseholdMember(age, rel, smokes)
 
-    model.members.push(newMember)
-    model.resetForm()
+    vm.members.push(newMember)
+    vm.resetForm()
   }
 
-  model.removeMember = (member) => {
+  vm.removeMember = (member) => {
     if (confirm('Remove this member?')) {
-      model.members.remove(member)
+      vm.members.remove(member)
     }
   }
 
-  model.submitForm = () => {
-    const jsonMembers = ko.toJSON(model.members())
+  vm.submitForm = () => {
+    const jsonMembers = ko.toJSON(vm.members())
 
-    model.debugText(jsonMembers)
-    model.toggleDebug(true)
+    vm.debugText(jsonMembers)
+    vm.toggleDebug(true)
   }
 
-  model.resetForm = () => {
-    model.memberAge('')
-    model.memberRelationship('')
-    model.memberSmokes(false)
-    model.clearErrors()
+  vm.resetForm = () => {
+    vm.memberAge('')
+    vm.memberRelationship('')
+    vm.memberSmokes(false)
+    vm.clearErrors()
   }
 
   // Knockout-Validation: https://github.com/Knockout-Contrib/Knockout-Validation/wiki
-  model.validation = ko.validation.group(model)
-  model.errors = () => { return model.validation() }
-  model.isValid = () => { return model.errors().length === 0 }
-  model.displayErrors = () => { model.validation.showAllMessages() }
-  model.clearErrors = () => { model.validation.showAllMessages(false) }
+  vm.validation = ko.validation.group(vm)
+  vm.errors = () => { return vm.validation() }
+  vm.isValid = () => { return vm.errors().length === 0 }
+  vm.displayErrors = () => { vm.validation.showAllMessages() }
+  vm.clearErrors = () => { vm.validation.showAllMessages(false) }
 }
 
 ko.validation.init()
