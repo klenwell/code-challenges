@@ -1,0 +1,13 @@
+source "https://rubygems.org"
+
+# Webserver Interface
+gem 'rack'
+
+# REST-like API Framework
+gem 'grape'
+
+# Debugger
+gem 'pry'
+
+# Static Analysis
+gem 'rubocop', require: false
