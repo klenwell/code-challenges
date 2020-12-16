@@ -19,10 +19,12 @@ function HouseholdsViewModel() {
 
   model.validRelationships = ['self', 'spouse', 'child', 'parent', 'grandparent', 'other']
 
-  model.memberAge = ko.observable();
-  model.memberRelationship = ko.observable();
-  model.memberSmokes = ko.observable();
   model.members = ko.observableArray([new HouseholdMember(40, 'self', false)])
+  model.memberAge = ko.observable()
+  model.memberRelationship = ko.observable()
+  model.memberSmokes = ko.observable()
+  model.debugText = ko.observable()
+  model.toggleDebug = ko.observable(false)
 
   model.addMember = () => {
     let age = model.memberAge()
@@ -33,7 +35,10 @@ function HouseholdsViewModel() {
   }
 
   model.submitForm = () => {
-    console.log("TODO: submit", model.members())
+    let jsonMembers = ko.toJSON(model.members())
+    model.debugText(jsonMembers)
+    model.toggleDebug(true)
+    console.log("TODO: submit", model.toggleDebug(), jsonMembers)
   }
 }
 
