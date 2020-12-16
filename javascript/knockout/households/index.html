@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Household Builder</title>
+        <style>
+            .debug {
+                font-family: monospace;
+                border: 1px solid black;
+                padding: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Household Builder</h1>
+        <div class="builder">
+            <ol data-bind="foreach: members">
+              <li>
+                <span data-bind="text: asListItem"></span>
+                <button data-bind="click: $root.removeMember">x</button>
+              </li>
+            </ol>
+
+            <form data-bind="submit: submitForm">
+                <div>
+                    <label>Age
+                        <input data-bind="value: memberAge">
+                    </label>
+                </div>
+                <div>
+                    <label>Relationship
+                        <select data-bind="options: $root.validRelationships, value: memberRelationship, optionsCaption: '---'"></select>
+                    </label>
+                </div>
+                <div>
+                    <label>Smoker?
+                        <input type="checkbox" data-bind="checked: memberSmokes">
+                    </label>
+                </div>
+                <div>
+                    <button data-bind="click: addMember">add</button>
+                </div>
+                <div>
+                    <button type="submit">submit</button>
+                </div>
+            </form>
+        </div>
+
+        <pre class="debug" data-bind="visible: toggleDebug, text: debugText"></pre>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.1/knockout-latest.js"
+                integrity="sha512-2AL/VEauKkZqQU9BHgnv48OhXcJPx9vdzxN1JrKDVc4FPU/MEE/BZ6d9l0mP7VmvLsjtYwqiYQpDskK9dG8KBA=="
+                crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout-validation/2.0.4/knockout.validation.min.js"
+                integrity="sha512-b99MDNv5TqiZtPKH2UeHzDAVydmgrOJEPtaPPEF8AgV86eYyqINFI/K7/7f0+R4WNTAVv8KvvpjwfOYHv5rd5g=="
+                crossorigin="anonymous"></script>
+        <script type="text/javascript" src="./index.js"></script>
+    </body>
+</html>
