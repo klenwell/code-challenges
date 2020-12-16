@@ -18,7 +18,6 @@ function HouseholdsViewModel() {
   let model = this
 
   model.validRelationships = ['self', 'spouse', 'child', 'parent', 'grandparent', 'other']
-
   model.members = ko.observableArray([new HouseholdMember(40, 'self', false)])
   model.memberAge = ko.observable()
   model.memberRelationship = ko.observable()
@@ -26,7 +25,7 @@ function HouseholdsViewModel() {
   model.debugText = ko.observable()
   model.toggleDebug = ko.observable(false)
 
-  model.addMember = () => {
+  model.addMember = (el, event) => {
     let age = model.memberAge()
     let rel = model.memberRelationship()
     let smokes = model.memberSmokes()
@@ -34,6 +33,12 @@ function HouseholdsViewModel() {
 
     model.members.push(newMember)
     model.resetForm()
+  }
+
+  model.removeMember = (member) => {
+    if ( confirm("Remove this member?") ) {
+      model.members.remove(member)
+    }
   }
 
   model.submitForm = () => {

@@ -15,7 +15,10 @@
         <h1>Household Builder</h1>
         <div class="builder">
             <ol data-bind="foreach: members">
-              <li data-bind="text: asListItem"></td>
+              <li>
+                <span data-bind="text: asListItem"></span>
+                <button data-bind="click: $root.removeMember">x</button>
+              </li>
             </ol>
 
             <form data-bind="submit: submitForm">
