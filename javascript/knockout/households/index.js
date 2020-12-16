@@ -31,14 +31,22 @@ function HouseholdsViewModel() {
     let rel = model.memberRelationship()
     let smokes = model.memberSmokes()
     let newMember = new HouseholdMember(age, rel, smokes)
+
     model.members.push(newMember)
+    model.resetForm()
   }
 
   model.submitForm = () => {
     let jsonMembers = ko.toJSON(model.members())
+
     model.debugText(jsonMembers)
     model.toggleDebug(true)
-    console.log("TODO: submit", model.toggleDebug(), jsonMembers)
+  }
+
+  model.resetForm = () => {
+    model.memberAge('')
+    model.memberRelationship('')
+    model.memberSmokes(false)
   }
 }
 
