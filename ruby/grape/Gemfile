@@ -11,3 +11,10 @@ gem 'pry'
 
 # Static Analysis
 gem 'rubocop', require: false
+
+# For BDD tests
+gem 'rspec'
+
+# Rack testing: https://github.com/rack/rack-test
+# Source: https://github.com/ruby-grape/grape#writing-tests
+gem 'rack-test'
