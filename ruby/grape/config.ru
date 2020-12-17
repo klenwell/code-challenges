@@ -1,10 +1,5 @@
 # https://github.com/ruby-grape/grape#alongside-sinatra-or-other-frameworks
 require 'grape'
+require_relative 'api/challenge_api.rb'
 
-class PingApi < Grape::API
-  get :ping do
-    { ping: 'pong' }
-  end
-end
-
-run PingApi
+run Challenge::API
