@@ -4,6 +4,34 @@ module Challenge
     version 'v1'
     format :json
 
+    resources :households do
+      # POST /api/v1/households
+      desc 'Create a household.'
+      post do
+        { post: 'TODO' }
+      end
+
+      # GET /api/v1/households/random
+      desc 'Return a randomly generated household.'
+      get :random do
+        { random: 'TODO' }
+      end
+
+      # GET /api/v1/households/:id
+      desc 'Read a household.'
+      params do
+        requires :id, type: Integer, desc: 'Household ID.'
+      end
+      route_param :id do
+        get do
+          {
+            get: 'TODO',
+            id: params[:id]
+          }
+        end
+      end
+    end
+
     # GET /api/v1/ping
     get :ping do
       { ping: 'pong' }
