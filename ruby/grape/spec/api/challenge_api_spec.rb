@@ -9,7 +9,7 @@ describe Challenge::API do
     Challenge::API
   end
 
-  describe 'ping' do
+  describe 'GET /api/v1/ping' do
     it 'returns pongs' do
       get '/api/v1/ping'
       expect(last_response.status).to eq 200
@@ -18,7 +18,7 @@ describe Challenge::API do
   end
 
   describe 'households' do
-    describe 'create' do
+    describe 'POST /api/v1/households' do
       it 'creates a new household' do
         members = []
         post '/api/v1/households', members.to_json, 'CONTENT_TYPE' => 'application/json'
@@ -26,7 +26,7 @@ describe Challenge::API do
       end
     end
 
-    describe 'get' do
+    describe 'GET /api/v1/households/' do
       it 'return a household by id parameter' do
         household_id = 1
         get "/api/v1/households/#{household_id}"
@@ -34,7 +34,7 @@ describe Challenge::API do
       end
     end
 
-    describe 'random' do
+    describe 'GET /api/v1/households/random' do
       it 'generates and returns a random household' do
         get "/api/v1/households/random"
         expect(last_response.status).to eq 200
