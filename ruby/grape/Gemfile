@@ -13,7 +13,7 @@ gem 'activerecord'
 gem 'pg'
 
 # Database Migrations
-gem 'standalone_migrations'
+gem 'standalone_migrations', '>= 6.0'
 
 # Debugger
 gem 'pry'
