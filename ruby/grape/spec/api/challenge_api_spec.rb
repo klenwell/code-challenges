@@ -35,10 +35,16 @@ describe Challenge::API do
     end
 
     describe 'GET /api/v1/households/random' do
-      it 'generates and returns a random household' do
+      let!(:response) do
         get "/api/v1/households/random"
-        expect(last_response.status).to eq 200
+        last_response
       end
+      let(:json_data) { JSON.parse(last_response.body) }
+
+      it { expect(response.status).to eq 200 }
+      it { expect(json_data.keys).to include 'household' }
+      it { expect(json_data.keys).to include 'members' }
+      it { expect(json_data['members'].length).to be >= 1 }
     end
   end
 end

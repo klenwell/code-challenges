@@ -1,18 +1,20 @@
 # frozen_string_literal: true
 
 # Source: https://github.com/ruby-grape/grape/blob/master/spec/spec_helper.rb
-$LOAD_PATH.unshift(File.dirname(__FILE__))
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'api'))
+root_path = File.join(File.dirname(__FILE__), '..')
 
 require "rack/test"
 require 'grape'
 require 'active_record'
 require 'shoulda-matchers'
 
+Dir["#{root_path}/app/models/**/*.rb"].each {|f| require f}
+Dir["#{root_path}/api/*.rb"].each {|f| require f}
+
 # Connect to test database: https://stackoverflow.com/q/14519951/1093087
 # On safe_load args: https://stackoverflow.com/a/43767643/1093087
 env = 'test'
-db_config_file = File.join(File.dirname(__FILE__), '..', 'db', 'config.yml')
+db_config_file = "#{root_path}/db/config.yml"
 db_config = YAML.safe_load(File.read(db_config_file), [], [], true)
 ActiveRecord::Base.establish_connection(db_config[env])
 

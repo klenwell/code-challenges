@@ -14,7 +14,11 @@ module Challenge
       # GET /api/v1/households/random
       desc 'Return a randomly generated household.'
       get :random do
-        { random: 'TODO' }
+        household = Household.create_random
+        {
+          household: household,
+          members: household.members
+        }
       end
 
       # GET /api/v1/households/:id
