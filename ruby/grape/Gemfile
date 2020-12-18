@@ -28,5 +28,8 @@ gem 'rspec'
 # Source: https://github.com/ruby-grape/grape#writing-tests
 gem 'rack-test'
 
+# Enhanced rspec matchers (I thought these came packaged with rspec)
+gem 'shoulda-matchers'
+
 # Ruby make-like utility
 gem 'rake'

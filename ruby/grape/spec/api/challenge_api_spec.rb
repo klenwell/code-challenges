@@ -10,7 +10,7 @@ describe Challenge::API do
   end
 
   describe 'GET /api/v1/ping' do
-    it 'returns pongs' do
+    it 'returns pong' do
       get '/api/v1/ping'
       expect(last_response.status).to eq 200
       expect(JSON.parse(last_response.body)).to eq({ 'ping' => 'pong' })

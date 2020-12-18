@@ -7,6 +7,7 @@ $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'api'))
 require "rack/test"
 require 'grape'
 require 'active_record'
+require 'shoulda-matchers'
 
 # Connect to test database: https://stackoverflow.com/q/14519951/1093087
 # On safe_load args: https://stackoverflow.com/a/43767643/1093087
@@ -39,4 +40,15 @@ RSpec.configure do |config|
 
   # Enable flags like --only-failures and --next-failure
   config.example_status_persistence_file_path = '.rspec_status'
+end
+
+# Source: https://github.com/thoughtbot/shoulda-matchers#non-rails-apps
+Shoulda::Matchers.configure do |config|
+  config.integrate do |with|
+    with.test_framework :rspec
+
+    # Keep as many of these lines as are necessary:
+    with.library :active_record
+    with.library :active_model
+  end
 end
