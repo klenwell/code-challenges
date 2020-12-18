@@ -21,4 +21,26 @@ describe HouseholdMember, type: :model do
 
     it { expect(smoker.smokes?).to be(true) }
   end
+
+  describe '.random' do
+    context 'without parameters' do
+      it 'will create a random member' do
+        rando = HouseholdMember.random
+        expect(rando).to be_instance_of HouseholdMember
+        expect(described_class::RELATIONSHIPS).to include rando.relationship
+        expect(rando.household).to be_nil
+      end
+    end
+
+    context 'with parameters' do
+      it 'will create a random member with random attrs' do
+        age = 25
+        smokes = true
+        rando = HouseholdMember.random(age: age, smokes: smokes)
+
+        expect(rando.age).to eq(age)
+        expect(rando.smokes).to eq(smokes)
+      end
+    end
+  end
 end
