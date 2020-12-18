@@ -8,11 +8,11 @@ require "rack/test"
 require 'grape'
 require 'active_record'
 
-# Connect to test database
-# https://stackoverflow.com/q/14519951/1093087
+# Connect to test database: https://stackoverflow.com/q/14519951/1093087
+# On safe_load args: https://stackoverflow.com/a/43767643/1093087
 env = 'test'
-db_config_file = File.join(File.expand_path('..', __FILE__), '..', 'db', 'config.yml')
-db_config = YAML.load(File.read(db_config_file))
+db_config_file = File.join(File.dirname(__FILE__), '..', 'db', 'config.yml')
+db_config = YAML.safe_load(File.read(db_config_file), [], [], true)
 ActiveRecord::Base.establish_connection(db_config[env])
 
 RSpec.configure do |config|

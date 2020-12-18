@@ -10,10 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_12_18_164222) do
+ActiveRecord::Schema.define(version: 2020_12_18_184120) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "household_members", force: :cascade do |t|
+    t.bigint "household_id"
+    t.integer "age"
+    t.string "relationship"
+    t.boolean "smokes"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["household_id"], name: "index_household_members_on_household_id"
+  end
 
   create_table "households", force: :cascade do |t|
     t.datetime "created_at", precision: 6, null: false
