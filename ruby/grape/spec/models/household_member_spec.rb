@@ -1,6 +1,7 @@
 require 'spec_helper'
 require_relative '../../app/models/household_member'
 
+# rubocop: disable Metrics/BlockLength
 describe HouseholdMember, type: :model do
   describe 'associations' do
     it { is_expected.to belong_to(:household).class_name('Household') }
@@ -25,7 +26,7 @@ describe HouseholdMember, type: :model do
   describe '.random' do
     context 'without parameters' do
       it 'will create a random member' do
-        rando = HouseholdMember.random
+        rando = HouseholdMember.create_random
         expect(rando).to be_instance_of HouseholdMember
         expect(described_class::RELATIONSHIPS).to include rando.relationship
         expect(rando.household).to be_nil
@@ -36,7 +37,7 @@ describe HouseholdMember, type: :model do
       it 'will create a random member with random attrs' do
         age = 25
         smokes = true
-        rando = HouseholdMember.random(age: age, smokes: smokes)
+        rando = HouseholdMember.create_random(age: age, smokes: smokes)
 
         expect(rando.age).to eq(age)
         expect(rando.smokes).to eq(smokes)
@@ -44,3 +45,4 @@ describe HouseholdMember, type: :model do
     end
   end
 end
+# rubocop: enable Metrics/BlockLength
