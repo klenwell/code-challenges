@@ -6,6 +6,15 @@ gem 'rack'
 # REST-like API Framework
 gem 'grape'
 
+# Database ORM
+gem 'activerecord'
+
+# Postgres Database
+gem 'pg'
+
+# Database Migrations
+gem 'standalone_migrations'
+
 # Debugger
 gem 'pry'
 
@@ -18,3 +27,6 @@ gem 'rspec'
 # Rack testing: https://github.com/rack/rack-test
 # Source: https://github.com/ruby-grape/grape#writing-tests
 gem 'rack-test'
+
+# Ruby make-like utility
+gem 'rake'
