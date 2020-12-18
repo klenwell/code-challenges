@@ -1,2 +1,3 @@
 # Ignore spec example file.
+.rspec_status
 spec/examples.txt
