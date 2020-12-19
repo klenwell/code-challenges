@@ -27,10 +27,30 @@ describe Challenge::API do
     end
 
     describe 'GET /api/v1/households/' do
-      it 'return a household by id parameter' do
-        household_id = 1
-        get "/api/v1/households/#{household_id}"
-        expect(last_response.status).to eq 200
+      context 'requested household exists' do
+        let(:household) { Household.create_random }
+
+        it 'return a household by id parameter' do
+          get "/api/v1/households/#{household.id}"
+          json_data = JSON.parse(last_response.body)
+
+          expect(last_response.status).to eq 200
+          expect(json_data['household']['id']).to eq(household.id)
+        end
+      end
+
+      context 'requested household does not exist' do
+        it 'return a household by id parameter' do
+          # Arrange
+          expected_error = "Couldn't find Household with 'id'=0"
+
+          # Act
+          get "/api/v1/households/0"
+
+          # Assert
+          expect(last_response.status).to eq 404
+          expect(JSON.parse(last_response.body)).to eq({ 'error' => expected_error })
+        end
       end
     end
 

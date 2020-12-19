@@ -4,6 +4,13 @@ module Challenge
     version 'v1'
     format :json
 
+    # https://github.com/ruby-grape/grape#exception-handling
+    rescue_from ActiveRecord::RecordNotFound do |e|
+      error!(e, 404)
+    end
+
+    rescue_from :all
+
     resources :households do
       # POST /api/v1/households
       desc 'Create a household.'
@@ -28,9 +35,10 @@ module Challenge
       end
       route_param :id do
         get do
+          household = Household.find(params[:id])
           {
-            get: 'TODO',
-            id: params[:id]
+            household: household,
+            members: household.members
           }
         end
       end
