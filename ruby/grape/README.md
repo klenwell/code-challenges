@@ -13,7 +13,30 @@ $ curl http://localhost:9292/api/v1/ping
 ```
 
 ### Households
-The second part of this challenge extends the [Ad Hoc Hhbuilder challenge](https://github.com/klenwell/code-challenges/tree/main/ad-hoc/hhbuilder) by building a backend to complement the frontend interface.
+The second part of this challenge extends the [Ad Hoc Hhbuilder challenge](https://github.com/klenwell/code-challenges/tree/main/ad-hoc/hhbuilder) by building a backend to complement the frontend interface. Example request:
+
+```
+$ curl http://localhost:9292/api/v1/households/random
+{
+  "household":{
+    "id":3,
+    "created_at":"2020-12-19T20:06:34.504Z",
+    "updated_at":"2020-12-19T20:06:34.504Z"
+  },
+  "members":[
+    {
+      "id":4,
+      "household_id":3,
+      "age":35,
+      "relationship":"self",
+      "smokes":false,
+      "created_at":"2020-12-19T20:06:34.471Z",
+      "updated_at":"2020-12-19T20:06:34.508Z"
+    },
+    ...
+  ]
+}
+```
 
 ## Getting Started
 One rule I've always emphasized with my teams is that the README should be explicit in helping new developers to the project get their developer up and running as quickly as possible.
