@@ -8,8 +8,8 @@ require 'grape'
 require 'active_record'
 require 'shoulda-matchers'
 
-Dir["#{root_path}/app/models/**/*.rb"].each {|f| require f}
-Dir["#{root_path}/api/*.rb"].each {|f| require f}
+Dir["#{root_path}/app/models/**/*.rb"].sort.each { |f| require f }
+Dir["#{root_path}/api/*.rb"].sort.each { |f| require f }
 
 # Connect to test database: https://stackoverflow.com/q/14519951/1093087
 # On safe_load args: https://stackoverflow.com/a/43767643/1093087

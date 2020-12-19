@@ -5,8 +5,8 @@ require 'grape'
 require 'active_record'
 
 # Load API and models
-Dir["#{root_path}/api/*.rb"].each {|f| require f}
-Dir["#{root_path}/app/models/**/*.rb"].each {|f| require f}
+Dir["#{root_path}/api/*.rb"].sort.each { |f| require f }
+Dir["#{root_path}/app/models/**/*.rb"].sort.each { |f| require f }
 
 # Connect to test database: https://stackoverflow.com/q/14519951/1093087
 # TODO: dynamic environment support
