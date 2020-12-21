@@ -12,6 +12,32 @@ $ curl http://localhost:9292/api/v1/ping
 {"ping":"pong"}
 ```
 
+### Households
+The second part of this challenge extends the [Ad Hoc Hhbuilder challenge](https://github.com/klenwell/code-challenges/tree/main/ad-hoc/hhbuilder) by building a backend to complement the frontend interface. Example request:
+
+```
+$ curl http://localhost:9292/api/v1/households/random
+{
+  "household":{
+    "id":3,
+    "created_at":"2020-12-19T20:06:34.504Z",
+    "updated_at":"2020-12-19T20:06:34.504Z"
+  },
+  "members":[
+    {
+      "id":4,
+      "household_id":3,
+      "age":35,
+      "relationship":"self",
+      "smokes":false,
+      "created_at":"2020-12-19T20:06:34.471Z",
+      "updated_at":"2020-12-19T20:06:34.508Z"
+    },
+    ...
+  ]
+}
+```
+
 ## Getting Started
 One rule I've always emphasized with my teams is that the README should be explicit in helping new developers to the project get their developer up and running as quickly as possible.
 
@@ -36,10 +62,39 @@ If you want to run this on your own, follow these steps:
       cd code-challenges/ruby/grape
       bundle install
 
+### Database
+- Set up postgres databases:
+
+      # Use postgres command line interface (see ansible-ubuntu-workstation group_vars for pw)
+      psql
+
+      # SQL commands
+      CREATE USER challenge WITH PASSWORD 'challenge';
+      CREATE DATABASE grape_households_dev;
+      GRANT ALL PRIVILEGES ON DATABASE grape_households_dev TO challenge;
+      CREATE DATABASE grape_households_test;
+      GRANT ALL PRIVILEGES ON DATABASE grape_households_test TO challenge;
+      ALTER ROLE challenge SUPERUSER;
+
+- Update settings `config/db.yaml` (if necessary).
+
+- Create databases and run migrations:
+
+      bundle exec rake db:setup
+      bundle exec rake db:setup RAILS_ENV=test
+      bundle exec rake db:migrate
+      bundle exec rake db:migrate RAILS_ENV=test
+
+## Test
+To run rspec tests:
+
+      rspec
+
+## Local Server
 - Run the server:
 
       bundle exec rackup
 
-- Test form the command line:
+- Test from the command line:
 
       curl http://localhost:9292/api/v1/ping

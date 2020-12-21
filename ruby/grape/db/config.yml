@@ -1,0 +1,16 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  pool: 5
+  host: localhost
+  username: challenge
+  password: challenge
+
+development:
+  <<: *default
+  database: grape_households_dev
+
+
+test: &test
+  <<: *default
+  database: grape_households_test

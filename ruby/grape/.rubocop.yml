@@ -7,6 +7,7 @@ AllCops:
     - 'Guardfile'
     - '*.gemspec'
     - !ruby/regexp /old_and_unused\.rb$/
+    - 'db/schema.rb'
   TargetRubyVersion: 2.7
   NewCops: enable
 
