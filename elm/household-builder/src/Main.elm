@@ -32,8 +32,8 @@ memberRelationships =
 type alias Model =
   { members : List Member
   , ageField : String
-  , relationship : String
-  , smokes: Bool
+  , relationshipField : String
+  , smokerField : Bool
   , isValidMember: MemberValidator
   }
 
@@ -52,9 +52,9 @@ init : () -> (Model, Cmd Msg)
 init _ =
   ( { members = []
     , ageField = ""
-    , relationship = ""
-    , smokes = False
-    , isValidMember = Ok
+    , relationshipField = ""
+    , smokerField = False
+    , isValidMember = None
     }
   , Cmd.none
   )
@@ -75,8 +75,8 @@ update msg model =
   case msg of
     InputAge age ->
       ({ model | ageField = age }, Cmd.none)
-    SelectRelationship rel ->
-      (model, Cmd.none)
+    SelectRelationship selectedOption ->
+      ({ model | relationshipField = selectedOption }, Cmd.none)
     ToggleSmokes smokes ->
       (model, Cmd.none)
     AddMember ->
@@ -93,7 +93,7 @@ validateMember model =
   in
     if not (memberAge > 0) then
       Error "Age must be number greater than 0."
-    else if not (List.member model.relationship memberRelationships) then
+    else if not (List.member model.relationshipField memberRelationships) then
       Error "Please select a valid relationship"
     else
       Ok
@@ -117,7 +117,7 @@ view model =
       , div []
         [ viewMemberValidation model
         , viewInput "text" "Age" model.ageField InputAge
-        , viewSelectOptions "Relationship"
+        , viewSelectOptions "Relationship" memberRelationships SelectRelationship
         , viewInput "checkbox" "Smoker?" "true" ToggleSmokes
         , button [ class "add", onClick AddMember ] [ text "add" ]
         , button [ type_ "submit", onClick SubmitHousehold ] [ text "submit" ]
@@ -139,9 +139,21 @@ viewInput inputType labelText val toMsg =
       ]
     ]
 
-viewSelectOptions : String -> Html msg
-viewSelectOptions labelText =
-  div [] [ text ("TODO: " ++ labelText) ]
+viewSelectOptions : String -> List String -> (String -> msg) -> Html msg
+viewSelectOptions labelText optionList toMsg =
+  let
+    headedOptions = "---" :: optionList
+  in
+    div []
+      [ label []
+        [ span [] [ text labelText ]
+        , select [ onInput toMsg ] (List.map listToOptions headedOptions)
+        ]
+      ]
+
+listToOptions : String -> Html msg
+listToOptions relation =
+  option [ value relation ] [ text relation ]
 
 viewMemberValidation : Model -> Html msg
 viewMemberValidation model =
