@@ -9,7 +9,7 @@ module Main exposing (..)
 
 import Browser
 import Html exposing (..)
-import Html.Attributes exposing ( type_, value, class )
+import Html.Attributes exposing ( type_, value, class, style )
 import Html.Events exposing (onClick, onInput)
 
 
@@ -23,14 +23,18 @@ main =
     , view = view
     }
 
+memberRelationships =
+  ["self", "spouse", "child", "parent", "grandparent", "other"]
+
 
 -- MODEL
 
 type alias Model =
   { members : List Member
-  , age : Int
+  , ageField : String
   , relationship : String
   , smokes: Bool
+  , isValidMember: MemberValidator
   }
 
 type alias Member =
@@ -39,12 +43,18 @@ type alias Member =
   , smokes : Bool
   }
 
+type MemberValidator
+  = None
+  | Ok
+  | Error String
+
 init : () -> (Model, Cmd Msg)
 init _ =
   ( { members = []
-    , age = 0
+    , ageField = ""
     , relationship = ""
     , smokes = False
+    , isValidMember = Ok
     }
   , Cmd.none
   )
@@ -64,17 +74,29 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     InputAge age ->
-      (model, Cmd.none)
+      ({ model | ageField = age }, Cmd.none)
     SelectRelationship rel ->
       (model, Cmd.none)
     ToggleSmokes smokes ->
       (model, Cmd.none)
     AddMember ->
-      (model, Cmd.none)
+      ({ model | isValidMember = validateMember model }, Cmd.none)
     DeleteMember ->
       (model, Cmd.none)
     SubmitHousehold ->
       (model, Cmd.none)
+
+validateMember : Model -> MemberValidator
+validateMember model =
+  let
+    memberAge = Maybe.withDefault 0 (String.toInt model.ageField)
+  in
+    if not (memberAge > 0) then
+      Error "Age must be number greater than 0."
+    else if not (List.member model.relationship memberRelationships) then
+      Error "Please select a valid relationship"
+    else
+      Ok
 
 
 -- SUBSCRIPTIONS
@@ -92,8 +114,9 @@ view model =
     [ h1 [] [ text "Household Builder" ]
     , div [ class "builder" ]
       [ ol [ class "household" ] [ viewMembersList model.members ]
-      , form []
-        [ viewInput "text" "Age" (String.fromInt model.age) InputAge
+      , div []
+        [ viewMemberValidation model
+        , viewInput "text" "Age" model.ageField InputAge
         , viewSelectOptions "Relationship"
         , viewInput "checkbox" "Smoker?" "true" ToggleSmokes
         , button [ class "add", onClick AddMember ] [ text "add" ]
@@ -119,3 +142,13 @@ viewInput inputType labelText val toMsg =
 viewSelectOptions : String -> Html msg
 viewSelectOptions labelText =
   div [] [ text ("TODO: " ++ labelText) ]
+
+viewMemberValidation : Model -> Html msg
+viewMemberValidation model =
+  case model.isValidMember of
+    Ok ->
+      div [ style "color" "green" ] [ text "OK" ]
+    Error message ->
+      div [ style "color" "red" ] [ text message ]
+    None ->
+      div [] [ text "Please enter a household member."]
