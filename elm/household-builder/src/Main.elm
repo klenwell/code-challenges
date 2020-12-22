@@ -80,7 +80,7 @@ update msg model =
     ToggleSmokes toggle ->
       ({ model | smokerField = toggleSmokerField model.smokerField }, Cmd.none)
     AddMember ->
-      ({ model | isValidMember = validateMember model }, Cmd.none)
+      (appendMember { model | isValidMember = validateMember model }, Cmd.none)
     DeleteMember ->
       (model, Cmd.none)
     SubmitHousehold ->
@@ -101,6 +101,22 @@ validateMember model =
       Error "Please select a valid relationship"
     else
       Ok
+
+appendMember : Model -> Model
+appendMember model =
+  let
+    newMember = { age = Maybe.withDefault 0 (String.toInt model.ageField)
+                , relationship = model.relationshipField
+                , smokes = model.smokerField
+                }
+  in
+    case model.isValidMember of
+      Ok ->
+        { model | members = model.members ++ [ newMember ] }
+      Error message ->
+        model
+      None ->
+        model
 
 
 -- SUBSCRIPTIONS
@@ -140,7 +156,16 @@ boolToString boolValue =
 
 viewMembersList : List Member -> Html msg
 viewMembersList members =
-  div [] [ text "TODO: viewMembersList" ]
+  div [] (List.map memberToListItem members)
+
+memberToListItem : Member -> Html msg
+memberToListItem member =
+  let
+    memberRel = member.relationship
+    memberAge = String.fromInt member.age
+    memberSmoker = if member.smokes then "smoker" else "non-smoker"
+  in
+    li [ ] [ text (memberRel ++ " is a " ++ memberAge ++ " year-old " ++ memberSmoker ) ]
 
 viewInput : String -> String -> String -> (String -> msg) -> Html msg
 viewInput inputType labelText val toMsg =
