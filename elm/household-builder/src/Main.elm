@@ -77,14 +77,18 @@ update msg model =
       ({ model | ageField = age }, Cmd.none)
     SelectRelationship selectedOption ->
       ({ model | relationshipField = selectedOption }, Cmd.none)
-    ToggleSmokes smokes ->
-      (model, Cmd.none)
+    ToggleSmokes toggle ->
+      ({ model | smokerField = toggleSmokerField model.smokerField }, Cmd.none)
     AddMember ->
       ({ model | isValidMember = validateMember model }, Cmd.none)
     DeleteMember ->
       (model, Cmd.none)
     SubmitHousehold ->
       (model, Cmd.none)
+
+toggleSmokerField : Bool -> Bool
+toggleSmokerField oldValue =
+  not oldValue
 
 validateMember : Model -> MemberValidator
 validateMember model =
@@ -123,8 +127,16 @@ view model =
         , button [ type_ "submit", onClick SubmitHousehold ] [ text "submit" ]
         ]
       ]
-    , pre [ class "debug" ] [ text "" ]
+    , pre [ class "debug" ] [ text (boolToString model.smokerField) ]
     ]
+
+boolToString : Bool -> String
+boolToString boolValue =
+  case boolValue of
+    True ->
+      "true"
+    False ->
+      "false"
 
 viewMembersList : List Member -> Html msg
 viewMembersList members =
