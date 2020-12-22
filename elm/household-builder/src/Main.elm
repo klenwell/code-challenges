@@ -9,7 +9,7 @@ module Main exposing (..)
 
 import Browser
 import Html exposing (..)
-import Html.Attributes exposing (type_, value, class, style, selected)
+import Html.Attributes exposing (type_, value, class, style, selected, checked)
 import Html.Events exposing (onClick, onInput)
 
 
@@ -149,14 +149,14 @@ view model =
       [ ol [ class "household" ] [ viewMembersList model.members ]
       , div []
         [ viewMemberValidation model
-        , viewInput "text" "Age" model.ageField InputAge
+        , viewTextInput "Age" model.ageField InputAge
         , viewSelectOptions "Relationship" memberRelationships model.relationshipField SelectRelationship
-        , viewInput "checkbox" "Smoker?" "true" ToggleSmokes
+        , viewCheckbox "Smoker?" model.smokerField ToggleSmokes
         , button [ class "add", onClick AddMember ] [ text "add" ]
         , button [ type_ "submit", onClick SubmitHousehold ] [ text "submit" ]
         ]
       ]
-    , pre [ class "debug" ] [ text (boolToString model.smokerField) ]
+    , pre [ class "debug" ] [ text "" ]
     ]
 
 boolToString : Bool -> String
@@ -180,12 +180,21 @@ memberToListItem member =
   in
     li [ ] [ text (memberRel ++ " is a " ++ memberAge ++ " year-old " ++ memberSmoker ) ]
 
-viewInput : String -> String -> String -> (String -> msg) -> Html msg
-viewInput inputType labelText val toMsg =
+viewTextInput : String -> String -> (String -> msg) -> Html msg
+viewTextInput labelText val toMsg =
   div []
     [ label []
       [ span [] [ text labelText ]
-      , input [ type_ inputType, value val, onInput toMsg ] []
+      , input [ type_ "text", value val, onInput toMsg ] []
+      ]
+    ]
+
+viewCheckbox : String -> Bool -> (String -> msg) -> Html msg
+viewCheckbox labelText isChecked toMsg =
+  div []
+    [ label []
+      [ span [] [ text labelText ]
+      , input [ type_ "checkbox", checked isChecked, onInput toMsg ] []
       ]
     ]
 
