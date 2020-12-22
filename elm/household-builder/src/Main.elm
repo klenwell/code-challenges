@@ -9,7 +9,7 @@ module Main exposing (..)
 
 import Browser
 import Html exposing (..)
-import Html.Attributes exposing ( type_, value, class, style )
+import Html.Attributes exposing (type_, value, class, style, selected)
 import Html.Events exposing (onClick, onInput)
 
 
@@ -25,6 +25,9 @@ main =
 
 memberRelationships =
   ["self", "spouse", "child", "parent", "grandparent", "other"]
+
+selectDefault =
+  "---"
 
 
 -- MODEL
@@ -52,7 +55,7 @@ init : () -> (Model, Cmd Msg)
 init _ =
   ( { members = []
     , ageField = ""
-    , relationshipField = ""
+    , relationshipField = selectDefault
     , smokerField = False
     , isValidMember = None
     }
@@ -80,7 +83,7 @@ update msg model =
     ToggleSmokes toggle ->
       ({ model | smokerField = toggleSmokerField model.smokerField }, Cmd.none)
     AddMember ->
-      (appendMember { model | isValidMember = validateMember model }, Cmd.none)
+      (resetForm (appendMember { model | isValidMember = validateMember model }), Cmd.none)
     DeleteMember ->
       (model, Cmd.none)
     SubmitHousehold ->
@@ -118,6 +121,16 @@ appendMember model =
       None ->
         model
 
+resetForm : Model -> Model
+resetForm model =
+  case model.isValidMember of
+    Ok ->
+      { model | ageField = "", relationshipField = selectDefault, smokerField = False }
+    Error message ->
+      model
+    None ->
+      model
+
 
 -- SUBSCRIPTIONS
 
@@ -137,7 +150,7 @@ view model =
       , div []
         [ viewMemberValidation model
         , viewInput "text" "Age" model.ageField InputAge
-        , viewSelectOptions "Relationship" memberRelationships SelectRelationship
+        , viewSelectOptions "Relationship" memberRelationships model.relationshipField SelectRelationship
         , viewInput "checkbox" "Smoker?" "true" ToggleSmokes
         , button [ class "add", onClick AddMember ] [ text "add" ]
         , button [ type_ "submit", onClick SubmitHousehold ] [ text "submit" ]
@@ -176,21 +189,25 @@ viewInput inputType labelText val toMsg =
       ]
     ]
 
-viewSelectOptions : String -> List String -> (String -> msg) -> Html msg
-viewSelectOptions labelText optionList toMsg =
+viewSelectOptions : String -> List String -> String -> (String -> msg) -> Html msg
+viewSelectOptions labelText optionList selectedOption toMsg =
   let
-    headedOptions = "---" :: optionList
+    headedOptions = selectDefault :: optionList
   in
     div []
       [ label []
         [ span [] [ text labelText ]
-        , select [ onInput toMsg ] (List.map listToOptions headedOptions)
+        , select [ onInput toMsg ] (List.map (listToOptions selectedOption) headedOptions)
         ]
       ]
 
-listToOptions : String -> Html msg
-listToOptions relation =
-  option [ value relation ] [ text relation ]
+listToOptions : String -> String -> Html msg
+listToOptions selectedOption optionValue =
+  -- Source: https://www.reddit.com/r/elm/comments/4z4twe/in_a_select_element_how_do_i_designate_the/d6swmtc/
+  let
+    isSelected = optionValue == selectedOption
+  in
+    option [ value optionValue, selected isSelected ] [ text optionValue ]
 
 viewMemberValidation : Model -> Html msg
 viewMemberValidation model =
