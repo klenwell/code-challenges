@@ -11,6 +11,7 @@ import Browser
 import Html exposing (..)
 import Html.Attributes exposing (type_, value, class, style, selected, checked)
 import Html.Events exposing (onClick, onInput)
+import Json.Encode as Encode
 
 
 -- MAIN
@@ -38,6 +39,7 @@ type alias Model =
   , relationshipField : String
   , smokerField : Bool
   , isValidMember: MemberValidator
+  , serializedHousehold: Encode.Value
   }
 
 type alias Member =
@@ -58,6 +60,7 @@ init _ =
     , relationshipField = selectDefault
     , smokerField = False
     , isValidMember = None
+    , serializedHousehold = Encode.string ""
     }
   , Cmd.none
   )
@@ -87,7 +90,7 @@ update msg model =
     DeleteMember ->
       (model, Cmd.none)
     SubmitHousehold ->
-      (model, Cmd.none)
+      ({ model | serializedHousehold = serializeHousehold model.members }, Cmd.none)
 
 toggleSmokerField : Bool -> Bool
 toggleSmokerField oldValue =
@@ -131,6 +134,20 @@ resetForm model =
     None ->
       model
 
+serializeHousehold : List Member -> Encode.Value
+serializeHousehold memberList =
+  Encode.list encodeMember memberList
+
+encodeMember : Member -> Encode.Value
+encodeMember member =
+  Encode.object
+    [ ( "age", Encode.int member.age )
+    , ( "relationship", Encode.string member.relationship )
+    , ( "smokes", Encode.bool member.smokes )
+    ]
+
+
+
 
 -- SUBSCRIPTIONS
 
@@ -156,16 +173,8 @@ view model =
         , button [ type_ "submit", onClick SubmitHousehold ] [ text "submit" ]
         ]
       ]
-    , pre [ class "debug" ] [ text "" ]
+    , pre [ class "debug" ] [ text (Encode.encode 4 model.serializedHousehold) ]
     ]
-
-boolToString : Bool -> String
-boolToString boolValue =
-  case boolValue of
-    True ->
-      "true"
-    False ->
-      "false"
 
 viewMembersList : List Member -> Html msg
 viewMembersList members =
