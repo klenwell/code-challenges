@@ -230,7 +230,6 @@ viewSelectOptions labelText optionList selectedOption toMsg =
 
 listToOptions : String -> String -> Html msg
 listToOptions selectedOption optionValue =
-  -- Source: https://www.reddit.com/r/elm/comments/4z4twe/in_a_select_element_how_do_i_designate_the/d6swmtc/
   let
     isSelected = optionValue == selectedOption
   in
