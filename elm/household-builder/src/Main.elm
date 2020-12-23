@@ -73,7 +73,7 @@ type Msg
   | SelectRelationship String
   | ToggleSmokes String
   | AddMember
-  | DeleteMember
+  | DeleteMember Member
   | SubmitHousehold
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -87,8 +87,8 @@ update msg model =
       ({ model | smokerField = toggleSmokerField model.smokerField }, Cmd.none)
     AddMember ->
       (resetForm (appendMember { model | isValidMember = validateMember model }), Cmd.none)
-    DeleteMember ->
-      (model, Cmd.none)
+    DeleteMember member ->
+      (removeMember model member, Cmd.none)
     SubmitHousehold ->
       ({ model | serializedHousehold = serializeHousehold model.members }, Cmd.none)
 
@@ -146,7 +146,12 @@ encodeMember member =
     , ( "smokes", Encode.bool member.smokes )
     ]
 
-
+removeMember : Model -> Member -> Model
+removeMember model member =
+  let
+    newMembers = List.filter (\m -> m /= member) model.members
+  in
+    { model | members = newMembers }
 
 
 -- SUBSCRIPTIONS
@@ -176,18 +181,22 @@ view model =
     , pre [ class "debug" ] [ text (Encode.encode 4 model.serializedHousehold) ]
     ]
 
-viewMembersList : List Member -> Html msg
+viewMembersList : List Member -> Html Msg
 viewMembersList members =
   div [] (List.map memberToListItem members)
 
-memberToListItem : Member -> Html msg
+memberToListItem : Member -> Html Msg
 memberToListItem member =
   let
-    memberRel = member.relationship
-    memberAge = String.fromInt member.age
-    memberSmoker = if member.smokes then "smoker" else "non-smoker"
+    relation = member.relationship
+    age = String.fromInt member.age
+    smoker = if member.smokes then "smoker" else "non-smoker"
+    memberText = relation ++ " is a " ++ age ++ " year-old " ++ smoker
   in
-    li [ ] [ text (memberRel ++ " is a " ++ memberAge ++ " year-old " ++ memberSmoker ) ]
+    li []
+      [ span [] [ text memberText ]
+      , button [ class "delete", onClick (DeleteMember member) ] [ text "x" ]
+      ]
 
 viewTextInput : String -> String -> (String -> msg) -> Html msg
 viewTextInput labelText val toMsg =
