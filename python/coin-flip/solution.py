@@ -41,23 +41,25 @@ def flip_coin_until(goal, max_flips=1000):
     raise ValueError("Too many flips: {}".format(len(flips)))
 
 
+def run_trials(goal, trial_size):
+    flip_counts = []
+
+    for n in range(trial_size):
+        flips = flip_coin_until(goal)
+        flip_count = len(flips)
+        flip_counts.append(flip_count)
+
+    return sum(flip_counts) / len(flip_counts)
+
+
 def solution():
     alice_goal = ["H", "H"]
     bob_goal = ["H", "T"]
-
-    alice_trials = []
-    bob_trials = []
-
-    for n in range(1000):
-        alice_trial = flip_coin_until(alice_goal)
-        bob_trial = flip_coin_until(bob_goal)
-
-        alice_trials.append(len(alice_trial))
-        bob_trials.append(len(bob_trial))
+    trial_size = 1000
 
     averages = {
-        "alice": sum(alice_trials) / len(alice_trials),
-        "bob": sum(bob_trials) / len(bob_trials)
+        "alice": run_trials(alice_goal, trial_size),
+        "bob": run_trials(bob_goal, trial_size)
     }
 
     return averages
