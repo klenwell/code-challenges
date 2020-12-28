@@ -20,6 +20,27 @@ def flip_coin():
     return random.choice(COIN_SIDES)
 
 
+def flip_coin_until(goal, max_flips=1000):
+    """goal should desired sequence of flips. E.g. ["H", "T"]
+
+    Returns complete sequence once goal is met. Or raises error if too many flips.
+    """
+    flips = []
+    goal_len = len(goal)
+    max_flips = 1000
+
+    for n in range(max_flips):
+        flip = flip_coin()
+        flips.append(flip)
+        recent_flips = flips[-len(goal):]
+
+        if recent_flips == goal:
+            return flips
+
+    # Should not get here.
+    raise ValueError("Too many flips: {}".format(len(flips)))
+
+
 if __name__ == "__main__":
-    flips = [flip_coin() for n in range(100)]
+    flip_seqs = [flip_coin_until(["H", "H", "H"]) for n in range(10)]
     breakpoint()
