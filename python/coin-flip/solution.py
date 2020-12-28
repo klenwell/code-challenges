@@ -41,6 +41,28 @@ def flip_coin_until(goal, max_flips=1000):
     raise ValueError("Too many flips: {}".format(len(flips)))
 
 
+def solution():
+    alice_goal = ["H", "H"]
+    bob_goal = ["H", "T"]
+
+    alice_trials = []
+    bob_trials = []
+
+    for n in range(1000):
+        alice_trial = flip_coin_until(alice_goal)
+        bob_trial = flip_coin_until(bob_goal)
+
+        alice_trials.append(len(alice_trial))
+        bob_trials.append(len(bob_trial))
+
+    averages = {
+        "alice": sum(alice_trials) / len(alice_trials),
+        "bob": sum(bob_trials) / len(bob_trials)
+    }
+
+    return averages
+
+
 if __name__ == "__main__":
-    flip_seqs = [flip_coin_until(["H", "H", "H"]) for n in range(10)]
-    breakpoint()
+    averages = solution()
+    print(averages)
