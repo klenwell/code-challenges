@@ -105,3 +105,6 @@ config/secrets.py
 
 # Ignore tmp cached files
 /cache
+
+# Java classes
+java/**/*.class
