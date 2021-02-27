@@ -37,27 +37,26 @@ class AboutSymbols < Neo::Koan
     RubyConstant = "What is the sound of one hand clapping?"
     def test_constants_become_symbols
       all_symbols_as_strings = Symbol.all_symbols.map { |x| x.to_s }
-
-      assert_equal true, all_symbols_as_strings.include?(RubyConstant)
+      assert_equal true, all_symbols_as_strings.include?("RubyConstant")
     end
   end
 
   def test_symbols_can_be_made_from_strings
     string = "catsAndDogs"
-    assert_equal :cats_and_dogs, string.to_sym
+    assert_equal :catsAndDogs, string.to_sym
   end
 
   def test_symbols_with_spaces_can_be_built
     symbol = :"cats and dogs"
 
-    assert_equal :cats_and_dogs.to_sym, symbol
+    assert_equal "cats and dogs".to_sym, symbol
   end
 
   def test_symbols_with_interpolation_can_be_built
     value = "and"
     symbol = :"cats #{value} dogs"
 
-    assert_equal :cats_and_dogs.to_sym, symbol
+    assert_equal :"cats and dogs".to_sym, symbol
   end
 
   def test_to_s_is_called_on_interpolated_symbols
@@ -85,7 +84,7 @@ class AboutSymbols < Neo::Koan
 
   def test_symbols_cannot_be_concatenated
     # Exceptions will be pondered further down the path
-    assert_raise(ValueError) do
+    assert_raise(NoMethodError) do
       :cats + :dogs
     end
   end
