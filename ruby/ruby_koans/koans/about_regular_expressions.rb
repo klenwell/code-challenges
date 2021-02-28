@@ -3,7 +3,7 @@ require File.expand_path(File.dirname(__FILE__) + '/neo')
 
 class AboutRegularExpressions < Neo::Koan
   def test_a_pattern_is_a_regular_expression
-    assert_equal RegularExpression, /pattern/.class
+    assert_equal Regexp, /pattern/.class
   end
 
   def test_a_regexp_can_search_a_string_for_matching_content
@@ -27,8 +27,8 @@ class AboutRegularExpressions < Neo::Koan
 
   def test_asterisk_means_zero_or_more
     assert_equal "abb", "abbcccddddeeeee"[/ab*/]
-    assert_equal "ab", "abbcccddddeeeee"[/az*/]
-    assert_equal "a", "abbcccddddeeeee"[/z*/]
+    assert_equal "a", "abbcccddddeeeee"[/az*/]
+    assert_equal "", "abbcccddddeeeee"[/z*/]
 
     # THINK ABOUT IT:
     #
@@ -44,7 +44,7 @@ class AboutRegularExpressions < Neo::Koan
   # ------------------------------------------------------------------
 
   def test_the_left_most_match_wins
-    assert_equal "ab", "abbccc az"[/az*/]
+    assert_equal "a", "abbccc az"[/az*/]
   end
 
   # ------------------------------------------------------------------
@@ -93,12 +93,12 @@ class AboutRegularExpressions < Neo::Koan
 
   def test_slash_a_anchors_to_the_start_of_the_string
     assert_equal "start", "start end"[/\Astart/]
-    assert_equal "end", "start end"[/\Aend/]
+    assert_equal nil, "start end"[/\Aend/]
   end
 
   def test_slash_z_anchors_to_the_end_of_the_string
     assert_equal "end", "start end"[/end\z/]
-    assert_equal "start", "start end"[/start\z/]
+    assert_equal nil, "start end"[/start\z/]
   end
 
   def test_caret_anchors_to_the_start_of_lines
@@ -123,7 +123,7 @@ class AboutRegularExpressions < Neo::Koan
 
   def test_parentheses_also_capture_matched_content_by_number
     assert_equal "Gray", "Gray, James"[/(\w+), (\w+)/, 1]
-    assert_equal "Gray James", "Gray, James"[/(\w+), (\w+)/, 2]
+    assert_equal "James", "Gray, James"[/(\w+), (\w+)/, 2]
   end
 
   def test_variables_can_also_be_used_to_access_captures
@@ -148,11 +148,11 @@ class AboutRegularExpressions < Neo::Koan
   # ------------------------------------------------------------------
 
   def test_scan_is_like_find_all
-    assert_equal ["one", "two-three"], "one two-three".scan(/\w+/)
+    assert_equal ["one", "two", "three"], "one two-three".scan(/\w+/)
   end
 
   def test_sub_is_like_find_and_replace
-    assert_equal "one two-three", "one two-three".sub(/(t\w*)/) { $1[0, 1] }
+    assert_equal "one t-three", "one two-three".sub(/(t\w*)/) { $1[0, 1] }
   end
 
   def test_gsub_is_like_find_and_replace_all
