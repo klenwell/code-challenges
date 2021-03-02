@@ -62,7 +62,7 @@ class AboutControlStatements < Neo::Koan
     unless false    # same as saying 'if !false', which evaluates as 'if true'
       result = :false_value
     end
-    assert_equal :default_value, result
+    assert_equal :false_value, result
   end
 
   def test_unless_statement_evaluate_true
@@ -77,7 +77,7 @@ class AboutControlStatements < Neo::Koan
     result = :default_value
     result = :false_value unless false
 
-    assert_equal :default_value, result
+    assert_equal :false_value, result
   end
 
   def test_while_statement
@@ -136,7 +136,7 @@ class AboutControlStatements < Neo::Koan
     10.times do
       sum += 1
     end
-    assert_equal (1..10).reduce(0, :+), sum
+    assert_equal 10, sum
   end
 
 end
