@@ -15,6 +15,19 @@
 #
 def triangle(a, b, c)
   # WRITE THIS CODE
+  equal_sides = [
+    a == b,
+    a == c,
+    b == c
+  ].select{ |comp| comp }.length
+
+  if equal_sides == 3
+    :equilateral
+  elsif equal_sides == 1
+    :isosceles
+  else
+    :scalene
+  end
 end
 
 # Error class used in part 2.  No need to change this code.
