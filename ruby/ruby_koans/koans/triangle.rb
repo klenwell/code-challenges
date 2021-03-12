@@ -15,15 +15,11 @@
 #
 def triangle(a, b, c)
   # WRITE THIS CODE
-  equal_sides = [
-    a == b,
-    a == c,
-    b == c
-  ].select{ |comp| comp }.length
+  unique_sides = [a, b, c].uniq.length
 
-  if equal_sides == 3
+  if unique_sides == 1
     :equilateral
-  elsif equal_sides == 1
+  elsif unique_sides == 2
     :isosceles
   else
     :scalene
