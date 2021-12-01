@@ -38,6 +38,7 @@ def extract_measurements():
         entries = file.readlines()
         return [int(e) for e in entries]
 
+
 def count_larger_measurements(measurements):
     count = 0
     previous_measurement = None
@@ -51,14 +52,28 @@ def count_larger_measurements(measurements):
     return count
 
 
+def count_larger_windows(measurements):
+    count = 0
+
+    for n in range(3, len(measurements)):
+        previous_window = measurements[n-3:n]
+        current_window = measurements[n-2:n+1]
+        print(previous_window, current_window, sum(current_window), sum(previous_window))
+
+        if sum(current_window) > sum(previous_window):
+            count += 1
+
+    return count
+
+
 def solve_pt1():
     measurements = extract_measurements()
-    print("{} measurements".format(len(measurements)))
     return count_larger_measurements(measurements)
 
 
 def solve_pt2():
-    pass
+    measurements = extract_measurements()
+    return count_larger_windows(measurements)
 
 
 #
