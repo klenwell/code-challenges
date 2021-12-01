@@ -58,7 +58,6 @@ def count_larger_windows(measurements):
     for n in range(3, len(measurements)):
         previous_window = measurements[n-3:n]
         current_window = measurements[n-2:n+1]
-        print(previous_window, current_window, sum(current_window), sum(previous_window))
 
         if sum(current_window) > sum(previous_window):
             count += 1
