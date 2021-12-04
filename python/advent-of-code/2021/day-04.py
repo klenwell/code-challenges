@@ -84,17 +84,15 @@ class BingoSubsystem:
 
         return winning_boards[-1]
 
-    #
-    # Methods
-    #
-
-
 
 class BingoBoard:
     def __init__(self, rows):
         self.rows = rows
         self.called_numbers = []
 
+    #
+    # Properties
+    #
     @cached_property
     def columns(self):
         columns = []
@@ -118,11 +116,14 @@ class BingoBoard:
     @property
     def score(self):
         if not self.is_winner(self.called_numbers):
-            raise ValueError("This card is not a winner!")
+            raise ValueError("This board is not a winner!")
 
         unmarked_numbers = set(self.all_squares) - set(self.called_numbers)
         return sum(unmarked_numbers) * self.called_numbers[-1]
 
+    #
+    # Methods
+    #
     def is_winner(self, called_numbers):
         self.called_numbers = called_numbers
 
