@@ -6,59 +6,95 @@ https://adventofcode.com/2021/day/3
 TBA
 """
 from os.path import dirname, join as path_join
+from functools import cached_property
 
 ROOT_DIR = dirname(__file__)
 INPUT_DIR = path_join(ROOT_DIR, 'inputs')
 INPUT_FILE = path_join(INPUT_DIR, 'day-03.txt')
 
 
+class DiagnosticReport:
+    def __init__(self, input_file):
+        self.input_file = input_file
+
+    @cached_property
+    def rows(self):
+        with open(self.input_file) as file:
+            lines = file.readlines()
+            return [line.strip() for line in lines]
+
+    @cached_property
+    def col_nums(self):
+        num_cols = len(self.rows[0])
+        return list(range(num_cols))
+
+    @cached_property
+    def columns(self):
+        columns = []
+
+        for n in self.col_nums:
+            bits = []
+
+            for row in self.rows:
+                bit = int(row[n])
+                bits.append(bit)
+
+            columns.append(bits)
+
+        return columns
+
+    @property
+    def power_consumption(self):
+        return self.gamma_rate * self.epsilon_rate
+
+    @property
+    def binary_gamma_rate(self):
+        gamma_rate_bits = []
+
+        for bits in self.columns:
+            most_common_bit = self.most_common_bit(bits)
+            gamma_rate_bits.append(most_common_bit)
+
+        return ''.join([str(bit) for bit in gamma_rate_bits])
+
+    @property
+    def gamma_rate(self):
+        return int(self.binary_gamma_rate, 2)
+
+    @property
+    def binary_epsilon_rate(self):
+        epsilon_rate_bits = []
+
+        for bits in self.columns:
+            least_common_bit = self.least_common_bit(bits)
+            epsilon_rate_bits.append(least_common_bit)
+
+        return ''.join([str(bit) for bit in epsilon_rate_bits])
+
+    @property
+    def epsilon_rate(self):
+        return int(self.binary_epsilon_rate, 2)
+
+    def most_common_bit(self, bits):
+        zero_count = len([bit for bit in bits if bit == 0])
+        one_count = len([bit for bit in bits if bit == 1])
+
+        if zero_count > one_count:
+            return 0
+        elif one_count > zero_count:
+            return 1
+        else:
+            raise ValueError("0 and 1 bits equal")
+
+    def least_common_bit(self, bits):
+        return self.most_common_bit(bits) ^ 1
+
+
+
 def extract_report():
     with open(INPUT_FILE) as file:
-        entries = file.readlines()
-        return [e.strip() for e in entries]
-
-
-def rows_to_bit_columns(rows):
-    bit_columns = []
-    num_cols = len(rows[0])
-
-    for n in range(num_cols):
-        bit_column = []
-
-        for row in rows:
-            bit = int(row[n])
-            bit_column.append(bit)
-
-        bit_columns.append(bit_column)
-
-    return bit_columns
-
-
-def parse_bit_columns(bit_columns):
-    gamma_bits = []
-    epsilon_bits = []
-    to_bit_str = lambda bits: ''.join([str(b) for b in bits])
-
-    for bit_list in bit_columns:
-        gamma_bit = bit_list_to_gamma_bit(bit_list)
-        epsilon_bit = 1 if gamma_bit == 0 else 0    # or gamma_bit ^ 1
-        gamma_bits.append(gamma_bit)
-        epsilon_bits.append(epsilon_bit)
-
-    gamma = int(to_bit_str(gamma_bits), 2)
-    epsilon = int(to_bit_str(epsilon_bits), 2)
-
-    return gamma, epsilon
-
-
-def bit_list_to_gamma_bit(bit_list):
-    zero_count = len([bit for bit in bit_list if bit == 0])
-    one_count = len([bit for bit in bit_list if bit == 1])
-
-    if zero_count > one_count:
-        return 0
-    else:
-        return 1
+        lines = file.readlines()
+        return [line.strip() for line in lines]
 
 
 def rate_rows(rows, match_by, default_bit):
@@ -70,12 +106,9 @@ def rate_rows(rows, match_by, default_bit):
     else:
         match_bit_fx = least_common_bit_by_index
 
-
     for col in range(num_cols):
-        match_bit = match_bit_fx(reduced_rows, col)
         matching_rows = []
-        print(col, len(reduced_rows), reduced_rows[0], match_bit)
-
+        match_bit = match_bit_fx(reduced_rows, col)
         match_bit = match_bit if match_bit != 2 else default_bit
 
         for row in reduced_rows:
@@ -84,17 +117,11 @@ def rate_rows(rows, match_by, default_bit):
                 matching_rows.append(row)
 
         reduced_rows = matching_rows.copy()
-        print(len(reduced_rows))
 
         if len(reduced_rows) == 1:
             break
 
-    to_bit_str = lambda bits: ''.join([str(b) for b in bits])
-    return int(to_bit_str(reduced_rows[0]), 2)
-
-
-def extract_co2_rating(rows):
-    pass
+    return bits_to_int(reduced_rows[0])
 
 
 def most_common_bit_by_index(rows, index):
@@ -109,6 +136,7 @@ def most_common_bit_by_index(rows, index):
     else:
         return 2
 
+
 def least_common_bit_by_index(rows, index):
     bit = most_common_bit_by_index(rows, index)
     if bit == 2:
@@ -117,11 +145,17 @@ def least_common_bit_by_index(rows, index):
         return bit ^ 1
 
 
+def bits_to_int(bits):
+    bit_str = ''.join([str(b) for b in bits])
+    return int(bit_str, 2)
+
+
+#
+# Solutions
+#
 def solve_pt1():
-    rows = extract_report()
-    bit_columns = rows_to_bit_columns(rows)
-    gamma, epsilon = parse_bit_columns(bit_columns)
-    return gamma * epsilon
+    report = DiagnosticReport(INPUT_FILE)
+    return report.power_consumption
 
 
 def solve_pt2():
