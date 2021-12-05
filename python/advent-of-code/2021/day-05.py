@@ -18,12 +18,6 @@ class Solution:
     #
     # Properties
     #
-    @cached_property
-    def input_lines(self):
-        with open(self.input_file) as file:
-            lines = file.readlines()
-            return [line.strip() for line in lines]
-
     @property
     def first(self):
         self.grid = {}
@@ -31,13 +25,7 @@ class Solution:
         for segment in self.segments:
             if self.is_diagonal(segment):
                 continue
-
-            pts = self.segment_to_pts(segment)
-            for pt in pts:
-                if pt in self.grid:
-                    self.grid[pt] += 1
-                else:
-                    self.grid[pt] = 1
+            self.plot_segment_to_grid(segment)
 
         return len([v for v in self.grid.values() if v > 1])
 
@@ -46,14 +34,15 @@ class Solution:
         self.grid = {}
 
         for segment in self.segments:
-            pts = self.segment_to_pts(segment)
-            for pt in pts:
-                if pt in self.grid:
-                    self.grid[pt] += 1
-                else:
-                    self.grid[pt] = 1
+            self.plot_segment_to_grid(segment)
 
         return len([v for v in self.grid.values() if v > 1])
+
+    @cached_property
+    def input_lines(self):
+        with open(self.input_file) as file:
+            lines = file.readlines()
+            return [line.strip() for line in lines]
 
     @cached_property
     def segments(self):
@@ -65,42 +54,6 @@ class Solution:
 
         return segments
 
-    @cached_property
-    def axis(self):
-        return ((self.min_x, self.max_x), (self.min_y, self.max_y))
-
-    @cached_property
-    def min_x(self):
-        xs = []
-        for segment in self.segments:
-            xs.append(segment[0][0])
-            xs.append(segment[1][0])
-        return min(xs)
-
-    @cached_property
-    def max_x(self):
-        xs = []
-        for segment in self.segments:
-            xs.append(segment[0][0])
-            xs.append(segment[1][0])
-        return max(xs)
-
-    @cached_property
-    def min_y(self):
-        ys = []
-        for segment in self.segments:
-            ys.append(segment[0][1])
-            ys.append(segment[1][1])
-        return min(ys)
-
-    @cached_property
-    def max_y(self):
-        ys = []
-        for segment in self.segments:
-            ys.append(segment[0][1])
-            ys.append(segment[1][1])
-        return max(ys)
-
     #
     # Methods
     #
@@ -111,6 +64,14 @@ class Solution:
     def csv_to_pt(self, csv):
         x, y = csv.split(',')
         return (int(x.strip()), int(y.strip()))
+
+    def plot_segment_to_grid(self, segment):
+        pts = self.segment_to_pts(segment)
+        for pt in pts:
+            if pt in self.grid:
+                self.grid[pt] += 1
+            else:
+                self.grid[pt] = 1
 
     def is_diagonal(self, segment):
         x = segment[0][0]
@@ -162,12 +123,12 @@ class Solution:
             n0 = min(x, x1)
             n1 = max(x, x1)
             for n in range(n0, n1+1):
-                pts.append((n,y))
+                pts.append((n, y))
         elif y != y1:
             n0 = min(y, y1)
             n1 = max(y, y1)
             for n in range(n0, n1+1):
-                pts.append((x,n))
+                pts.append((x, n))
         else:
             raise ValueError("Unexpected segment: {}".format(segment))
 
@@ -178,11 +139,5 @@ class Solution:
 # Main
 #
 solution = Solution(INPUT_FILE)
-segment = solution.segments[4]
-pts = solution.segment_to_pts(segment)
-print(pts)
-print(len(pts))
-print(segment)
 print("pt 1 solution: {}".format(solution.first))
 print("pt 2 solution: {}".format(solution.second))
-breakpoint()
