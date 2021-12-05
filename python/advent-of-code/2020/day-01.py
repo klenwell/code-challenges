@@ -3,9 +3,11 @@ Advent of Code 2021 - Day 01
 https://adventofcode.com/2020/day/1
 
 ## PUZZLE
-Before you leave, the Elves in accounting just need you to fix your expense report (your puzzle input); apparently, something isn't quite adding up.
+Before you leave, the Elves in accounting just need you to fix your expense report
+(your puzzle input); apparently, something isn't quite adding up.
 
-Specifically, they need you to find the two entries that sum to 2020 and then multiply those two numbers together.
+Specifically, they need you to find the two entries that sum to 2020 and then multiply
+those two numbers together.
 
 For example, suppose your expense report contained the following:
 
@@ -16,9 +18,11 @@ For example, suppose your expense report contained the following:
 675
 1456
 
-In this list, the two entries that sum to 2020 are 1721 and 299. Multiplying them together produces 1721 * 299 = 514579, so the correct answer is 514579.
+In this list, the two entries that sum to 2020 are 1721 and 299. Multiplying them
+together produces 1721 * 299 = 514579, so the correct answer is 514579.
 
-Of course, your expense report is much larger. Find the two entries that sum to 2020; what do you get if you multiply them together?
+Of course, your expense report is much larger. Find the two entries that sum to 2020;
+what do you get if you multiply them together?
 """
 from os.path import dirname, join as path_join
 
@@ -34,9 +38,9 @@ def extract_entries():
         entries = file.readlines()
         return [int(e) for e in entries]
 
+
 def find_complements(target, entries):
     for entry in entries:
-        #print("testing: {} to match {}".format(entry, target))
         for complement in entries:
             if target - entry == complement:
                 return (entry, complement)

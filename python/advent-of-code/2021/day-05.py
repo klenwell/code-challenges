@@ -23,10 +23,18 @@ class Solution:
             lines = file.readlines()
             return [line.strip() for line in lines]
 
+    @property
+    def first(self):
+        return 'TODO'
+
+    @property
+    def second(self):
+        return 'TODO'
+
 
 #
 # Main
 #
 solution = Solution(INPUT_FILE)
-print("pt 1 solution: {}".format(solution.input_lines))
-print("pt 2 solution: {}".format(solution.input_lines))
+print("pt 1 solution: {}".format(solution.first))
+print("pt 2 solution: {}".format(solution.second))
