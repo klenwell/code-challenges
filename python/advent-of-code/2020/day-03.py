@@ -23,11 +23,7 @@ class Solution:
     @property
     def first(self):
         dx = 3
-        x = 0
-        trees = 0
-
         return self.traverse_map(dx, 1)
-
 
     @property
     def second(self):
@@ -43,8 +39,6 @@ class Solution:
         for dx, dy in slopes:
             trees = self.traverse_map(dx, dy)
             trees_per_slope.append(trees)
-
-        print(trees_per_slope)
 
         return math.prod(trees_per_slope)
 
