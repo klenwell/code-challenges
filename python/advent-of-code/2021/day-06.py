@@ -19,11 +19,39 @@ class Solution:
     #
     @property
     def first(self):
-        pass
+        nums = self.input_lines[0].split(',')
+        fishes = [int(n) for n in nums]
+        days = 80
+
+        for n in range(days):
+            pop = []
+            for fish in fishes:
+                if fish > 0:
+                    fish = fish-1
+                else:
+                    fish = 6
+                    pop.append(8)
+
+                pop.append(fish)
+
+            fishes = pop.copy()
+            print("Day {}".format(n), len(fishes))
+
+        return len(fishes)
 
     @property
     def second(self):
-        pass
+        nums = self.input_lines[0].split(',')
+        fishes = [LanternFish(int(n)) for n in nums]
+        days = 80
+
+        for n in range(days):
+            for fish in fishes:
+                fish.age()
+
+            print("Day {}".format(n), sum([fish.offspring for fish in fishes]))
+
+        return sum([fish.offspring for fish in fishes])
 
     @cached_property
     def input_lines(self):
@@ -34,6 +62,23 @@ class Solution:
     #
     # Methods
     #
+
+class LanternFish:
+    def __init__(self, due_days):
+        self.due_days = due_days
+        self.offspring = 1
+
+    def age(self):
+        self.due_days -= 1
+        if self.due_days == -1:
+            self.reproduce()
+
+    def reproduce(self):
+        self.offspring *= 2
+        self.due_days = 7
+
+    def __repr__(self):
+        return "Fish(due={}, offspring={})".format(self.due_days, self.offspring)
 
 
 #
