@@ -41,17 +41,18 @@ class Solution:
 
     @property
     def second(self):
-        nums = self.input_lines[0].split(',')
-        fishes = [LanternFish(int(n)) for n in nums]
-        days = 80
+        nums = [int(n) for n in self.input_lines[0].split(',')]
+        cohorts = {}
+        for n in range(9):
+            cohorts[n] = nums.count(n)
+
+        days = 256
 
         for n in range(days):
-            for fish in fishes:
-                fish.age()
+            cohorts = self.cycle_cohorts(cohorts)
+            print("Day {}".format(n), sum(cohorts.values()))
 
-            print("Day {}".format(n), sum([fish.offspring for fish in fishes]))
-
-        return sum([fish.offspring for fish in fishes])
+        return sum(cohorts.values())
 
     @cached_property
     def input_lines(self):
@@ -62,6 +63,17 @@ class Solution:
     #
     # Methods
     #
+    def cycle_cohorts(self, cohorts):
+        cycled_cohorts = {}
+        newborns = cohorts[0]
+
+        for n in range(9):
+            cycled_cohorts[n] = cohorts.get(n+1, 0)
+
+        cycled_cohorts[6] += newborns
+        cycled_cohorts[8] = newborns
+
+        return cycled_cohorts
 
 class LanternFish:
     def __init__(self, due_days):
