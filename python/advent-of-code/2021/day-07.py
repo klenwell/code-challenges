@@ -19,25 +19,24 @@ class Solution:
     #
     @property
     def first(self):
-        print(len(self.crabs), min(self.crabs), max(self.crabs))
-
         costs = []
         for n in range(max(self.crabs) + 1):
             fuel_cost = self.align_crabs(n)
             cost_pos = (fuel_cost, n)
             costs.append(cost_pos)
-
-        return sorted(costs)[0]
+        return sorted(costs)[0][0]
 
     @property
     def second(self):
+        # print("This will take a few seconds...")
         costs = []
         for n in range(max(self.crabs) + 1):
             fuel_cost = self.align_crabs_v2(n)
             cost_pos = (fuel_cost, n)
             costs.append(cost_pos)
+            # self.print_countdown(n)
 
-        return sorted(costs)[0]
+        return sorted(costs)[0][0]
 
     @cached_property
     def input_lines(self):
@@ -63,14 +62,24 @@ class Solution:
 
     def align_crabs_v2(self, pos):
         costs = []
-        print(pos)
 
         for crab_pos in self.crabs:
             steps = abs(crab_pos - pos)
-            cost = sum([n for n in range(1, steps+1)])
+
+            # Orginal: cost = sum([n for n in range(1, steps+1)])
+            # Much faster: https://stackoverflow.com/a/60348809/1093087
+            cost = steps * (steps + 1) // 2
+
             costs.append(cost)
 
         return sum(costs)
+
+    def print_countdown(self, n):
+        seq1 = [0, 100, 200, 300, 500, 800, 1300]
+        seq2 = [max(self.crabs)-n for n in range(1, 11)]
+
+        if n in sorted(seq1 + seq2, reverse=True):
+            print("{} loops to go".format(max(self.crabs) - n))
 
 
 #
