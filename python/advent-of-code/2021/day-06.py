@@ -19,40 +19,40 @@ class Solution:
     #
     @property
     def first(self):
-        nums = self.input_lines[0].split(',')
-        fishes = [int(n) for n in nums]
+        fishes = [int(n) for n in self.input_lines[0].split(',')]
         days = 80
 
         for n in range(days):
-            pop = []
+            next_gen = []
             for fish in fishes:
                 if fish > 0:
                     fish = fish-1
                 else:
                     fish = 6
-                    pop.append(8)
+                    next_gen.append(8)
 
-                pop.append(fish)
-
-            fishes = pop.copy()
-            print("Day {}".format(n), len(fishes))
+                next_gen.append(fish)
+            fishes = next_gen.copy()
 
         return len(fishes)
 
     @property
     def second(self):
-        nums = [int(n) for n in self.input_lines[0].split(',')]
-        cohorts = {}
-        for n in range(9):
-            cohorts[n] = nums.count(n)
-
+        """As expected, the brutal approach in part 1 did not work. Could numpy arrays
+        power through it? This Reddit comment tipped me off to solution here:
+        https://old.reddit.com/r/adventofcode/comments/r9z49j/2021_day_6_solutions/hnffzni/
+        """
         days = 256
+        fishes = [int(n) for n in self.input_lines[0].split(',')]
+
+        cohorts = [0] * 9
+        for n in range(len(cohorts)):
+            cohorts[n] = fishes.count(n)
 
         for n in range(days):
             cohorts = self.cycle_cohorts(cohorts)
-            print("Day {}".format(n), sum(cohorts.values()))
 
-        return sum(cohorts.values())
+        return sum(cohorts)
 
     @cached_property
     def input_lines(self):
@@ -64,33 +64,10 @@ class Solution:
     # Methods
     #
     def cycle_cohorts(self, cohorts):
-        cycled_cohorts = {}
-        newborns = cohorts[0]
-
-        for n in range(9):
-            cycled_cohorts[n] = cohorts.get(n+1, 0)
-
-        cycled_cohorts[6] += newborns
-        cycled_cohorts[8] = newborns
-
-        return cycled_cohorts
-
-class LanternFish:
-    def __init__(self, due_days):
-        self.due_days = due_days
-        self.offspring = 1
-
-    def age(self):
-        self.due_days -= 1
-        if self.due_days == -1:
-            self.reproduce()
-
-    def reproduce(self):
-        self.offspring *= 2
-        self.due_days = 7
-
-    def __repr__(self):
-        return "Fish(due={}, offspring={})".format(self.due_days, self.offspring)
+        newborns = cohorts.pop(0)
+        cohorts.append(newborns)
+        cohorts[6] += newborns
+        return cohorts
 
 
 #
