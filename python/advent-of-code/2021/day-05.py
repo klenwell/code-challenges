@@ -74,10 +74,8 @@ class Solution:
                 self.grid[pt] = 1
 
     def is_diagonal(self, segment):
-        x = segment[0][0]
-        y = segment[0][1]
-        x1 = segment[1][0]
-        y1 = segment[1][1]
+        x, y = segment[0]
+        x1, y1 = segment[1]
 
         if x == x1:
             return False
@@ -94,10 +92,8 @@ class Solution:
 
     def diagonal_segment_to_pts(self, segment):
         pts = []
-        x = segment[0][0]
-        y = segment[0][1]
-        x1 = segment[1][0]
-        y1 = segment[1][1]
+        x, y = segment[0]
+        x1, y1 = segment[1]
 
         dx = x1 - x
         dy = y1 - y
@@ -114,10 +110,8 @@ class Solution:
 
     def nondiagonal_segment_to_pts(self, segment):
         pts = []
-        x = segment[0][0]
-        y = segment[0][1]
-        x1 = segment[1][0]
-        y1 = segment[1][1]
+        x, y = segment[0]
+        x1, y1 = segment[1]
 
         if x != x1:
             n0 = min(x, x1)
