@@ -19,7 +19,14 @@ class Solution:
     #
     @property
     def first(self):
-        pass
+        valid_passports = 0
+        
+        for passport in self.passports:
+            if self.is_valid(passport):
+                valid_passports += 1
+
+        return valid_passports
+
 
     @property
     def second(self):
@@ -31,10 +38,34 @@ class Solution:
             lines = file.readlines()
             return [line.strip() for line in lines]
 
+    @cached_property
+    def batches(self):
+        with open(self.input_file, 'r') as file:
+            data = file.read()
+            return data.split("\n\n")
+
+    @cached_property
+    def passports(self):
+        passports = []
+
+        for batch in self.batches:
+            passport = {}
+            fields = batch.split()
+            for field in fields:
+                k, v = field.split(':')
+                passport[k] = v
+            passports.append(passport)
+
+        return passports
+
     #
     # Methods
     #
-    
+    def is_valid(self, passport):
+        required_fields = ['byr', 'iyr', 'eyr', 'hgt', 'hcl', 'ecl', 'pid']
+        fields = passport.keys()
+        return len(set(required_fields) - set(fields)) == 0
+
 
 #
 # Main
