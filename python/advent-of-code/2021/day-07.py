@@ -19,11 +19,25 @@ class Solution:
     #
     @property
     def first(self):
-        pass
+        print(len(self.crabs), min(self.crabs), max(self.crabs))
+
+        costs = []
+        for n in range(max(self.crabs) + 1):
+            fuel_cost = self.align_crabs(n)
+            cost_pos = (fuel_cost, n)
+            costs.append(cost_pos)
+
+        return sorted(costs)[0]
 
     @property
     def second(self):
-        pass
+        costs = []
+        for n in range(max(self.crabs) + 1):
+            fuel_cost = self.align_crabs_v2(n)
+            cost_pos = (fuel_cost, n)
+            costs.append(cost_pos)
+
+        return sorted(costs)[0]
 
     @cached_property
     def input_lines(self):
@@ -31,9 +45,32 @@ class Solution:
             lines = file.readlines()
             return [line.strip() for line in lines]
 
+    @cached_property
+    def crabs(self):
+        return [int(n) for n in self.input_lines[0].split(',')]
+
     #
     # Methods
     #
+    def align_crabs(self, pos):
+        costs = []
+
+        for crab_pos in self.crabs:
+            cost = abs(crab_pos - pos)
+            costs.append(cost)
+
+        return sum(costs)
+
+    def align_crabs_v2(self, pos):
+        costs = []
+        print(pos)
+
+        for crab_pos in self.crabs:
+            steps = abs(crab_pos - pos)
+            cost = sum([n for n in range(1, steps+1)])
+            costs.append(cost)
+
+        return sum(costs)
 
 
 #
