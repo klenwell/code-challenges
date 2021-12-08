@@ -30,6 +30,7 @@ class Solution:
     def second(self):
         # print("This will take a few seconds...")
         costs = []
+
         for n in range(max(self.crabs) + 1):
             fuel_cost = self.align_crabs_v2(n)
             cost_pos = (fuel_cost, n)
@@ -65,11 +66,9 @@ class Solution:
 
         for crab_pos in self.crabs:
             steps = abs(crab_pos - pos)
-
-            # Orginal: cost = sum([n for n in range(1, steps+1)])
+            # cost = sum([n for n in range(1, steps+1)])
             # Much faster: https://stackoverflow.com/a/60348809/1093087
             cost = steps * (steps + 1) // 2
-
             costs.append(cost)
 
         return sum(costs)
