@@ -34,14 +34,6 @@ class Solution:
     #
     # Methods
     #
-    def align_crabs(self, pos):
-        costs = []
-
-        for crab_pos in self.crabs:
-            cost = abs(crab_pos - pos)
-            costs.append(cost)
-
-        return sum(costs)
 
 
 #
