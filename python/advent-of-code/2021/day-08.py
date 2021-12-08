@@ -19,7 +19,21 @@ class Solution:
     #
     @property
     def first(self):
-        pass
+        unique_signal_digits = {
+            # digit: signal input length
+            1: 2,
+            4: 4,
+            7: 3,
+            8: 7
+        }
+        unique_segment_digits = []
+        input_signal_lengths = unique_signal_digits.values()
+
+        for values in self.output_values:
+            for value in values:
+                if len(value) in input_signal_lengths:
+                    unique_segment_digits.append(value)
+        return len(unique_segment_digits)
 
     @property
     def second(self):
@@ -30,6 +44,25 @@ class Solution:
         with open(self.input_file) as file:
             lines = file.readlines()
             return [line.strip() for line in lines]
+
+    @cached_property
+    def signal_patterns(self):
+        patterns = []
+        for line in self.input_lines:
+            signals, _ = line.split('|')
+            pattern = [p for p in signals.strip().split(' ')]
+            patterns.append(pattern)
+        return patterns
+
+    @cached_property
+    def output_values(self):
+        values = []
+        for line in self.input_lines:
+            _, outputs = line.split('|')
+            digits = [d for d in outputs.strip().split(' ')]
+            values.append(digits)
+        return values
+
 
     #
     # Methods
