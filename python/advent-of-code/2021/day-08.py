@@ -37,7 +37,16 @@ class Solution:
 
     @property
     def second(self):
-        pass
+        output_values = []
+
+        for n, signals in enumerate(self.signal_patterns):
+            outputs = self.output_values[n]
+            mapped_digits = self.map_signals_to_digits(signals)
+            output_value = self.decode_outputs(outputs, mapped_digits)
+            output_values.append(output_value)
+            print(output_value)
+
+        return sum(output_values)
 
     @cached_property
     def input_lines(self):
@@ -67,7 +76,75 @@ class Solution:
     #
     # Methods
     #
+    def decode_outputs(self, outputs, mapped_digits):
+        output_digits = []
 
+        for output in outputs:
+            for n, code in enumerate(mapped_digits):
+                if sorted(code) == sorted(output):
+                    output_digits.append(n)
+                    break
+
+        return (output_digits[0] * 1000) + (output_digits[1] * 100) + (output_digits[2] * 10) + output_digits[3]
+
+    def map_signals_to_digits(self, _signals):
+        mapping = [None] * 10
+        signals = _signals.copy()
+
+        a_overlaps_b = lambda outer, inner: len(set(inner) - set(outer)) == 0
+
+        # Digits 1-4 can be identified by num of segments
+        mapping[1] = [s for s in signals if len(s) == 2][0]
+        mapping[4] = [s for s in signals if len(s) == 4][0]
+        mapping[7] = [s for s in signals if len(s) == 3][0]
+        mapping[8] = [s for s in signals if len(s) == 7][0]
+        signals.remove(mapping[1])
+        signals.remove(mapping[4])
+        signals.remove(mapping[7])
+        signals.remove(mapping[8])
+
+        # Digit 3 has 5 segments and overlaps digit 7
+        for signal in signals:
+            if len(signal) == 5 and a_overlaps_b(signal, mapping[7]):
+                mapping[3] = signal
+                signals.remove(signal)
+
+        # Digit 9 has 6 segments and overlaps digit 4
+        for signal in signals:
+            if len(signal) == 6 and a_overlaps_b(signal, mapping[4]):
+                mapping[9] = signal
+                signals.remove(signal)
+
+        # Digit 0 has 6 segments and overlaps digit 1
+        for signal in signals:
+            if len(signal) == 6 and a_overlaps_b(signal, mapping[1]):
+                mapping[0] = signal
+                signals.remove(signal)
+
+        # Digit 6 is last to have 6 segments
+        for signal in signals:
+            if len(signal) == 6:
+                mapping[6] = signal
+                signals.remove(signal)
+
+        # Digit 5 is overlapped by 6
+        for signal in signals:
+            if a_overlaps_b(mapping[6], signal):
+                mapping[5] = signal
+                signals.remove(signal)
+
+        # Digit 3 overlaps 7
+        for signal in signals:
+            if a_overlaps_b(signal, mapping[7]):
+                mapping[3] = signal
+                signals.remove(signal)
+
+        # Which leaves Digit 2
+        mapping[2] = signals.pop()
+
+        assert len(signals) == 0, signals
+
+        return mapping
 
 #
 # Main
