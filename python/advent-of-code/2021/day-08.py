@@ -1,6 +1,8 @@
 """
 Advent of Code 2021 - Day 08
 https://adventofcode.com/2021/day/8
+
+Compare: https://github.com/hyper-neutrino/advent-of-code/blob/main/2021/day8p2.py
 """
 from os.path import join as path_join
 from functools import cached_property
@@ -20,7 +22,7 @@ class Solution:
     @property
     def first(self):
         unique_signal_digits = {
-            # digit: signal input length
+            # digit: signal input segments
             1: 2,
             4: 4,
             7: 3,
@@ -38,14 +40,11 @@ class Solution:
     @property
     def second(self):
         output_values = []
-
         for n, signals in enumerate(self.signal_patterns):
             outputs = self.output_values[n]
             mapped_digits = self.map_signals_to_digits(signals)
             output_value = self.decode_outputs(outputs, mapped_digits)
             output_values.append(output_value)
-            print(output_value)
-
         return sum(output_values)
 
     @cached_property
@@ -85,7 +84,7 @@ class Solution:
                     output_digits.append(n)
                     break
 
-        return (output_digits[0] * 1000) + (output_digits[1] * 100) + (output_digits[2] * 10) + output_digits[3]
+        return int('{}{}{}{}'.format(*output_digits))
 
     def map_signals_to_digits(self, _signals):
         mapping = [None] * 10
@@ -141,7 +140,6 @@ class Solution:
 
         # Which leaves Digit 2
         mapping[2] = signals.pop()
-
         assert len(signals) == 0, signals
 
         return mapping
