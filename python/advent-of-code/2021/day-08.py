@@ -71,7 +71,6 @@ class Solution:
             values.append(digits)
         return values
 
-
     #
     # Methods
     #
@@ -143,6 +142,7 @@ class Solution:
         assert len(signals) == 0, signals
 
         return mapping
+
 
 #
 # Main
