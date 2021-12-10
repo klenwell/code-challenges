@@ -5,6 +5,7 @@ https://adventofcode.com/2021/day/9
 from os.path import join as path_join
 from functools import cached_property
 from config import INPUT_DIR
+from math import prod
 
 
 INPUT_FILE = path_join(INPUT_DIR, 'day-09.txt')
@@ -15,7 +16,7 @@ class Solution:
         self.input_file = input_file
 
     #
-    # Properties
+    # Solutions
     #
     @property
     def first(self):
@@ -27,13 +28,12 @@ class Solution:
 
     @property
     def second(self):
-        result = 1
         top_3_basins = sorted(self.basins, key=lambda b: b.size, reverse=True)[0:3]
-        for basin in top_3_basins:
-            result *= basin.size
-        print([(b.low_point, b.size) for b in self.basins])
-        return result
+        return prod([b.size for b in top_3_basins])
 
+    #
+    # Properties
+    #
     @cached_property
     def input_lines(self):
         with open(self.input_file) as file:
@@ -44,9 +44,7 @@ class Solution:
     def basins(self):
         basins = []
         for low_point in self.low_points:
-            print(low_point)
             basin = Basin(low_point, self.grid)
-            print(basin.size)
             basins.append(basin)
         return basins
 
@@ -115,14 +113,13 @@ class Basin:
         while len(survey_pts) > 0:
             survey_pt = survey_pts.pop(0)
             surveyed_pts.append(survey_pt)
-            inner_pts = self.crawl_basin(survey_pt)
+            inner_pts = self.survey_basin(survey_pt)
             basin_pts = basin_pts.union(set(inner_pts))
             survey_pts += [ip for ip in inner_pts if ip not in surveyed_pts]
-            print('survey_pts', survey_pts, 'surveyed_pts', len(surveyed_pts), len(basin_pts))
 
         return list(basin_pts)
 
-    def crawl_basin(self, pt):
+    def survey_basin(self, pt):
         """Check adjacent points on the grid. Any that are less than 9 are
         considered inside the basin.
         """
@@ -140,8 +137,8 @@ class Basin:
             if height < 9:
                 inner_pts.append(adj_pt)
 
-        print('crawl_basin', pt, inner_pts)
         return inner_pts
+
 
 #
 # Main
