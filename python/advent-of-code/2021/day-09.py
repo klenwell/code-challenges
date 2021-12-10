@@ -20,25 +20,46 @@ class Solution:
     @property
     def first(self):
         risk_level = 0
-
-        for x in range(self.row_count):
-            for y in range(self.column_count):
-                if self.is_low_point(x, y):
-                    risk = self.grid[(x, y)]
-                    print(x, y, risk)
-                    risk_level += risk + 1
-
+        for (x, y) in self.low_points:
+            risk = self.grid[(x, y)]
+            risk_level += risk + 1
         return risk_level
 
     @property
     def second(self):
-        pass
+        result = 1
+        top_3_basins = sorted(self.basins, key=lambda b: b.size, reverse=True)[0:3]
+        for basin in top_3_basins:
+            result *= basin.size
+        print([(b.low_point, b.size) for b in self.basins])
+        return result
 
     @cached_property
     def input_lines(self):
         with open(self.input_file) as file:
             lines = file.readlines()
             return [line.strip() for line in lines]
+
+    @cached_property
+    def basins(self):
+        basins = []
+        for low_point in self.low_points:
+            print(low_point)
+            basin = Basin(low_point, self.grid)
+            print(basin.size)
+            basins.append(basin)
+        return basins
+
+    @cached_property
+    def low_points(self):
+        low_points = []
+
+        for x in range(self.row_count):
+            for y in range(self.column_count):
+                if self.is_low_point(x, y):
+                    low_points.append((x, y))
+
+        return low_points
 
     @cached_property
     def grid(self):
@@ -75,6 +96,52 @@ class Solution:
 
         return True
 
+
+class Basin:
+    def __init__(self, low_point, grid):
+        self.low_point = low_point
+        self.grid = grid
+
+    @property
+    def size(self):
+        return len(self.pts)
+
+    @cached_property
+    def pts(self):
+        basin_pts = set()
+        survey_pts = [self.low_point]
+        surveyed_pts = []
+
+        while len(survey_pts) > 0:
+            survey_pt = survey_pts.pop(0)
+            surveyed_pts.append(survey_pt)
+            inner_pts = self.crawl_basin(survey_pt)
+            basin_pts = basin_pts.union(set(inner_pts))
+            survey_pts += [ip for ip in inner_pts if ip not in surveyed_pts]
+            print('survey_pts', survey_pts, 'surveyed_pts', len(surveyed_pts), len(basin_pts))
+
+        return list(basin_pts)
+
+    def crawl_basin(self, pt):
+        """Check adjacent points on the grid. Any that are less than 9 are
+        considered inside the basin.
+        """
+        inner_pts = []
+        default_value = 9
+        (x, y) = pt
+
+        n = (x, y-1)
+        s = (x, y+1)
+        e = (x+1, y)
+        w = (x-1, y)
+
+        for adj_pt in (n, s, e, w):
+            height = self.grid.get(adj_pt, default_value)
+            if height < 9:
+                inner_pts.append(adj_pt)
+
+        print('crawl_basin', pt, inner_pts)
+        return inner_pts
 
 #
 # Main
