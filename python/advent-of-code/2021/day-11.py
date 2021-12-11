@@ -13,6 +13,7 @@ INPUT_FILE = path_join(INPUT_DIR, 'day-11.txt')
 class Solution:
     def __init__(self, input_file):
         self.input_file = input_file
+        self.grid = {}
 
     #
     # Solutions
@@ -20,16 +21,25 @@ class Solution:
     @property
     def first(self):
         total_flashes = 0
+        self.reset_grid()
+
         for step in range(100):
-            self.print_grid()
             flashes = self.step()
             total_flashes += flashes
-            print(step, '->', flashes)
         return total_flashes
 
     @property
     def second(self):
-        pass
+        steps = 0
+        self.reset_grid()
+
+        while True:
+            steps += 1
+            flashes = self.step()
+            self.print_grid()
+            print(steps)
+            if flashes == len(self.pts):
+                return steps
 
     #
     # Properties
@@ -41,23 +51,22 @@ class Solution:
             return [line.strip() for line in lines]
 
     @cached_property
-    def grid(self):
-        grid_map = {}
-
-        for y, line in enumerate(self.input_lines):
-            cols = list(line)
-            for x, energy in enumerate(cols):
-                grid_map[(x, y)] = int(energy)
-
-        return grid_map
-
-    @cached_property
     def pts(self):
         return self.grid.keys()
 
     #
     # Methods
     #
+    def reset_grid(self):
+        self.grid = {}
+
+        for y, line in enumerate(self.input_lines):
+            cols = list(line)
+            for x, energy in enumerate(cols):
+                self.grid[(x, y)] = int(energy)
+
+        return self.grid
+
     def print_grid(self):
         for y in range(10):
             line = []
