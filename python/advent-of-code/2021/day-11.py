@@ -26,6 +26,7 @@ class Solution:
         for step in range(100):
             flashes = self.step()
             total_flashes += flashes
+
         return total_flashes
 
     @property
@@ -36,8 +37,6 @@ class Solution:
         while True:
             steps += 1
             flashes = self.step()
-            self.print_grid()
-            print(steps)
             if flashes == len(self.pts):
                 return steps
 
@@ -67,42 +66,31 @@ class Solution:
 
         return self.grid
 
-    def print_grid(self):
-        for y in range(10):
-            line = []
-            for x in range(10):
-                n = self.grid[(x, y)]
-                chr = '*' if n == 0 else str(n)
-                line.append(chr)
-            print(''.join(line))
-
     def step(self):
         flashers = set()
         new_flashers = self.energize()
 
         while new_flashers:
             flashers = flashers.union(new_flashers)
-            new_flashers = self.flash(new_flashers)
-            new_flashers = new_flashers - flashers
+            contact_flashers = self.flash(new_flashers)
+            new_flashers = contact_flashers - flashers
 
         self.reset(flashers)
         return len(flashers)
 
     def energize(self):
-        flashers = []
+        flashers = set()
         for pt in self.pts:
             self.grid[pt] += 1
             if self.grid[pt] > 9:
-                flashers.append(pt)
+                flashers.add(pt)
         return flashers
 
     def flash(self, flashers):
-        new_flashers = set()
-
+        contact_flashers = set()
         for pt in flashers:
-            new_flashers = new_flashers.union(self.energize_neighbors(pt))
-
-        return new_flashers
+            contact_flashers = contact_flashers.union(self.energize_neighbors(pt))
+        return contact_flashers
 
     def reset(self, flashers):
         for pt in flashers:
@@ -131,7 +119,14 @@ class Solution:
 
         return flashers
 
-
+    def print_grid(self):
+        for y in range(10):
+            line = []
+            for x in range(10):
+                n = self.grid[(x, y)]
+                chr = '*' if n == 0 else str(n)
+                line.append(chr)
+            print(''.join(line))
 
 
 #
