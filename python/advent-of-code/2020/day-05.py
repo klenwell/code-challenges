@@ -26,7 +26,6 @@ class Solution:
         for left_seat in sorted(self.seat_ids):
             middle_seat = left_seat + 1
             right_seat = left_seat + 2
-            print(left_seat, middle_seat, right_seat)
             if (middle_seat not in self.seat_ids) and (right_seat in self.seat_ids):
                 return middle_seat
 
