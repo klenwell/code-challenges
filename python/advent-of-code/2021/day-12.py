@@ -24,7 +24,6 @@ class Solution:
         paths = []
         complete_paths = []
         complete = False
-        print(self.starters)
 
         for edge in self.starters:
             path = ['start']
@@ -44,10 +43,32 @@ class Solution:
 
         return len(paths)
 
-    def pop_edge_partner(self, edge, node):
-        print(edge, node)
+    @property
+    def second(self):
+        paths = []
+        complete_paths = []
+        complete = False
+
+        for edge in self.starters:
+            path = ['start']
+            next = self.pop_edge_partner(edge, 'start')
+            path.append(next)
+            paths.append(path)
+
+        while not complete:
+            new_paths = []
+            for path in paths:
+                valid_paths = self.filter_valid_paths_v2(path)
+                new_paths += valid_paths
+
+            complete = all([path[-1] == 'end' for path in new_paths])
+            paths = new_paths
+
+        return len(paths)
+
+    def pop_edge_partner(self, edge, cave):
         pair = edge.copy()
-        pair.remove(node)
+        pair.remove(cave)
         return pair[0]
 
     def filter_valid_paths(self, path):
@@ -78,9 +99,52 @@ class Solution:
 
         return new_paths
 
-    @property
-    def second(self):
-        pass
+    def filter_valid_paths_v2(self, path):
+        new_paths = []
+        last_cave = path[-1]
+        penult_cave = path[-2]
+
+        # No more routes if this path at end
+        if last_cave == 'end':
+            return [path]
+
+        # Find connecting nodes
+        for edge in self.edges:
+            # Skip unconnected path
+            if last_cave not in edge:
+                continue
+
+            # Skip start edge
+            if 'start' in edge:
+                continue
+
+            next_cave = self.pop_edge_partner(edge, last_cave)
+
+            # Skip if already visited one small cave twice
+            if next_cave.islower() and self.visited_small_cave_twice(path):
+                continue
+
+            # Create new path
+            new_path = path.copy()
+            new_path.append(next_cave)
+            new_paths.append(new_path)
+
+        return new_paths
+
+    def visited_small_cave_twice(self, path):
+        visited_cave_count = {}
+
+        for visited_cave in path:
+            if not visited_cave.islower():
+                continue
+
+            if visited_cave_count.get(visited_cave, 0) > 1:
+                return True
+            else:
+                visited_cave_count[visited_cave] = 1
+
+        return False
+
 
     #
     # Properties
