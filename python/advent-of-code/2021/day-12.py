@@ -65,10 +65,6 @@ class Solution:
             if last_cave not in edge:
                 continue
 
-            # Skip current edge
-            if penult_cave in edge:
-                continue
-
             next_cave = self.pop_edge_partner(edge, last_cave)
 
             # Skip small caves that have already been visits
