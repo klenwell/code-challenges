@@ -22,7 +22,6 @@ class Solution:
     @property
     def first(self):
         paths = []
-        complete_paths = []
         complete = False
 
         for edge in self.starters:
@@ -39,32 +38,63 @@ class Solution:
 
             complete = all([path[-1] == 'end' for path in new_paths])
             paths = new_paths
-            print(paths)
 
         return len(paths)
 
     @property
     def second(self):
-        paths = []
+        open_paths = []
         complete_paths = []
         complete = False
 
-        for edge in self.starters:
+        for next_cave in self.route_map['start']:
             path = ['start']
-            next = self.pop_edge_partner(edge, 'start')
-            path.append(next)
-            paths.append(path)
+            path.append(next_cave)
+            open_paths.append(path)
 
         while not complete:
             new_paths = []
-            for path in paths:
+            for path in open_paths:
                 valid_paths = self.filter_valid_paths_v2(path)
-                new_paths += valid_paths
 
-            complete = all([path[-1] == 'end' for path in new_paths])
-            paths = new_paths
+                for path in valid_paths:
+                    if path[-1] == 'end':
+                        complete_paths.append(path)
+                    else:
+                        new_paths.append(path)
+                        if len(new_paths) % 50000 == 0:
+                            breakpoint()
 
-        return len(paths)
+            open_paths = new_paths
+            complete = len(open_paths) < 1
+            print(len(open_paths), len(complete_paths))
+            if len(complete_paths) > 240550:
+                raise ValueError("Too many paths: {}".format(len(complete_paths)))
+
+        return len(complete_paths)
+
+    @cached_property
+    def route_map(self):
+
+        index = {}
+        for edge in self.edges:
+            c1, c2 = edge
+
+            # Update c1 index
+            c1_map = index.get(c1, set())
+            if c2 != 'start':
+                c1_map.add(c2)
+                index[c1] = c1_map
+
+            # Update c2 index
+            c2_map = index.get(c2, set())
+            if c1 != 'start':
+                c2_map.add(c1)
+                index[c2] = c2_map
+
+        # 'end' is terminal
+        index['end'] = set()
+        return index
 
     def pop_edge_partner(self, edge, cave):
         pair = edge.copy()
@@ -74,21 +104,14 @@ class Solution:
     def filter_valid_paths(self, path):
         new_paths = []
         last_cave = path[-1]
-        penult_cave = path[-2]
 
         # No more routes if this path at end
         if last_cave == 'end':
             return [path]
 
         # Find connecting nodes
-        for edge in self.edges:
-            # Skip unconnected path
-            if last_cave not in edge:
-                continue
-
-            next_cave = self.pop_edge_partner(edge, last_cave)
-
-            # Skip small caves that have already been visits
+        for next_cave in self.route_map[last_cave]:
+            # Skip small caves that have already been visited
             if next_cave.islower() and next_cave in path:
                 continue
 
@@ -102,27 +125,19 @@ class Solution:
     def filter_valid_paths_v2(self, path):
         new_paths = []
         last_cave = path[-1]
-        penult_cave = path[-2]
 
         # No more routes if this path at end
         if last_cave == 'end':
             return [path]
 
         # Find connecting nodes
-        for edge in self.edges:
-            # Skip unconnected path
-            if last_cave not in edge:
-                continue
-
-            # Skip start edge
-            if 'start' in edge:
-                continue
-
-            next_cave = self.pop_edge_partner(edge, last_cave)
-
+        for next_cave in self.route_map[last_cave]:
             # Skip if already visited one small cave twice
-            if next_cave.islower() and self.visited_small_cave_twice(path):
-                continue
+            # TODO: Fix this. If small cave, can visit if hasn't visit it yet or
+            # hasn't visited a small cave twice
+            if next_cave.islower() and next_cave in path:
+                if self.visited_small_cave_twice(path):
+                    continue
 
             # Create new path
             new_path = path.copy()
@@ -132,16 +147,16 @@ class Solution:
         return new_paths
 
     def visited_small_cave_twice(self, path):
-        visited_cave_count = {}
+        visited_caves = []
 
         for visited_cave in path:
             if not visited_cave.islower():
                 continue
 
-            if visited_cave_count.get(visited_cave, 0) > 1:
+            if visited_cave in visited_caves:
                 return True
             else:
-                visited_cave_count[visited_cave] = 1
+                visited_caves.append(visited_cave)
 
         return False
 
