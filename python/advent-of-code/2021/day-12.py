@@ -7,9 +7,7 @@ from functools import cached_property
 from config import INPUT_DIR
 
 
-DAY_NUM = 12
-FNAME = 'day-{:02d}.txt'.format(DAY_NUM)
-INPUT_FILE = path_join(INPUT_DIR, FNAME)
+INPUT_FILE = path_join(INPUT_DIR, 'day-12.txt')
 
 
 class Solution:
@@ -24,10 +22,9 @@ class Solution:
         paths = []
         complete = False
 
-        for edge in self.starters:
+        for next_cave in self.route_map['start']:
             path = ['start']
-            next = self.pop_edge_partner(edge, 'start')
-            path.append(next)
+            path.append(next_cave)
             paths.append(path)
 
         while not complete:
@@ -45,14 +42,13 @@ class Solution:
     def second(self):
         open_paths = []
         complete_paths = []
-        complete = False
 
         for next_cave in self.route_map['start']:
             path = ['start']
             path.append(next_cave)
             open_paths.append(path)
 
-        while not complete:
+        while len(open_paths) > 0:
             new_paths = []
             for path in open_paths:
                 valid_paths = self.filter_valid_paths_v2(path)
@@ -62,20 +58,30 @@ class Solution:
                         complete_paths.append(path)
                     else:
                         new_paths.append(path)
-                        if len(new_paths) % 50000 == 0:
-                            breakpoint()
 
             open_paths = new_paths
-            complete = len(open_paths) < 1
-            print(len(open_paths), len(complete_paths))
-            if len(complete_paths) > 240550:
-                raise ValueError("Too many paths: {}".format(len(complete_paths)))
 
         return len(complete_paths)
 
+    #
+    # Properties
+    #
+    @cached_property
+    def input_lines(self):
+        with open(self.input_file) as file:
+            lines = file.readlines()
+            return [line.strip() for line in lines]
+
+    @cached_property
+    def edges(self):
+        pairs = []
+        for line in self.input_lines:
+            pair = line.split('-')
+            pairs.append(pair)
+        return pairs
+
     @cached_property
     def route_map(self):
-
         index = {}
         for edge in self.edges:
             c1, c2 = edge
@@ -96,6 +102,9 @@ class Solution:
         index['end'] = set()
         return index
 
+    #
+    # Methods
+    #
     def pop_edge_partner(self, edge, cave):
         pair = edge.copy()
         pair.remove(cave)
@@ -133,8 +142,6 @@ class Solution:
         # Find connecting nodes
         for next_cave in self.route_map[last_cave]:
             # Skip if already visited one small cave twice
-            # TODO: Fix this. If small cave, can visit if hasn't visit it yet or
-            # hasn't visited a small cave twice
             if next_cave.islower() and next_cave in path:
                 if self.visited_small_cave_twice(path):
                     continue
@@ -153,51 +160,13 @@ class Solution:
             if not visited_cave.islower():
                 continue
 
+            # Is this second time we're seeing this cave?
             if visited_cave in visited_caves:
                 return True
             else:
                 visited_caves.append(visited_cave)
 
         return False
-
-
-    #
-    # Properties
-    #
-    @cached_property
-    def input_lines(self):
-        with open(self.input_file) as file:
-            lines = file.readlines()
-            return [line.strip() for line in lines]
-
-    @cached_property
-    def edges(self):
-        pairs = []
-        for line in self.input_lines:
-            pair = line.split('-')
-            pairs.append(pair)
-        return pairs
-
-    @cached_property
-    def starters(self):
-        starts = []
-        for pair in self.edges:
-            if 'start' in pair:
-                starts.append(pair)
-        return starts
-
-    @cached_property
-    def enders(self):
-        ends = []
-        for pair in self.edges:
-            if 'end' in pair:
-                ends.append(pair)
-        return ends
-
-
-    #
-    # Methods
-    #
 
 
 #
