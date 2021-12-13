@@ -41,9 +41,63 @@ class Solution:
         assert max([x for (x, y) in merged_grid.keys()]) <= pos
         print(sorted(merged_grid.keys()))
 
-        # wrong: 464
-        # 958
         return dots
+
+    @property
+    def second(self):
+        dots = self.dots.copy()
+
+        for axis, pos in self.folds:
+            dots = self.fold(axis, pos, dots)
+            print(len(dots))
+
+        print(dots)
+        self.print_dots(dots)
+        return '^^^ See print out above ^^^'
+
+    def print_dots(self, dots):
+        max_y = max([y for (x, y) in dots])
+        max_x = max([x for (x, y) in dots])
+
+        for y in range(max_y + 1):
+            row = []
+            for x in range(max_x + 1):
+                chr = '#' if (x, y) in dots else '.'
+                row.append(chr)
+            print(''.join(row))
+
+    def fold(self, axis, pos, dots):
+        if axis == 'x':
+            return self.fold_left(pos, dots)
+        else:
+            return self.fold_up(pos, dots)
+
+    def fold_left(self, fold_x, dots):
+        left_dots = set()
+        right_dots = set()
+
+        for (x, y) in dots:
+            if x < fold_x:
+                left_dots.add((x, y))
+            elif x > fold_x:
+                xm = fold_x - x + fold_x
+                right_dots.add((xm, y))
+
+        return left_dots.union(right_dots)
+
+    def fold_up(self, fold_y, dots):
+        upper_dots = set()
+        lower_dots = set()
+
+        for (x, y) in dots:
+            if y < fold_y:
+                upper_dots.add((x, y))
+            elif y > fold_y:
+                ym = fold_y - y + fold_y
+                lower_dots.add((x, ym))
+
+        return upper_dots.union(lower_dots)
+
 
     def overlay_grid(self, grid, overlay):
         new_grid = dict(grid)
@@ -65,16 +119,12 @@ class Solution:
         return folded_grid
 
     @property
-    def second(self):
-        pass
+    def max_x(self):
+        return max([x for (x, y) in self.dots])
 
     @property
-    def grid_width(self):
-        return len(self.input_lines[0])
-
-    @property
-    def grid_height(self):
-        return len(self.input_lines)
+    def max_y(self):
+        return max([y for (x, y) in self.dots])
 
     #
     # Properties
@@ -112,6 +162,37 @@ class Solution:
             axis, val = inst.split('=')
             folds.append((axis, int(val)))
         return folds
+
+    @cached_property
+    def grid(self):
+        grid = {}
+        dot_char = '#'
+        blank_char = '.'
+
+        for y in range(self.max_y + 1):
+            print('grid', y)
+            for x in range(self.max_x + 1):
+                pt = (x, y)
+                if pt in self.dots:
+                    grid[pt] = dot_char
+                else:
+                    grid[pt] = blank_char
+
+        return grid
+
+    def print_grid(self, grid):
+        max_x = max([x for (x, y) in grid.keys()])
+        max_y = max([y for (x, y) in grid.keys()])
+
+        for y in range(max_y + 1):
+            row = []
+            for x in range(max_x + 1):
+                char = grid.get((x, y), '.')
+                row.append(char)
+            print(''.join(row))
+
+
+
 
     #
     # Methods
