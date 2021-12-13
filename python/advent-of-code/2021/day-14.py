@@ -1,13 +1,13 @@
 """
-Advent of Code 2021 - Day 13
-https://adventofcode.com/2021/day/13
+Advent of Code 2021 - Day 14
+https://adventofcode.com/2021/day/14
 """
 from os.path import join as path_join
 from functools import cached_property
 from config import INPUT_DIR
 
 
-INPUT_FILE = path_join(INPUT_DIR, 'day-13.txt')
+INPUT_FILE = path_join(INPUT_DIR, 'day-14.txt')
 
 
 class Solution:
@@ -17,35 +17,13 @@ class Solution:
     #
     # Solutions
     #
-    @property
-    def first(self):
-        grid = {}
-        mirror_grid = {}
-        first_fold = self.folds[0]
+    @staticmethod
+    def first():
+        solution = Solution(INPUT_FILE)
 
-        for pt in self.dots:
-            if pt[0] < first_fold[1]:
-                grid[pt] = '#'
-            elif pt[0] > first_fold[1]:
-                mirror_grid[pt] = '#'
-
-        axis, pos = first_fold
-        overlay_grid = self.fold_grid_over(mirror_grid, pos)
-        merged_grid = self.overlay_grid(grid, overlay_grid)
-        dots = len(merged_grid.keys())
-
-        assert max([x for (x, y) in merged_grid.keys()]) <= pos
-        return dots
-
-    @property
-    def second(self):
-        dots = self.dots.copy()
-
-        for axis, pos in self.folds:
-            dots = self.fold(axis, pos, dots)
-
-        self.print_dots(dots)
-        return '^^^ See print out above ^^^'
+    @staticmethod
+    def second():
+        solution = Solution(INPUT_FILE)
 
     #
     # Properties
@@ -150,6 +128,5 @@ class Solution:
 #
 # Main
 #
-solution = Solution(INPUT_FILE)
-print("pt 1 solution: {}".format(solution.first))
-print("pt 2 solution: {}".format(solution.second))
+print("pt 1 solution: {}".format(Solution.first()))
+print("pt 2 solution: {}".format(Solution.second()))
