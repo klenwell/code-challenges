@@ -32,7 +32,6 @@ class Solution:
             for path in paths:
                 valid_paths = self.filter_valid_paths(path)
                 new_paths += valid_paths
-
             complete = all([path[-1] == 'end' for path in new_paths])
             paths = new_paths
 
