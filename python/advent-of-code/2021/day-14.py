@@ -59,7 +59,52 @@ class Solution:
 
     @staticmethod
     def second():
+        """
+        Proposed solution:
+        Find step at which sequence repeates.
+        Extrapolate character counts from there. (Chain grows 2(len) + 1 each step)
+        """
         solution = Solution(INPUT_FILE)
+
+        steps = 40
+        polymer = POLYMER_TEMPLATE
+
+        for step in range(steps):
+            polymer = solution.apply_insert_rules(polymer)
+            repeats = solution.does_sequence_repeat(polymer)
+
+            if repeats:
+                break
+
+        stopped_at = step
+        element_counts = sorted(solution.count_elements(polymer))
+        polymer_len = len(polymer)
+        lce_freq, lce = element_counts[0]
+        mce_freq, mce = element_counts[-1]
+
+        lce_pct = lce_freq / polymer_len
+        mce_pct = mce_freq / polymer_len
+
+        print('step', step, polymer_len)
+        print(lce_freq, lce, lce_pct)
+        print(mce_freq, mce, mce_pct)
+        #breakpoint()
+
+        for step in range(stopped_at, steps):
+            polymer_len = (polymer_len * 2) - 1
+            mce_freq = mce_pct * polymer_len
+            lce_freq = lce_pct * polymer_len
+            print(step, polymer_len, mce_freq, lce_freq)
+
+        return mce_freq - lce_freq
+
+    def does_sequence_repeat(self, polymer):
+        first_polymer_len = 39
+        needle = polymer[0:first_polymer_len]
+
+        repeats = polymer.count(needle)
+
+        return repeats > 1
 
     #
     # Properties
