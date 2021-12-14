@@ -42,7 +42,7 @@ class Solution:
         return [(n, el) for el, n in counter.items()]
 
     def apply_insert_rules(self, polymer):
-        print(polymer)
+        #print(polymer)
         chain = []
 
         for n, elem in enumerate(list(polymer)):
@@ -53,8 +53,7 @@ class Solution:
             insert = self.insertion_rules[elem + next]
             chain += [elem, insert, next]
 
-        print(chain)
-        raise 'die'
+        #print(chain)
         return ''.join(chain)
 
     @staticmethod
