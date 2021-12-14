@@ -68,16 +68,28 @@ class Solution:
 
         steps = 40
         polymer = POLYMER_TEMPLATE
+        print(solution.simplified_rules, len(solution.simplified_rules), len(solution.insertion_rules))
 
         for step in range(steps):
-            polymer = solution.apply_insert_rules(polymer)
-            repeats = solution.does_sequence_repeat(polymer)
+            polymer = solution.apply_simplified_insert_rules(polymer)
+            #repeats = solution.sequence_repeat(polymer)
+            lce, mce = solution.count_least_most_common_elements(polymer)
+            print(step, lce, mce)
 
-            if repeats:
-                break
+            #if repeats > 1:
+            #    break
+
+        element_counts = sorted(solution.count_elements(polymer))
+        print(element_counts)
+        lce = element_counts[0]
+        mce = element_counts[-1]
+        print(lce, mce)
+
+        return mce[0] - lce[0]
 
         stopped_at = step
         element_counts = sorted(solution.count_elements(polymer))
+
         polymer_len = len(polymer)
         lce_freq, lce = element_counts[0]
         mce_freq, mce = element_counts[-1]
@@ -94,17 +106,50 @@ class Solution:
             polymer_len = (polymer_len * 2) - 1
             mce_freq = mce_pct * polymer_len
             lce_freq = lce_pct * polymer_len
-            print(step, polymer_len, mce_freq, lce_freq)
 
         return mce_freq - lce_freq
 
-    def does_sequence_repeat(self, polymer):
+    def apply_simplified_insert_rules(self, polymer):
+        #print(polymer)
+        chain = [polymer[0]]
+
+        for n, elem in enumerate(list(polymer)):
+            if n >= len(polymer) - 1:
+                break
+
+            next = polymer[n+1]
+            insert = self.simplified_rules.get(elem + next)
+
+            if insert:
+                chain += [insert, next]
+
+        #print(chain)
+        #breakpoint()
+        return ''.join(chain)
+
+    @cached_property
+    def simplified_rules(self):
+        rules = {}
+        lce = 'H'
+        mce = 'C'
+        for line in self.input_lines:
+            pair, insert = line.split(' -> ')
+            if lce == insert or lce in pair:
+                rules[pair] = insert
+            elif mce == insert or mce in pair:
+                rules[pair] = insert
+        return rules
+
+    def sequence_repeat(self, polymer):
         first_polymer_len = 39
         needle = polymer[0:first_polymer_len]
-
         repeats = polymer.count(needle)
+        return repeats
 
-        return repeats > 1
+    def count_least_most_common_elements(self, polymer):
+        element_counts = sorted(self.count_elements(polymer))
+        return (element_counts[0][0], element_counts[-1][0])
+
 
     #
     # Properties
