@@ -43,7 +43,7 @@ class Solution:
 
     def apply_insert_rules(self, polymer):
         #print(polymer)
-        chain = []
+        chain = [polymer[0]]
 
         for n, elem in enumerate(list(polymer)):
             if n >= len(polymer) - 1:
@@ -51,9 +51,10 @@ class Solution:
 
             next = polymer[n+1]
             insert = self.insertion_rules[elem + next]
-            chain += [elem, insert, next]
+            chain += [insert, next]
 
         #print(chain)
+        #breakpoint()
         return ''.join(chain)
 
     @staticmethod
