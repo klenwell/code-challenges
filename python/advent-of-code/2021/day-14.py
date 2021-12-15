@@ -59,97 +59,41 @@ class Solution:
 
     @staticmethod
     def second():
-        """
-        Proposed solution:
-        Find step at which sequence repeates.
-        Extrapolate character counts from there. (Chain grows 2(len) + 1 each step)
+        """Another counting exercise like Day 6.
+        Source: https://old.reddit.com/r/adventofcode/comments/rg0ssd
         """
         solution = Solution(INPUT_FILE)
-
         steps = 40
         polymer = POLYMER_TEMPLATE
-        print(solution.simplified_rules, len(solution.simplified_rules), len(solution.insertion_rules))
+        element_counter = {}
+        existing_pairs = {}
 
-        for step in range(steps):
-            polymer = solution.apply_simplified_insert_rules(polymer)
-            #repeats = solution.sequence_repeat(polymer)
-            lce, mce = solution.count_least_most_common_elements(polymer)
-            print(step, lce, mce)
+        for el in polymer:
+            element_counter[el] = element_counter.get(el, 0) + 1
+        print(element_counter)
 
-            #if repeats > 1:
-            #    break
+        for n in range(len(polymer) - 1):
+            pair = polymer[n] + polymer[n+1]
+            existing_pairs[pair] = existing_pairs.get(pair, 0) + 1
+        print(existing_pairs)
 
-        element_counts = sorted(solution.count_elements(polymer))
-        print(element_counts)
-        lce = element_counts[0]
-        mce = element_counts[-1]
-        print(lce, mce)
+        for n in range(steps):
+            new_pairs = {}
 
-        return mce[0] - lce[0]
+            for existing_pair, pair_count in existing_pairs.items():
+                insert = solution.insertion_rules[existing_pair]
+                left_pair = existing_pair[0] + insert
+                right_pair = insert + existing_pair[1]
 
-        stopped_at = step
-        element_counts = sorted(solution.count_elements(polymer))
+                element_counter[insert] = element_counter.get(insert, 0) + pair_count
+                new_pairs[left_pair] = existing_pairs.get(left_pair, 0) + pair_count
+                new_pairs[right_pair] = existing_pairs.get(right_pair, 0) + pair_count
 
-        polymer_len = len(polymer)
-        lce_freq, lce = element_counts[0]
-        mce_freq, mce = element_counts[-1]
+            existing_pairs = new_pairs.copy()
 
-        lce_pct = lce_freq / polymer_len
-        mce_pct = mce_freq / polymer_len
-
-        print('step', step, polymer_len)
-        print(lce_freq, lce, lce_pct)
-        print(mce_freq, mce, mce_pct)
-        #breakpoint()
-
-        for step in range(stopped_at, steps):
-            polymer_len = (polymer_len * 2) - 1
-            mce_freq = mce_pct * polymer_len
-            lce_freq = lce_pct * polymer_len
-
-        return mce_freq - lce_freq
-
-    def apply_simplified_insert_rules(self, polymer):
-        #print(polymer)
-        chain = [polymer[0]]
-
-        for n, elem in enumerate(list(polymer)):
-            if n >= len(polymer) - 1:
-                break
-
-            next = polymer[n+1]
-            insert = self.simplified_rules.get(elem + next)
-
-            if insert:
-                chain += [insert, next]
-
-        #print(chain)
-        #breakpoint()
-        return ''.join(chain)
-
-    @cached_property
-    def simplified_rules(self):
-        rules = {}
-        lce = 'H'
-        mce = 'C'
-        for line in self.input_lines:
-            pair, insert = line.split(' -> ')
-            if lce == insert or lce in pair:
-                rules[pair] = insert
-            elif mce == insert or mce in pair:
-                rules[pair] = insert
-        return rules
-
-    def sequence_repeat(self, polymer):
-        first_polymer_len = 39
-        needle = polymer[0:first_polymer_len]
-        repeats = polymer.count(needle)
-        return repeats
-
-    def count_least_most_common_elements(self, polymer):
-        element_counts = sorted(self.count_elements(polymer))
-        return (element_counts[0][0], element_counts[-1][0])
-
+        element_counts = sorted([count for count in element_counter.values()])
+        print(element_counter)
+        return element_counts[-1] - element_counts[0]
 
     #
     # Properties
