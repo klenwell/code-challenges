@@ -5,6 +5,7 @@ https://adventofcode.com/2021/day/14
 from os.path import join as path_join
 from functools import cached_property
 from config import INPUT_DIR
+from collections import defaultdict, Counter
 
 
 INPUT_FILE = path_join(INPUT_DIR, 'day-14.txt')
@@ -18,14 +19,11 @@ class Solution:
     @staticmethod
     def first():
         solution = Solution(INPUT_FILE)
-        print(solution.insertion_rules)
-
         steps = 10
         polymer = POLYMER_TEMPLATE
 
         for step in range(steps):
             polymer = solution.apply_insert_rules(polymer)
-            print(polymer)
 
         element_counts = sorted(solution.count_elements(polymer))
         print(element_counts)
@@ -42,7 +40,6 @@ class Solution:
         return [(n, el) for el, n in counter.items()]
 
     def apply_insert_rules(self, polymer):
-        #print(polymer)
         chain = [polymer[0]]
 
         for n, elem in enumerate(list(polymer)):
@@ -53,8 +50,6 @@ class Solution:
             insert = self.insertion_rules[elem + next]
             chain += [insert, next]
 
-        #print(chain)
-        #breakpoint()
         return ''.join(chain)
 
     @staticmethod
@@ -63,37 +58,39 @@ class Solution:
         Source: https://old.reddit.com/r/adventofcode/comments/rg0ssd
         """
         solution = Solution(INPUT_FILE)
-        steps = 40
+        steps = 10
         polymer = POLYMER_TEMPLATE
         element_counter = {}
-        existing_pairs = {}
+        polymer_pairs = {}
+        print(polymer)
 
         for el in polymer:
             element_counter[el] = element_counter.get(el, 0) + 1
         print(element_counter)
 
-        for n in range(len(polymer) - 1):
-            pair = polymer[n] + polymer[n+1]
-            existing_pairs[pair] = existing_pairs.get(pair, 0) + 1
-        print(existing_pairs)
+        for n in range(len(polymer)-1):
+            pair = polymer[n:n+2]
+            polymer_pairs[pair] = polymer_pairs.get(pair, 0) + 1
+        print(polymer_pairs)
 
-        for n in range(steps):
+        for step in range(steps):
             new_pairs = {}
+            print(step, new_pairs)
 
-            for existing_pair, pair_count in existing_pairs.items():
-                insert = solution.insertion_rules[existing_pair]
-                left_pair = existing_pair[0] + insert
-                right_pair = insert + existing_pair[1]
+            for old_pair, pair_count in polymer_pairs.items():
+                insert = solution.insertion_rules[old_pair]
+                left_pair = old_pair[0] + insert
+                right_pair = insert + old_pair[1]
 
-                element_counter[insert] = element_counter.get(insert, 0) + pair_count
-                new_pairs[left_pair] = existing_pairs.get(left_pair, 0) + pair_count
-                new_pairs[right_pair] = existing_pairs.get(right_pair, 0) + pair_count
+                # Update element and new pair counts
+                element_counter[insert] += pair_count
+                new_pairs[left_pair] = new_pairs[left_pair] + pair_count
+                new_pairs[right_pair] = new_pairs[right_pair] + pair_count
 
-            existing_pairs = new_pairs.copy()
+            polymer_pairs = new_pairs
 
-        element_counts = sorted([count for count in element_counter.values()])
         print(element_counter)
-        return element_counts[-1] - element_counts[0]
+        return max(element_counter.values()) - min(element_counter.values())
 
     #
     # Properties
