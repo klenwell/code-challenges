@@ -5,7 +5,6 @@ https://adventofcode.com/2021/day/14
 from os.path import join as path_join
 from functools import cached_property
 from config import INPUT_DIR
-from collections import defaultdict, Counter
 
 
 INPUT_FILE = path_join(INPUT_DIR, 'day-14.txt')
@@ -75,7 +74,6 @@ class Solution:
 
         for step in range(steps):
             new_pairs = {}
-            print(step, new_pairs)
 
             for old_pair, pair_count in polymer_pairs.items():
                 insert = solution.insertion_rules[old_pair]
@@ -84,8 +82,8 @@ class Solution:
 
                 # Update element and new pair counts
                 element_counter[insert] += pair_count
-                new_pairs[left_pair] = new_pairs[left_pair] + pair_count
-                new_pairs[right_pair] = new_pairs[right_pair] + pair_count
+                new_pairs[left_pair] = new_pairs.get(left_pair, 0) + pair_count
+                new_pairs[right_pair] = new_pairs.get(right_pair, 0) + pair_count
 
             polymer_pairs = new_pairs
 
