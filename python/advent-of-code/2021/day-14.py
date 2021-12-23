@@ -25,31 +25,10 @@ class Solution:
             polymer = solution.apply_insert_rules(polymer)
 
         element_counts = sorted(solution.count_elements(polymer))
-        print(element_counts)
         lce = element_counts[0]
         mce = element_counts[-1]
-        print(lce, mce)
 
         return mce[0] - lce[0]
-
-    def count_elements(self, polymer):
-        counter = {}
-        for el in polymer:
-            counter[el] = counter.get(el, 0) + 1
-        return [(n, el) for el, n in counter.items()]
-
-    def apply_insert_rules(self, polymer):
-        chain = [polymer[0]]
-
-        for n, elem in enumerate(list(polymer)):
-            if n >= len(polymer) - 1:
-                break
-
-            next = polymer[n+1]
-            insert = self.insertion_rules[elem + next]
-            chain += [insert, next]
-
-        return ''.join(chain)
 
     @staticmethod
     def second():
@@ -57,20 +36,17 @@ class Solution:
         Source: https://old.reddit.com/r/adventofcode/comments/rg0ssd
         """
         solution = Solution(INPUT_FILE)
-        steps = 10
+        steps = 40
         polymer = POLYMER_TEMPLATE
         element_counter = {}
         polymer_pairs = {}
-        print(polymer)
 
         for el in polymer:
             element_counter[el] = element_counter.get(el, 0) + 1
-        print(element_counter)
 
         for n in range(len(polymer)-1):
             pair = polymer[n:n+2]
             polymer_pairs[pair] = polymer_pairs.get(pair, 0) + 1
-        print(polymer_pairs)
 
         for step in range(steps):
             new_pairs = {}
@@ -87,7 +63,6 @@ class Solution:
 
             polymer_pairs = new_pairs
 
-        print(element_counter)
         return max(element_counter.values()) - min(element_counter.values())
 
     #
@@ -112,6 +87,25 @@ class Solution:
     #
     def __init__(self, input_file):
         self.input_file = input_file
+
+    def count_elements(self, polymer):
+        counter = {}
+        for el in polymer:
+            counter[el] = counter.get(el, 0) + 1
+        return [(n, el) for el, n in counter.items()]
+
+    def apply_insert_rules(self, polymer):
+        chain = [polymer[0]]
+
+        for n, elem in enumerate(list(polymer)):
+            if n >= len(polymer) - 1:
+                break
+
+            next = polymer[n+1]
+            insert = self.insertion_rules[elem + next]
+            chain += [insert, next]
+
+        return ''.join(chain)
 
 #
 # Main
