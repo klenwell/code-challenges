@@ -107,6 +107,7 @@ class Solution:
 
         return ''.join(chain)
 
+
 #
 # Main
 #
