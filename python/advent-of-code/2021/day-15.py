@@ -5,6 +5,7 @@ https://adventofcode.com/2021/day/15
 from os.path import join as path_join
 from functools import cached_property
 from config import INPUT_DIR
+import heapq
 
 
 INPUT_FILE = path_join(INPUT_DIR, 'day-15.txt')
@@ -44,8 +45,7 @@ class Solution:
         solution = Solution(None)
         assert len(solution.extended_test_input) == 50, len(solution.extended_test_input)
         assert len(solution.extended_test_input[0]) == 50, len(solution.extended_test_input[0])
-        assert solution.extended_test_input[-1][-10:] == '1299833479', \
-            solution.extended_test_input[-1][-10:]
+        assert solution.extended_test_input[-1][-10:] == '1299833479'
 
         path_finder = PathFinder(solution.extended_test_input)
         path_risk = path_finder.sum_lowest_risk_path()
@@ -119,7 +119,6 @@ class Solution:
         return ''.join(extended_row)
 
 
-
 class PathFinder:
     def __init__(self, map_rows):
         self.map_rows = map_rows
@@ -161,12 +160,9 @@ class PathFinder:
         open_paths = [(0, self.start)]
         steps = {self.start: None}
         costs = {self.start: 0}
-        loops = 0
 
         while open_paths:
-            loops += 1
-            print(loops, len(open_paths))
-            _, (x, y) = open_paths.pop()
+            _, (x, y) = heapq.heappop(open_paths)
 
             if (x, y) == self.goal:
                 break
@@ -175,9 +171,7 @@ class PathFinder:
                 cost = costs[(x, y)] + self.risk_values[(x, y)]
                 if neighbor not in costs or cost < costs[neighbor]:
                     costs[neighbor] = cost
-                    est_cost = cost + self.est_future_cost(neighbor)
-                    open_paths.append((est_cost, neighbor))
-                    open_paths.sort(reverse=True)
+                    heapq.heappush(open_paths, (cost, neighbor))
                     steps[neighbor] = (x, y)
 
         return self.steps_to_path(steps)
@@ -208,7 +202,7 @@ class PathFinder:
 #
 # Main
 #
-print("test: {}".format(Solution.test()))
-print("test: {}".format(Solution.test2()))
+print("test 1: {}".format(Solution.test()))
+print("test 2: {}".format(Solution.test2()))
 print("pt 1 solution: {}".format(Solution.first()))
 print("pt 2 solution: {}".format(Solution.second()))
