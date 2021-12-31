@@ -31,8 +31,23 @@ class Solution:
         expected = 40
 
         solution = Solution(None)
-
         path_finder = PathFinder(solution.test_input)
+        path_risk = path_finder.sum_lowest_risk_path()
+
+        assert path_risk == expected, (path_risk, expected)
+        return 'PASS'
+
+    @staticmethod
+    def test2():
+        expected = 315
+
+        solution = Solution(None)
+        assert len(solution.extended_test_input) == 50, len(solution.extended_test_input)
+        assert len(solution.extended_test_input[0]) == 50, len(solution.extended_test_input[0])
+        assert solution.extended_test_input[-1][-10:] == '1299833479', \
+            solution.extended_test_input[-1][-10:]
+
+        path_finder = PathFinder(solution.extended_test_input)
         path_risk = path_finder.sum_lowest_risk_path()
 
         assert path_risk == expected, (path_risk, expected)
@@ -47,7 +62,10 @@ class Solution:
 
     @staticmethod
     def second():
-        pass
+        solution = Solution(INPUT_FILE)
+        path_finder = PathFinder(solution.extended_input_lines)
+        path_risk = path_finder.sum_lowest_risk_path()
+        return path_risk
 
     #
     # Properties
@@ -59,14 +77,47 @@ class Solution:
             return [line.strip() for line in lines]
 
     @cached_property
+    def extended_input_lines(self):
+        top_left_tile = self.input_lines.copy()
+        return self.extend_map(top_left_tile)
+
+    @cached_property
     def test_input(self):
         return [l for l in TEST_MAP.split("\n") if l]
+
+    @cached_property
+    def extended_test_input(self):
+        top_left_tile = self.test_input.copy()
+        return self.extend_map(top_left_tile)
 
     #
     # Methods
     #
     def __init__(self, input_file):
         self.input_file = input_file
+
+    def extend_map(self, top_left_tile):
+        extended_rows = []
+
+        for n in range(5):
+            for row in top_left_tile:
+                new_row = [int(risk) % 9 + n for risk in row]
+                extended_row = self.extend_row(new_row)
+                extended_rows.append(extended_row)
+
+        return extended_rows
+
+    def extend_row(self, row):
+        extended_row = []
+
+        for n in range(5):
+            for risk in row:
+                new_risk = (risk + n) % 9
+                if new_risk == 0: new_risk = 9
+                extended_row.append(str(new_risk))
+
+        return ''.join(extended_row)
+
 
 
 class PathFinder:
@@ -110,8 +161,11 @@ class PathFinder:
         open_paths = [(0, self.start)]
         steps = {self.start: None}
         costs = {self.start: 0}
+        loops = 0
 
         while open_paths:
+            loops += 1
+            print(loops, len(open_paths))
             _, (x, y) = open_paths.pop()
 
             if (x, y) == self.goal:
@@ -155,5 +209,6 @@ class PathFinder:
 # Main
 #
 print("test: {}".format(Solution.test()))
+print("test: {}".format(Solution.test2()))
 print("pt 1 solution: {}".format(Solution.first()))
 print("pt 2 solution: {}".format(Solution.second()))
