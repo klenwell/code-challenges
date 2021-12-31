@@ -40,7 +40,10 @@ class Solution:
 
     @staticmethod
     def first():
-        pass
+        solution = Solution(INPUT_FILE)
+        path_finder = PathFinder(solution.input_lines)
+        path_risk = path_finder.sum_lowest_risk_path()
+        return path_risk
 
     @staticmethod
     def second():
