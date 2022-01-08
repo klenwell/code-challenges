@@ -92,15 +92,6 @@ class Packet:
 
         return self.version + sum
 
-    @property
-    def overflow(self):
-        if self.is_value():
-            starts_at = len(self.header) + len(self.value_bits)
-        else:
-            starts_at = len(self.header) + sum([len(sub.bits) for sub in self.subpackets])
-
-        return self.bits[starts_at:]
-
     #
     # Methods
     #
@@ -117,32 +108,6 @@ class Packet:
 
     def is_operator(self):
         return not self.is_value()
-
-    def parse_subpacket_bits(self, subpacket_bits, max_packets=None):
-        print('subpacket {} from {} {}'.format(subpacket_bits, self, self.bits))
-
-        packet = Packet(subpacket_bits).by_type()
-        packets = [packet]
-
-        while packet.overflow:
-            packet = Packet(packet.overflow).by_type()
-            packets.append(packet)
-
-            if max_packets and len(packets) >= max_packets:
-                break
-
-            if not self.valid_subpacket_bits(packet.overflow):
-                f = "Invalid subpacket bits: {} left of {}"
-                print(f.format(packet.overflow, subpacket_bits))
-                return packets
-
-        return packets
-
-    def valid_subpacket_bits(self, bit_str):
-        if len(bit_str) < 6:
-            return False
-
-        return True
 
     def chunk(self, seq, size):
         """https://stackoverflow.com/a/434328/1093087"""
@@ -181,11 +146,17 @@ class ValuePacket(Packet):
     def subpackets(self):
         return []
 
+    @property
+    def overflow(self):
+        starts_at = len(self.header) + len(self.value_bits)
+        return self.bits[starts_at:]
+
     def __repr__(self):
-        return '{}(version={} value={})'.format(
+        return '{}(version={} value={} bits={})'.format(
             self.__class__.__name__,
             self.version,
-            self.value
+            self.value,
+            self.bits
         )
 
 
@@ -239,11 +210,59 @@ class OperatorPacket(Packet):
             start_at = len(self.header) + 1 + 11
             return self.bits[start_at:]
 
+    @property
+    def overflow(self):
+        if self.length_based_subpackets():
+            starts_at = len(self.header) + 1 + len(self.length_bits) + self.subpacket_length
+        elif self.count_based_subpackets():
+            starts_at = len(self.header) + sum([len(sub.bits) for sub in self.subpackets])
+
+        return self.bits[starts_at:]
+
     def length_based_subpackets(self):
         return self.length_type_id == 0
 
     def count_based_subpackets(self):
         return self.length_type_id == 1
+
+    def parse_subpacket_bits(self, subpacket_bits, max_packets=None):
+        print('parsing subpacket {} for {} (max:{})'.format(subpacket_bits, self, max_packets))
+
+        if not subpacket_bits:
+            print('subpacket bits empty')
+            return []
+
+        packet = Packet(subpacket_bits).by_type()
+        packets = [packet]
+
+        while packet.overflow:
+            print('overflow from {}: {}'.format(self, packet.overflow))
+            if max_packets and len(packets) == max_packets:
+                return packets
+
+            if not self.valid_subpacket_bits(packet.overflow):
+                f = "Invalid subpacket bits: {} left of {}"
+                print(f.format(packet.overflow, subpacket_bits))
+                return packets
+
+            packet = Packet(packet.overflow).by_type()
+            packets.append(packet)
+
+        return packets
+
+    def valid_subpacket_bits(self, bit_str):
+        if len(bit_str) < 6:
+            return False
+
+        return True
+
+    def __repr__(self):
+        return '{}(version={} length_type_id={} bits={})'.format(
+            self.__class__.__name__,
+            self.version,
+            self.length_type_id,
+            self.bits
+        )
 
 
 class Solution:
@@ -270,13 +289,7 @@ class Solution:
         packet = transmission.packet
 
         assert packet.is_operator()
-        assert packet.bits == '00111000000000000110111101000101001010010001001000000000'
-        assert packet.version == 1, packet.version
-        assert packet.type_id == 6
-        assert packet.length_type_id == 0
-        assert packet.length_bits == '000000000011011', packet.length_bits
-        assert packet.subpacket_length == 27
-        assert len(packet.subpackets) == 2, len(packet.subpackets)
+        assert packet.length_based_subpackets()
         assert [p.value for p in packet.subpackets] == [10, 20]
         return 'PASS'
 
@@ -287,31 +300,12 @@ class Solution:
         packet = transmission.packet
 
         assert packet.is_operator()
-        assert packet.version == 7, packet.version
-        assert packet.type_id == 3
-        assert packet.length_type_id == 1
-        assert(packet.subpacket_bits == '01010000001100100000100011000001100000',
-               packet.subpacket_bits)
-        assert packet.subpacket_count == 3
-        assert len(packet.subpackets) == 3, len(packet.subpackets)
+        assert packet.count_based_subpackets()
         assert [p.value for p in packet.subpackets] == [1, 2, 3]
         return 'PASS'
 
     @staticmethod
     def test_4():
-        hex_string = '8A004A801A8002F478'
-        expected_sum = 16
-        transmission = Transmission(hex_string)
-        packet = transmission.packet
-
-        print(packet.bits)
-
-        assert packet.is_operator()
-        assert packet.version_sum == expected_sum, (packet.version_sum, expected_sum)
-        return 'PASS'
-
-    @staticmethod
-    def test_5():
         cases = [
             # hex_string, expected_sum
             ('8A004A801A8002F478', 16),
@@ -326,6 +320,19 @@ class Solution:
             assert packet.version_sum == expected_sum, (hex_string, packet.version_sum, expected_sum)
             print("PASS: {}".format(hex_string))
 
+        return 'PASS'
+
+    @staticmethod
+    def sandbox():
+        hex_string = 'A0016C880162017C3686B18A3D4780'
+        expected_sum = 31
+        transmission = Transmission(hex_string)
+        packet = transmission.packet
+
+        #breakpoint()
+
+        assert packet.is_operator()
+        assert packet.version_sum == expected_sum, (packet.version_sum, expected_sum)
         return 'PASS'
 
     #
@@ -358,13 +365,10 @@ class Solution:
 #
 # Main
 #
+print("sandbox: {}".format(Solution.sandbox()))
 print("test 1: {}".format(Solution.test_1()))
 print("test 2: {}".format(Solution.test_2()))
 print("test 3: {}".format(Solution.test_3()))
 print("test 4: {}".format(Solution.test_4()))
-print("value packet test: {}".format(Solution.test_value_packet()))
-print("operator packet test 1: {}".format(Solution.test_operator_packet()))
-print("operator packet test 2: {}".format(Solution.test_operator_packet_2()))
-print("test version sums: {}".format(Solution.test_version_sums()))
 print("pt 1 solution: {}".format(Solution.first()))
 print("pt 2 solution: {}".format(Solution.second()))
