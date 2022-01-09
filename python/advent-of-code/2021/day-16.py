@@ -124,7 +124,7 @@ class Packet:
 class ValuePacket(Packet):
     def __init__(self, bits):
         self.bits = bits
-        print(self)
+        print('>', self)
 
     @property
     def value(self):
@@ -163,7 +163,7 @@ class ValuePacket(Packet):
 class OperatorPacket(Packet):
     def __init__(self, bits):
         self.bits = bits
-        print(self)
+        print('>', self)
 
     @property
     def length_type_id(self):
@@ -181,11 +181,7 @@ class OperatorPacket(Packet):
         if self.length_based_subpackets():
             return self.bits[7:22]
         else:
-            raise ValueError('Subpackets not marked by length.')
-
-    @property
-    def filler(self):
-        return self.bits.split(self.subpacket_bits)[-1]
+            return self.bits[7:18]
 
     @cached_property
     def subpackets(self):
@@ -213,22 +209,39 @@ class OperatorPacket(Packet):
 
     @property
     def subpacket_bits(self):
+        starts_at = len(self.header) + 1 + len(self.length_bits)
+
         if self.length_based_subpackets():
-            start_at = len(self.header) + 1 + len(self.length_bits)
-            end_at = start_at + self.subpacket_length
-            return self.bits[start_at:end_at]
+            ends_at = starts_at + self.subpacket_length
+            return self.bits[starts_at:ends_at]
         elif self.count_based_subpackets():
-            start_at = len(self.header) + 1 + 11
-            return self.bits[start_at:]
+            return self.bits[starts_at:]
 
     @property
     def overflow(self):
+        """overflow reflects surplus bits in case where object may be passed a
+        bit_str of indeterminate composition. This should not happen with a
+        length-based operator packet.
+        """
         if self.length_based_subpackets():
             starts_at = len(self.header) + 1 + len(self.length_bits) + self.subpacket_length
         elif self.count_based_subpackets():
-            starts_at = len(self.header) + sum([len(sub.bits) for sub in self.subpackets])
+            starts_at = len(self.header) + 1 + len(self.length_bits) + sum([len(sub.bits) for sub in self.subpackets])
+        else:
+            raise TypeError('Overflow issue!')
 
         return self.bits[starts_at:]
+
+    @property
+    def filler(self):
+        """Filler is extra bits at the end of some packets. This is a pretty crappy
+        protocol when you think about it. It really needs a terminal bit flag.
+        """
+        if self.length_based_subpackets():
+            starts_at = len(self.header) + 1 + len(self.length_bits) + self.subpacket_length
+            return self.bits[starts_at:]
+        else:
+            return self.bits.split(self.subpacket_bits)[-1]
 
     def length_based_subpackets(self):
         return self.length_type_id == 0
@@ -240,7 +253,7 @@ class OperatorPacket(Packet):
         print('parsing subpacket {} for {} (max:{})'.format(subpacket_bits, self, max_packets))
 
         if not subpacket_bits:
-            print('subpacket bits empty')
+            print('*** subpacket bits empty')
             return []
 
         subpacket = Packet(subpacket_bits).by_type()
@@ -253,7 +266,7 @@ class OperatorPacket(Packet):
                 return subpackets
 
             if not self.valid_subpacket_bits(subpacket.overflow):
-                f = "Invalid subpacket bits: {} left of {}"
+                f = "*** Invalid subpacket bits: {} left of {}"
                 print(f.format(subpacket.overflow, subpacket_bits))
                 return subpackets
 
@@ -265,7 +278,6 @@ class OperatorPacket(Packet):
     def valid_subpacket_bits(self, bit_str):
         if len(bit_str) < 6:
             return False
-
         return True
 
     def dump(self):
@@ -296,6 +308,7 @@ class Solution:
     #
     @staticmethod
     def test_1():
+        print('------>', 'TEST 1')
         hex_string = 'D2FE28'
         transmission = Transmission(hex_string)
         packet = transmission.packet
@@ -309,6 +322,7 @@ class Solution:
 
     @staticmethod
     def test_2():
+        print('------>', 'TEST 2')
         hex_string = '38006F45291200'
         transmission = Transmission(hex_string)
         packet = transmission.packet
@@ -320,6 +334,7 @@ class Solution:
 
     @staticmethod
     def test_3():
+        print('------>', 'TEST 3')
         hex_string = 'EE00D40C823060'
         transmission = Transmission(hex_string)
         packet = transmission.packet
@@ -331,6 +346,7 @@ class Solution:
 
     @staticmethod
     def test_4():
+        print('------>', 'TEST 4')
         cases = [
             # hex_string, expected_sum
             ('8A004A801A8002F478', 16),
@@ -340,6 +356,7 @@ class Solution:
         ]
 
         for hex_string, expected_sum in cases:
+            print('--> CASE:', hex_string)
             transmission = Transmission(hex_string)
             packet = transmission.packet
             assert packet.version_sum == expected_sum, (hex_string, packet.version_sum, expected_sum)
