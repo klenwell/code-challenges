@@ -384,7 +384,13 @@ class Solution:
     #
     @staticmethod
     def first():
-        pass
+        solution = Solution(INPUT_FILE)
+        hex_string = solution.input_lines[0]
+        transmission = Transmission(hex_string)
+        packet = transmission.packet
+        print(hex_string)
+        print(packet.bits)
+        return packet.version_sum
 
     @staticmethod
     def second():
