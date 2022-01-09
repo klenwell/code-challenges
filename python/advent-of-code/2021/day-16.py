@@ -170,11 +170,22 @@ class OperatorPacket(Packet):
         return int(self.bits[6])
 
     @property
+    def length_type(self):
+        if self.length_based_subpackets():
+            return 'length-based'
+        else:
+            return 'count-based'
+
+    @property
     def length_bits(self):
         if self.length_based_subpackets():
             return self.bits[7:22]
         else:
             raise ValueError('Subpackets not marked by length.')
+
+    @property
+    def filler(self):
+        return self.bits.split(self.subpacket_bits)[-1]
 
     @cached_property
     def subpackets(self):
@@ -232,23 +243,24 @@ class OperatorPacket(Packet):
             print('subpacket bits empty')
             return []
 
-        packet = Packet(subpacket_bits).by_type()
-        packets = [packet]
+        subpacket = Packet(subpacket_bits).by_type()
+        subpackets = [subpacket]
 
-        while packet.overflow:
-            print('overflow from {}: {}'.format(self, packet.overflow))
-            if max_packets and len(packets) == max_packets:
-                return packets
+        # FIXME: subpacket's overflow may lead to subpacket_bits being re-parsed
+        while subpacket.overflow:
+            print('overflow from {}: {}'.format(self, subpacket.overflow))
+            if max_packets and len(subpackets) == max_packets:
+                return subpackets
 
-            if not self.valid_subpacket_bits(packet.overflow):
+            if not self.valid_subpacket_bits(subpacket.overflow):
                 f = "Invalid subpacket bits: {} left of {}"
-                print(f.format(packet.overflow, subpacket_bits))
-                return packets
+                print(f.format(subpacket.overflow, subpacket_bits))
+                return subpackets
 
-            packet = Packet(packet.overflow).by_type()
-            packets.append(packet)
+            subpacket = Packet(subpacket.overflow).by_type()
+            subpackets.append(subpacket)
 
-        return packets
+        return subpackets
 
     def valid_subpacket_bits(self, bit_str):
         if len(bit_str) < 6:
@@ -256,11 +268,24 @@ class OperatorPacket(Packet):
 
         return True
 
+    def dump(self):
+        return (
+            ('version', self.version),
+            ('type_id', self.type_id),
+            ('header', self.header),
+            ('length_type_id', self.length_type_id),
+            ('length_bits', self.length_bits),
+            ('subpacket_bits', self.subpacket_bits),
+            ('filler', self.filler),
+            ('bits', self.bits)
+        )
+
     def __repr__(self):
-        return '{}(version={} length_type_id={} bits={})'.format(
+        return '{}(version={} type={}:{} bits={})'.format(
             self.__class__.__name__,
             self.version,
             self.length_type_id,
+            self.length_type,
             self.bits
         )
 
@@ -328,8 +353,10 @@ class Solution:
         expected_sum = 31
         transmission = Transmission(hex_string)
         packet = transmission.packet
+        from pprint import pprint
+        pprint(packet.dump())
 
-        #breakpoint()
+        breakpoint()
 
         assert packet.is_operator()
         assert packet.version_sum == expected_sum, (packet.version_sum, expected_sum)
@@ -365,7 +392,7 @@ class Solution:
 #
 # Main
 #
-print("sandbox: {}".format(Solution.sandbox()))
+#print("sandbox: {}".format(Solution.sandbox()))
 print("test 1: {}".format(Solution.test_1()))
 print("test 2: {}".format(Solution.test_2()))
 print("test 3: {}".format(Solution.test_3()))
