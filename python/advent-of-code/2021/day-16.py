@@ -6,8 +6,13 @@ from os.path import join as path_join
 from functools import cached_property
 from config import INPUT_DIR
 
+from pprint import pprint
+import time
+
+
 
 INPUT_FILE = path_join(INPUT_DIR, 'day-16.txt')
+DEBUG = 0
 
 
 class Transmission:
@@ -45,6 +50,18 @@ class Transmission:
     def packet(self):
         return Packet(self.bits).by_type()
 
+    @property
+    def packets(self):
+        return self.collect_packets(self.packet)
+
+    def collect_packets(self, packet):
+        packets = [packet]
+
+        for subpacket in packet.subpackets:
+            packets += self.collect_packets(subpacket)
+
+        return packets
+
 
 class Packet:
     #
@@ -59,6 +76,13 @@ class Packet:
     @property
     def header(self):
         return self.bits[:6]
+
+    @property
+    def message(self):
+        if not self.overflow:
+            return self.bits
+        else:
+            return self.bits.rsplit(self.overflow, 1)[0]
 
     @property
     def version(self):
@@ -109,6 +133,12 @@ class Packet:
     def is_operator(self):
         return not self.is_value()
 
+    def debug(self, *messages):
+        if DEBUG:
+            print()
+            print("[LOG: {}]".format(time.time()))
+            print(*messages)
+
     def chunk(self, seq, size):
         """https://stackoverflow.com/a/434328/1093087"""
         return (seq[pos:pos + size] for pos in range(0, len(seq), size))
@@ -124,7 +154,7 @@ class Packet:
 class ValuePacket(Packet):
     def __init__(self, bits):
         self.bits = bits
-        print('>', self)
+        self.debug('>', self)
 
     @property
     def value(self):
@@ -152,18 +182,19 @@ class ValuePacket(Packet):
         return self.bits[starts_at:]
 
     def __repr__(self):
-        return '{}(version={} value={} bits={})'.format(
+        return '{}(version={} value={} msglen={} bitlen={})'.format(
             self.__class__.__name__,
             self.version,
             self.value,
-            self.bits
+            len(self.message),
+            len(self.bits)
         )
 
 
 class OperatorPacket(Packet):
     def __init__(self, bits):
         self.bits = bits
-        print('>', self)
+        self.debug('>', self)
 
     @property
     def length_type_id(self):
@@ -189,7 +220,6 @@ class OperatorPacket(Packet):
             return self.parse_subpacket_bits(self.subpacket_bits)
         elif self.count_based_subpackets():
             return self.parse_subpacket_bits(self.subpacket_bits, max_packets=self.subpacket_count)
-
         raise ValueError('Unexpected operator subpacket mode.')
 
     @property
@@ -197,7 +227,7 @@ class OperatorPacket(Packet):
         if self.length_based_subpackets():
             return int(self.length_bits, 2)
         else:
-            raise ValueError('Subpackets not marked by length.')
+            raise TypeError('Subpackets not marked by length.')
 
     @property
     def subpacket_count(self):
@@ -219,29 +249,18 @@ class OperatorPacket(Packet):
 
     @property
     def overflow(self):
-        """overflow reflects surplus bits in case where object may be passed a
-        bit_str of indeterminate composition. This should not happen with a
-        length-based operator packet.
-        """
-        if self.length_based_subpackets():
-            starts_at = len(self.header) + 1 + len(self.length_bits) + self.subpacket_length
-        elif self.count_based_subpackets():
-            starts_at = len(self.header) + 1 + len(self.length_bits) + sum([len(sub.bits) for sub in self.subpackets])
-        else:
-            raise TypeError('Overflow issue!')
-
-        return self.bits[starts_at:]
-
-    @property
-    def filler(self):
-        """Filler is extra bits at the end of some packets. This is a pretty crappy
+        """overflow is extra bits at the end of some packets. This is a pretty crappy
         protocol when you think about it. It really needs a terminal bit flag.
         """
         if self.length_based_subpackets():
             starts_at = len(self.header) + 1 + len(self.length_bits) + self.subpacket_length
-            return self.bits[starts_at:]
+        elif self.count_based_subpackets():
+            # Is this the problem? sub.message rather than sub.bits.
+            starts_at = len(self.header) + 1 + len(self.length_bits) + sum([len(sub.message) for sub in self.subpackets])
         else:
-            return self.bits.split(self.subpacket_bits)[-1]
+            raise TypeError('Overflow issue!')
+
+        return self.bits[starts_at:]
 
     def length_based_subpackets(self):
         return self.length_type_id == 0
@@ -250,35 +269,20 @@ class OperatorPacket(Packet):
         return self.length_type_id == 1
 
     def parse_subpacket_bits(self, subpacket_bits, max_packets=None):
-        print('parsing subpacket {} for {} (max:{})'.format(subpacket_bits, self, max_packets))
-
-        if not subpacket_bits:
-            print('*** subpacket bits empty')
-            return []
+        self.debug('parsing subpacket {} for {} (max:{})'.format(subpacket_bits, self, max_packets))
 
         subpacket = Packet(subpacket_bits).by_type()
         subpackets = [subpacket]
 
-        # FIXME: subpacket's overflow may lead to subpacket_bits being re-parsed
         while subpacket.overflow:
-            print('overflow from {}: {}'.format(self, subpacket.overflow))
+            self.debug('overflow from {}: {}'.format(self, subpacket.overflow))
             if max_packets and len(subpackets) == max_packets:
-                return subpackets
-
-            if not self.valid_subpacket_bits(subpacket.overflow):
-                f = "*** Invalid subpacket bits: {} left of {}"
-                print(f.format(subpacket.overflow, subpacket_bits))
                 return subpackets
 
             subpacket = Packet(subpacket.overflow).by_type()
             subpackets.append(subpacket)
 
         return subpackets
-
-    def valid_subpacket_bits(self, bit_str):
-        if len(bit_str) < 6:
-            return False
-        return True
 
     def dump(self):
         return (
@@ -288,17 +292,17 @@ class OperatorPacket(Packet):
             ('length_type_id', self.length_type_id),
             ('length_bits', self.length_bits),
             ('subpacket_bits', self.subpacket_bits),
-            ('filler', self.filler),
+            ('overflow', self.overflow),
             ('bits', self.bits)
         )
 
     def __repr__(self):
-        return '{}(version={} type={}:{} bits={})'.format(
+        return '{}(version={} type={}:{} bitlen={})'.format(
             self.__class__.__name__,
             self.version,
             self.length_type_id,
             self.length_type,
-            self.bits
+            len(self.bits)
         )
 
 
@@ -308,7 +312,6 @@ class Solution:
     #
     @staticmethod
     def test_1():
-        print('------>', 'TEST 1')
         hex_string = 'D2FE28'
         transmission = Transmission(hex_string)
         packet = transmission.packet
@@ -322,7 +325,6 @@ class Solution:
 
     @staticmethod
     def test_2():
-        print('------>', 'TEST 2')
         hex_string = '38006F45291200'
         transmission = Transmission(hex_string)
         packet = transmission.packet
@@ -334,7 +336,6 @@ class Solution:
 
     @staticmethod
     def test_3():
-        print('------>', 'TEST 3')
         hex_string = 'EE00D40C823060'
         transmission = Transmission(hex_string)
         packet = transmission.packet
@@ -346,7 +347,6 @@ class Solution:
 
     @staticmethod
     def test_4():
-        print('------>', 'TEST 4')
         cases = [
             # hex_string, expected_sum
             ('8A004A801A8002F478', 16),
@@ -356,28 +356,23 @@ class Solution:
         ]
 
         for hex_string, expected_sum in cases:
-            print('--> CASE:', hex_string)
             transmission = Transmission(hex_string)
             packet = transmission.packet
             assert packet.version_sum == expected_sum, (hex_string, packet.version_sum, expected_sum)
-            print("PASS: {}".format(hex_string))
 
         return 'PASS'
 
     @staticmethod
     def sandbox():
-        hex_string = 'A0016C880162017C3686B18A3D4780'
-        expected_sum = 31
+        solution = Solution(INPUT_FILE)
+        hex_string = solution.input_lines[0]
         transmission = Transmission(hex_string)
         packet = transmission.packet
-        from pprint import pprint
-        pprint(packet.dump())
-
-        breakpoint()
-
-        assert packet.is_operator()
-        assert packet.version_sum == expected_sum, (packet.version_sum, expected_sum)
-        return 'PASS'
+        #pprint(packet.dump())
+        print(transmission.packets)
+        #breakpoint()
+        print(packet.version_sum)
+        return 'PASS' if packet.version_sum == 986 else 'FAIL'
 
     #
     # Solutions
@@ -388,8 +383,6 @@ class Solution:
         hex_string = solution.input_lines[0]
         transmission = Transmission(hex_string)
         packet = transmission.packet
-        print(hex_string)
-        print(packet.bits)
         return packet.version_sum
 
     @staticmethod
@@ -415,7 +408,7 @@ class Solution:
 #
 # Main
 #
-#print("sandbox: {}".format(Solution.sandbox()))
+print("sandbox: {}".format(Solution.sandbox()))
 print("test 1: {}".format(Solution.test_1()))
 print("test 2: {}".format(Solution.test_2()))
 print("test 3: {}".format(Solution.test_3()))
