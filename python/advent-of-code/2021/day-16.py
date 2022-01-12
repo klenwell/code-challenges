@@ -6,10 +6,8 @@ from os.path import join as path_join
 from functools import cached_property
 from config import INPUT_DIR
 
-from pprint import pprint
 import time
 import math
-
 
 
 INPUT_FILE = path_join(INPUT_DIR, 'day-16.txt')
@@ -96,11 +94,6 @@ class Packet:
         return int(bits, 2)
 
     @property
-    def type_id(self):
-        bits = self.header[3:]
-        return int(bits, 2)
-
-    @property
     def subpackets(self):
         return []
 
@@ -136,9 +129,7 @@ class Packet:
 
     def debug(self, *messages):
         if DEBUG:
-            print()
-            print("[LOG: {}]".format(time.time()))
-            print(*messages)
+            print("[LOG: {}] {}".format(time.time(), messages))
 
     def chunk(self, seq, size):
         """https://stackoverflow.com/a/434328/1093087"""
@@ -197,6 +188,9 @@ class OperatorPacket(Packet):
         self.bits = bits
         self.debug('>', self)
 
+    #
+    # Properties
+    #
     @property
     def value(self):
         sub_values = [sub.value for sub in self.subpackets]
@@ -277,27 +271,21 @@ class OperatorPacket(Packet):
         if self.length_based_subpackets():
             starts_at = len(self.header) + 1 + len(self.length_bits) + self.subpacket_length
         elif self.count_based_subpackets():
-            # Is this the problem? sub.message rather than sub.bits.
-            starts_at = len(self.header) + 1 + len(self.length_bits) + sum([len(sub.message) for sub in self.subpackets])
+            subpackets_len = sum([len(sub.message) for sub in self.subpackets])
+            starts_at = len(self.header) + 1 + len(self.length_bits) + subpackets_len
         else:
             raise TypeError('Overflow issue!')
 
         return self.bits[starts_at:]
 
-    def length_based_subpackets(self):
-        return self.length_type_id == 0
-
-    def count_based_subpackets(self):
-        return self.length_type_id == 1
-
+    #
+    # Methods
+    #
     def parse_subpacket_bits(self, subpacket_bits, max_packets=None):
-        self.debug('parsing subpacket {} for {} (max:{})'.format(subpacket_bits, self, max_packets))
-
         subpacket = Packet(subpacket_bits).by_type()
         subpackets = [subpacket]
 
         while subpacket.overflow:
-            self.debug('overflow from {}: {}'.format(self, subpacket.overflow))
             if max_packets and len(subpackets) == max_packets:
                 return subpackets
 
@@ -305,6 +293,12 @@ class OperatorPacket(Packet):
             subpackets.append(subpacket)
 
         return subpackets
+
+    def length_based_subpackets(self):
+        return self.length_type_id == 0
+
+    def count_based_subpackets(self):
+        return self.length_type_id == 1
 
     def dump(self):
         return (
@@ -380,21 +374,9 @@ class Solution:
         for hex_string, expected_sum in cases:
             transmission = Transmission(hex_string)
             packet = transmission.packet
-            assert packet.version_sum == expected_sum, (hex_string, packet.version_sum, expected_sum)
+            assert packet.version_sum == expected_sum, (hex_string, packet.version_sum)
 
         return 'PASS'
-
-    @staticmethod
-    def sandbox():
-        solution = Solution(INPUT_FILE)
-        hex_string = solution.input_lines[0]
-        transmission = Transmission(hex_string)
-        packet = transmission.packet
-        #pprint(packet.dump())
-        print(transmission.packets)
-        #breakpoint()
-        print(packet.version_sum)
-        return 'PASS' if packet.version_sum == 986 else 'FAIL'
 
     #
     # Solutions
@@ -434,7 +416,6 @@ class Solution:
 #
 # Main
 #
-print("sandbox: {}".format(Solution.sandbox()))
 print("test 1: {}".format(Solution.test_1()))
 print("test 2: {}".format(Solution.test_2()))
 print("test 3: {}".format(Solution.test_3()))
