@@ -55,10 +55,8 @@ class Transmission:
 
     def collect_packets(self, packet):
         packets = [packet]
-
         for subpacket in packet.subpackets:
             packets += self.collect_packets(subpacket)
-
         return packets
 
 
@@ -104,10 +102,8 @@ class Packet:
     @property
     def version_sum(self):
         sum = 0
-
         for subpacket in self.subpackets:
             sum += subpacket.version_sum
-
         return self.version + sum
 
     #
@@ -266,7 +262,7 @@ class OperatorPacket(Packet):
     @property
     def overflow(self):
         """overflow is extra bits at the end of some packets. This is a pretty crappy
-        protocol when you think about it. It really needs a terminal bit flag.
+        protocol when you think about it. It really needs a terminal bit marker.
         """
         if self.length_based_subpackets():
             starts_at = len(self.header) + 1 + len(self.length_bits) + self.subpacket_length
