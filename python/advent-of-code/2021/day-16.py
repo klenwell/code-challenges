@@ -8,6 +8,7 @@ from config import INPUT_DIR
 
 from pprint import pprint
 import time
+import math
 
 
 
@@ -195,6 +196,27 @@ class OperatorPacket(Packet):
     def __init__(self, bits):
         self.bits = bits
         self.debug('>', self)
+
+    @property
+    def value(self):
+        sub_values = [sub.value for sub in self.subpackets]
+
+        if self.type_id == 0:
+            return sum(sub_values)
+        elif self.type_id == 1:
+            return math.prod(sub_values)
+        elif self.type_id == 2:
+            return min(sub_values)
+        elif self.type_id == 3:
+            return max(sub_values)
+        elif self.type_id == 4:
+            pass
+        elif self.type_id == 5:
+            return 1 if sub_values[0] > sub_values[1] else 0
+        elif self.type_id == 6:
+            return 1 if sub_values[0] < sub_values[1] else 0
+        elif self.type_id == 7:
+            return 1 if sub_values[0] == sub_values[1] else 0
 
     @property
     def length_type_id(self):
@@ -387,7 +409,11 @@ class Solution:
 
     @staticmethod
     def second():
-        pass
+        solution = Solution(INPUT_FILE)
+        hex_string = solution.input_lines[0]
+        transmission = Transmission(hex_string)
+        packet = transmission.packet
+        return packet.value
 
     #
     # Properties
