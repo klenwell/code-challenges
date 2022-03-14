@@ -21,15 +21,58 @@ class Solution:
     #
     @property
     def first(self):
-        pass
+        total_yeses = 0
+
+        for group in self.groups:
+            answers = ''.join(group)
+            group_yeses = len(set(answers))
+            total_yeses += group_yeses
+
+        return total_yeses
 
     @property
     def second(self):
-        pass
+        total_yeses = 0
+
+        for group in self.groups:
+            group_all_yeses = self.count_where_all_answered_yes(group)
+            total_yeses += group_all_yeses
+
+        return total_yeses
+
+    def count_where_all_answered_yes(self, group):
+        all_yeses = None
+
+        for answers in group:
+            answer_set = set(answers)
+            if not all_yeses:
+                all_yeses = answer_set
+            else:
+                all_yeses = all_yeses & answer_set
+
+            if not all_yeses:
+                return 0
+
+        return len(all_yeses)
 
     #
     # Properties
     #
+    @cached_property
+    def groups(self):
+        groups = []
+        group = []
+
+        for line in self.input_lines:
+            if line == '':
+                groups.append(group)
+                group = []
+            else:
+                group.append(line)
+
+        groups.append(group)
+        return groups
+
     @cached_property
     def input_lines(self):
         with open(self.input_file) as file:
