@@ -108,3 +108,6 @@ config/secrets.py
 
 # Java classes
 java/**/*.class
+
+# Coding Assignments
+python/harness
