@@ -45,15 +45,18 @@ function MainContent() {
       <div id="main-content">
         <h1>Hello, everyone!</h1>
         <ul>
-          <li>Item #1</li>
+          <li>Item One</li>
           <li>Item #2</li>
         </ul>
       </div>
     )
 }
 
-ReactDOM.render(
+const page = (
   <div>
     <Navbar />
     <MainContent />
-  </div>, root)
+  </div>
+)
+
+ReactDOM.render(page, root)
