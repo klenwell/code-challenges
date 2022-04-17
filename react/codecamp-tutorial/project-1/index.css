@@ -3,6 +3,21 @@ html, body {
     padding: 0;
 }
 
+nav {
+  display: flex;
+  justify-content: space-between;
+  text-align: center;
+}
+
 .nav-logo {
-  max-width: 40px;
+  width: 60px;
+}
+
+.nav-items {
+  list-style: none;
+  display: flex;
+}
+
+.nav-items li {
+  padding: 10px;
 }

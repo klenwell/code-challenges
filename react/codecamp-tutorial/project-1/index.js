@@ -13,13 +13,21 @@ function Navbar() {
   return (
     <nav>
       <img className="nav-logo" src="./react-logo.svg" />
+      <ul className="nav-items">
+        <li>Pricing</li>
+        <li>About</li>
+        <li>Contact</li>
+      </ul>
     </nav>
   )
 }
 
 function Header() {
   return (
-    <h1 className="header">Fun Facts about React (Component Version)</h1>
+    <header>
+      <Navbar />
+      <h1 className="header">Fun Facts about React (Component Version)</h1>
+    </header>
   )
 }
 
@@ -46,7 +54,6 @@ function Footer() {
 function Page() {
   return (
     <div>
-      <Navbar />
       <Header />
       <FactList />
       <Footer />
