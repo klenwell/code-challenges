@@ -1,0 +1,8 @@
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+.nav-logo {
+  max-height: 80px;
+}
