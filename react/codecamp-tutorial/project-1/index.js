@@ -1,27 +1,25 @@
-/*
-Challenge: Starting from scratch, build and render the
-HTML for our section project. Check the Google slide for
-what you're trying to build.
+/**
+Challenge:
 
-We'll be adding styling to it later.
+Part 1: Create a page of your own using a custom Page component
 
-Hints:
-* The React logo is a file in the project tree, so you can
-  access it by using `src="./react-logo.png" in your image
-  element
-* You can also set the `width` attribute of the image element
-  just like in HTML. In the slide, I have it set to 40px
+It should return an ordered list with the reasons why you're
+excited to be learning React :)
+
+Render your list to the page
+
  */
-
 function Navbar() {
   return (
-    <img className="nav-logo" src="./react-logo.svg" />
+    <nav>
+      <img className="nav-logo" src="./react-logo.svg" />
+    </nav>
   )
 }
 
 function Header() {
   return (
-    <h1 className="header">Fun Facts about React</h1>
+    <h1 className="header">Fun Facts about React (Component Version)</h1>
   )
 }
 
@@ -37,14 +35,25 @@ function FactList() {
   )
 }
 
-const page = (
-  <div>
-    <Navbar />
-    <Header />
-    <FactList />
-  </div>
-)
+function Footer() {
+  return (
+    <footer>
+      <small>Some rights reserved, ©2022</small>
+    </footer>
+  )
+}
+
+function Page() {
+  return (
+    <div>
+      <Navbar />
+      <Header />
+      <FactList />
+      <Footer />
+    </div>
+  )
+}
 
 const root = document.getElementById("root")
 
-ReactDOM.render(page, root)
+ReactDOM.render(<Page />, root)
