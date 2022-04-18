@@ -4,9 +4,8 @@ function Navbar() {
   return (
     <nav>
       <img className="nav-logo" src={logo} alt="logo" />
-      <ul className="nav-items">
-        <li>Item 1</li>
-      </ul>
+      <h2>React Facts</h2>
+      <h3>React Course - Project 1</h3>
     </nav>
   )
 }
