@@ -1,14 +1,12 @@
 import './App.css';
-import Header from './Header'
-import FactList from './FactList'
-import Footer from './Footer'
+import Navbar from './components/Navbar'
+import Main from './components/Main'
 
 function App() {
   return (
     <div>
-      <Header />
-      <FactList />
-      <Footer />
+      <Navbar />
+      <Main />
     </div>
   )
 }
