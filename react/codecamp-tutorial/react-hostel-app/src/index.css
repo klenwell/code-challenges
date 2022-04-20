@@ -28,3 +28,12 @@ nav > h4 {
   font-weight: 700;
   font-size: 22px;
 }
+
+section.hero {
+  padding: 2em;
+}
+
+section.hero p {
+  font-weight: 300;
+  padding-right: 40%;
+}
