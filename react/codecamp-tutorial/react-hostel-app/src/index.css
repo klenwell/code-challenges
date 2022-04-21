@@ -31,9 +31,42 @@ nav > h4 {
 
 section.hero {
   padding: 2em;
+  display: flex;
+  flex-direction: column;
 }
 
 section.hero p {
   font-weight: 300;
   padding-right: 40%;
+}
+
+section.cards {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 20px;
+  overflow-x: auto;
+}
+
+div.card {
+  width: 175px;
+  font-size: 14px;
+  font-weight: 300;
+  flex: 0 0 auto;         /* ADD */
+  display: flex;          /* ADD */
+  flex-direction: column; /* ADD */
+}
+
+div.card img.star {
+  height: 14px;
+}
+
+div.card h4 {
+  margin: 4px 0;
+  font-weight: 300;
+}
+
+div.card p {
+  display: flex;
+  align-items: center;
+  margin: 0;
 }
