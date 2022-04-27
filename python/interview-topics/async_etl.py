@@ -8,8 +8,7 @@ class Response:
 
     def __init__(self):
         self.started_at = time.time()
-        self.load_delay = random.randint(1, 2000) / 1000
-        self.transform_delay = random.randint(1, 500) / 1000
+        self.delay = random.randint(1, 2000) / 1000
         self.status = random.choice(self.STATUSES)
 
         if self.status == 'ok':
@@ -21,10 +20,10 @@ class Response:
         return random.randint(1, 1000)
 
     def __repr__(self):
-        f = '<Response started={} delays=({},{}) status={} data={}>'
+        f = '<Response started={} delay={} status={} data={}>'
         t1, t2 = str(self.started_at).split('.')
         started = '{}.{}'.format(t1[-3:], t2[:3])
-        return f.format(started, self.load_delay, self.transform_delay, self.status, self.data)
+        return f.format(started, self.delay, self.status, self.data)
 
 
 class Extract:
@@ -35,16 +34,23 @@ class Extract:
         data = await etl.transform(responses)
         return etl.load(data)
 
+    async def request_data(self):
+        response = Response()
+        await asyncio.sleep(response.delay)
+        return response
+
     async def extract(self):
-        data = []
+        responses = []
+        tasks = []
 
         for n in range(10):
-            response = Response()
-            await asyncio.sleep(response.load_delay)
-            print("Response #{}: {}".format(n, response))
-            data.append(response)
+            await asyncio.sleep(0.2)
+            task = asyncio.create_task(self.request_data())
+            print("Task #{}: {}".format(n, task.get_name()))
+            tasks.append(task)
 
-        return data
+        responses = await asyncio.gather(*tasks)
+        return responses
 
     async def transform(self, responses):
         data = []
@@ -52,7 +58,6 @@ class Extract:
         for response in responses:
             if response.status == 'ok':
                 print("Transform: {}".format(response))
-                await asyncio.sleep(response.transform_delay)
                 data.append(response.data)
             else:
                 print("Skip error: {}".format(response))
@@ -64,8 +69,23 @@ class Extract:
 
 
 async def main():
-    print('Start extract run')
-    result = await Extract.run()
-    print('ETL result: {}'.format(result))
+    print('Start ETL')
+    started_at = time.time()
+    etl = Extract()
+
+    print('Extract...')
+    responses = await etl.extract()
+
+    print('Transform...')
+    data = await etl.transform(responses)
+
+    print('Load...')
+    result = etl.load(data)
+
+    run_time = time.time() - started_at
+    delays = sum([r.delay for r in responses])
+    print('ETL result {}: {}'.format(data, result))
+    print('Run Time vs Request Delays: {:.2f} / {:.2f}'.format(run_time, delays))
+
 
 asyncio.run(main())
