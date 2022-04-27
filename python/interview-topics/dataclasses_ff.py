@@ -1,4 +1,9 @@
-from dataclasses import dataclass, field
+"""
+A quick introduction to Python Data Classes.
+
+Based on https://realpython.com/python-data-classes
+"""
+from dataclasses import dataclass
 from typing import Any
 import time
 import unittest
