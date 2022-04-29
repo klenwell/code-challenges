@@ -48,6 +48,7 @@ section.cards {
 }
 
 div.card {
+  position: relative;
   width: 175px;
   font-size: 14px;
   font-weight: 300;
@@ -56,8 +57,25 @@ div.card {
   flex-direction: column; /* ADD */
 }
 
+div.card img.header-image {
+  width: 100%;
+  max-height: 235px;
+  border-radius: 9px;
+  margin-bottom: 9px;
+}
+
 div.card img.star {
   height: 14px;
+}
+
+div.card div.badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background-color: white;
+  padding: 5px 7px;
+  border-radius: 2px;
+  font-weight: bold;
 }
 
 div.card h4 {

@@ -1,9 +1,9 @@
-import logo from '../images/logo.png';
+import logoSrc from '../images/logo.png';
 
 function Navbar() {
   return (
     <nav>
-      <img className="nav-logo" src={logo} alt="logo" />
+      <img className="nav-logo" src={logoSrc} alt="logo" />
       <h4>AirHostel</h4>
     </nav>
   )
