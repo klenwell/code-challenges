@@ -1,13 +1,14 @@
 import starImageSrc from '../images/star.png';
 
 function Card(props) {
-  const imgSrc = `/images/card-${props.id}.png`
+  const exp = props.experience
+  const imgSrc = `/images/card-${exp.id}.png`
   let badgeText = null
 
-  if (props.openSpots === 0) {
+  if (exp.openSpots === 0) {
     badgeText = 'SOLD OUT'
   }
-  else if ( props.location === 'Online' ) {
+  else if (exp.location === 'Online') {
     badgeText = 'ONLINE'
   }
 
@@ -17,13 +18,13 @@ function Card(props) {
       <img className="header-image" src={imgSrc} alt="header-image" />
       <p className="stats">
         <img className="star" src={starImageSrc} alt="star" />
-        <span className="rating">{props.rating}</span>
-        <span className="count">({props.count})</span>
+        <span className="rating">{exp.stats.rating}</span>
+        <span className="count">({exp.stats.reviewCount})</span>
         &middot;
-        <span className="location">{props.location}</span>
+        <span className="location">{exp.location}</span>
       </p>
-      <h4>{props.title}</h4>
-      <p className="price">From ${props.price} / person</p>
+      <h4>{exp.title}</h4>
+      <p className="price">From ${exp.price} / person</p>
     </div>
   )
 }
