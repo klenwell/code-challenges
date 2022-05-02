@@ -11,3 +11,27 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/*
+ * Header
+ */
+header {
+   display: flex;
+   align-items: center;
+   padding: 20px;
+   background-color: purple;
+   color: white;
+ }
+
+header img.logo {
+  height: 2em;
+  margin-right: 0.5em;
+}
+
+header h2 {
+  margin-right: auto;
+}
+
+header h4 {
+  font-weight: 500;
+}
