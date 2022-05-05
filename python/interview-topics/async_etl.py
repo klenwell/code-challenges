@@ -26,10 +26,10 @@ class Response:
         return f.format(started, self.delay, self.status, self.data)
 
 
-class Extract:
+class ETL:
     @staticmethod
     async def run():
-        etl = Extract()
+        etl = ETL()
         responses = await etl.extract()
         data = await etl.transform(responses)
         return etl.load(data)
@@ -46,7 +46,7 @@ class Extract:
         for n in range(10):
             await asyncio.sleep(0.2)
             task = asyncio.create_task(self.request_data())
-            print("Task #{}: {}".format(n, task.get_name()))
+            print("Task #{}: {}".format(n + 1, task.get_name()))
             tasks.append(task)
 
         responses = await asyncio.gather(*tasks)
@@ -71,7 +71,7 @@ class Extract:
 async def main():
     print('Start ETL')
     started_at = time.time()
-    etl = Extract()
+    etl = ETL()
 
     print('Extract...')
     responses = await etl.extract()
@@ -82,10 +82,12 @@ async def main():
     print('Load...')
     result = etl.load(data)
 
-    run_time = time.time() - started_at
-    delays = sum([r.delay for r in responses])
+    async_time = time.time() - started_at
+    sync_time = sum([r.delay for r in responses])
+    savings = ((sync_time / async_time) - 1) * 100
+    result_f = 'Async (Actual) vs Sync Time: {:.2f} vs {:.2f} ({:.1f}%)'
     print('ETL result {}: {}'.format(data, result))
-    print('Run Time vs Request Delays: {:.2f} / {:.2f}'.format(run_time, delays))
+    print(result_f.format(async_time, sync_time, savings))
 
 
 asyncio.run(main())
