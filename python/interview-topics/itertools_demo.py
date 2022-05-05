@@ -45,6 +45,36 @@ class IterToolsTest(unittest.TestCase):
         self.assertEqual(sequence.count('A'), 3)
         self.assertEqual(sequence.count('D'), 3)
 
+    def test_expects_to_repeat_endlessly(self):
+        # Arrange
+        in_repeat_loop = itertools.repeat('nom')
+        sequence = []
+
+        # Act
+        while len(sequence) < 100:
+            sequence.append(next(in_repeat_loop))
+
+        # Assert
+        self.assertEqual(len(sequence), 100)
+        self.assertEqual(sequence[0], 'nom')
+
+    def test_expects_to_repeat_three_times(self):
+        # Arrange
+        in_repeat_loop = itertools.repeat('nom', 3)
+        sequence = []
+        keep_repeating = True
+
+        # Act
+        while keep_repeating:
+            try:
+                sequence.append(next(in_repeat_loop))
+            except StopIteration:
+                keep_repeating = False
+
+        # Assert
+        self.assertEqual(len(sequence), 3)
+        self.assertEqual(sequence, ['nom'] * 3)
+        self.assertEqual(sequence, list(itertools.repeat('nom', 3)))
 
 #
 # Main
