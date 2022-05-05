@@ -59,7 +59,7 @@ class FeatureFlagTest(unittest.TestCase):
         self.assertEqual(ff.key, flag_key)
         self.assertEqual(ff.owner_id, owner.id)
         self.assertEqual(ff.owner_type, 'User')
-        self.assertFalse(ff.is_enabled())
+        self.assertEqual(ff.is_enabled(), False)
 
     def test_expects_types_to_be_hints_only(self):
         ff = FeatureFlag(key=123, owner=User())
@@ -68,7 +68,7 @@ class FeatureFlagTest(unittest.TestCase):
 
     def test_expects_to_be_enabled(self):
         ff = FeatureFlag(key='test', owner=User(), status='enabled')
-        self.assertTrue(ff.is_enabled)
+        self.assertEqual(ff.is_enabled(), True)
 
 
 if __name__ == '__main__':
