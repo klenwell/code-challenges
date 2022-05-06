@@ -76,6 +76,25 @@ class IterToolsTest(unittest.TestCase):
         self.assertEqual(sequence, ['nom'] * 3)
         self.assertEqual(sequence, list(itertools.repeat('nom', 3)))
 
+    def test_accumulate(self):
+        accumulation = list(itertools.accumulate([1, 2, 3, 4]))
+        self.assertEqual(accumulation, [1, 3, 6, 10])
+
+    def test_chain(self):
+        chained = list(itertools.chain('ABC', 'DEF', 'GHI'))
+        self.assertEqual(chained, list('ABCDEFGHI'))
+
+    def test_chain_from_iterable(self):
+        iterable = ['ABC', 'DEF', 'GHI']
+        chained = list(itertools.chain.from_iterable(iterable))
+        self.assertEqual(chained, list('ABCDEFGHI'))
+
+    def test_compress(self):
+        data = ['vanilla', 'chocolate', 'strawberry', 'cookies and cream']
+        selectors = [True, False, True, True]
+        compressed = list(itertools.compress(data, selectors))
+        self.assertEqual(compressed, ['vanilla', 'strawberry', 'cookies and cream'])
+
 #
 # Main
 #
