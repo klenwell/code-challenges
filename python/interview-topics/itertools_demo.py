@@ -5,6 +5,7 @@ https://docs.python.org/3/library/itertools.html
 """
 import itertools
 import unittest
+from dataclasses import dataclass
 
 
 class IterToolsTest(unittest.TestCase):
@@ -106,6 +107,47 @@ class IterToolsTest(unittest.TestCase):
         sequence = [None, None, False, True, None, True, False]
         filtered = list(itertools.filterfalse(exclude, sequence))
         self.assertEqual(filtered, [False, True, True, False])
+
+    def test_groupsby(self):
+        results = 'HHTHTTTHHTHHHHH'
+        uniquekeys = []
+        streaks = []
+
+        for k, g in itertools.groupby(results):
+            uniquekeys.append(k)
+            streaks.append(list(g))
+
+        self.assertEqual(uniquekeys, list('HTHTHTH'))
+        self.assertEqual(streaks[-1], list('HHHHH'))
+
+
+    def test_expects_groupby_to_not_work_for_dataclasses(self):
+        # See https://stackoverflow.com/a/68011508/1093087
+        # Arrange
+        @dataclass
+        class Student:
+            grade: str = ''
+
+        iterable = [
+            Student(grade='B'),
+            Student(grade='C'),
+            Student(grade='A'),
+            Student(grade='F'),
+            Student(grade='C')
+        ]
+
+        uniquekeys = []
+        groups = []
+
+        # Act
+        keyfunc = lambda s: s.grade
+        for k, g in itertools.groupby(iterable, keyfunc):
+            uniquekeys.append(k)
+            groups.append(list(g))
+
+        # Assert
+        self.assertEqual(sorted(uniquekeys), list('ABCCF'))
+        self.assertNotEqual(len(groups), 4)
 
 #
 # Main
