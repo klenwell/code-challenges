@@ -149,6 +149,17 @@ class IterToolsTest(unittest.TestCase):
         self.assertEqual(sorted(uniquekeys), list('ABCCF'))
         self.assertNotEqual(len(groups), 4)
 
+    def test_islice(self):
+        sequence = ['bun', 'lettuce', 'tomato', 'meat', 'bun']
+        start = 1
+        stop = len(sequence) - 1    # Note: -1 is invalid
+
+        slices = list(itertools.islice(sequence, start, stop))
+
+        self.assertEqual(slices, ['lettuce', 'tomato', 'meat'])
+        self.assertNotIn('bun', slices)
+
+
 #
 # Main
 #
