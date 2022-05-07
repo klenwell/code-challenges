@@ -95,6 +95,18 @@ class IterToolsTest(unittest.TestCase):
         compressed = list(itertools.compress(data, selectors))
         self.assertEqual(compressed, ['vanilla', 'strawberry', 'cookies and cream'])
 
+    def test_dropwhile(self):
+        predicate = lambda v: v == None
+        sequence = [None, None, False, True, None, False]
+        undropped = list(itertools.dropwhile(predicate, sequence))
+        self.assertEqual(undropped, [False, True, None, False])
+
+    def test_filterfalse(self):
+        exclude = lambda v: v == None
+        sequence = [None, None, False, True, None, True, False]
+        filtered = list(itertools.filterfalse(exclude, sequence))
+        self.assertEqual(filtered, [False, True, True, False])
+
 #
 # Main
 #
