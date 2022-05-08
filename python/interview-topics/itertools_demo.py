@@ -170,6 +170,18 @@ class IterToolsTest(unittest.TestCase):
         undropped = list(itertools.takewhile(predicate, sequence))
         self.assertEqual(undropped, [False, True])
 
+    def test_tee(self):
+        iterable = ['Ready', 'Set', 'Go']
+        steps = []
+
+        iterables = itertools.tee(iterable, 2)
+        for seq in iterables:
+            for step in seq:
+                steps.append(step)
+
+        self.assertEqual(len(steps), 6)
+        self.assertEqual(steps, ['Ready', 'Set', 'Go', 'Ready', 'Set', 'Go'])
+
 
 #
 # Main
