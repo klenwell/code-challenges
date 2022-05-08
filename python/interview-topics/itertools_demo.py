@@ -164,6 +164,12 @@ class IterToolsTest(unittest.TestCase):
         results = list(itertools.starmap(func, seq))
         self.assertEqual([32, 9, 1000], results)
 
+    def test_takewhile(self):
+        predicate = lambda v: v != None
+        sequence = [False, True, None, False]
+        undropped = list(itertools.takewhile(predicate, sequence))
+        self.assertEqual(undropped, [False, True])
+
 
 #
 # Main
