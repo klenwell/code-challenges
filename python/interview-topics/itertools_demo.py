@@ -97,13 +97,13 @@ class IterToolsTest(unittest.TestCase):
         self.assertEqual(compressed, ['vanilla', 'strawberry', 'cookies and cream'])
 
     def test_dropwhile(self):
-        predicate = lambda v: v == None
+        predicate = lambda v: v is None
         sequence = [None, None, False, True, None, False]
         undropped = list(itertools.dropwhile(predicate, sequence))
         self.assertEqual(undropped, [False, True, None, False])
 
     def test_filterfalse(self):
-        exclude = lambda v: v == None
+        exclude = lambda v: v is None
         sequence = [None, None, False, True, None, True, False]
         filtered = list(itertools.filterfalse(exclude, sequence))
         self.assertEqual(filtered, [False, True, True, False])
@@ -159,13 +159,13 @@ class IterToolsTest(unittest.TestCase):
         self.assertNotIn('bun', slices)
 
     def test_starmap(self):
-        seq = [(2,5), (3,2), (10,3)]
+        seq = [(2, 5), (3, 2), (10, 3)]
         func = pow
         results = list(itertools.starmap(func, seq))
         self.assertEqual([32, 9, 1000], results)
 
     def test_takewhile(self):
-        predicate = lambda v: v != None
+        predicate = lambda v: v is not None
         sequence = [False, True, None, False]
         undropped = list(itertools.takewhile(predicate, sequence))
         self.assertEqual(undropped, [False, True])
@@ -181,6 +181,16 @@ class IterToolsTest(unittest.TestCase):
 
         self.assertEqual(len(steps), 6)
         self.assertEqual(steps, ['Ready', 'Set', 'Go', 'Ready', 'Set', 'Go'])
+
+    def test_zip_longest(self):
+        seq1 = list('ABC')
+        seq2 = list(range(1, 10))
+        seq3 = ['Alice', 'Bob', 'Charles', 'Diana']
+
+        zipped = list(itertools.zip_longest(seq1, seq2, seq3))
+
+        self.assertEqual(zipped[0], ('A', 1, 'Alice'))
+        self.assertEqual(zipped[-1], (None, 9, None))
 
 
 #
