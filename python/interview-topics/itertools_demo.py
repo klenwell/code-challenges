@@ -120,7 +120,6 @@ class IterToolsTest(unittest.TestCase):
         self.assertEqual(uniquekeys, list('HTHTHTH'))
         self.assertEqual(streaks[-1], list('HHHHH'))
 
-
     def test_expects_groupby_to_not_work_for_dataclasses(self):
         # See https://stackoverflow.com/a/68011508/1093087
         # Arrange
@@ -158,6 +157,12 @@ class IterToolsTest(unittest.TestCase):
 
         self.assertEqual(slices, ['lettuce', 'tomato', 'meat'])
         self.assertNotIn('bun', slices)
+
+    def test_starmap(self):
+        seq = [(2,5), (3,2), (10,3)]
+        func = pow
+        results = list(itertools.starmap(func, seq))
+        self.assertEqual([32, 9, 1000], results)
 
 
 #
