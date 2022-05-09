@@ -195,6 +195,17 @@ class IterToolsInfiniteIteratorsTest(unittest.TestCase):
         self.assertEqual(sequence, list(itertools.repeat('nom', 3)))
 
 
+class IterToolsCombinatricTest(unittest.TestCase):
+    def test_product(self):
+        letters = list('ABC')
+        nums = [1, 2, 3]
+        cartesian_product = list(itertools.product(letters, nums))
+
+        self.assertEqual(len(cartesian_product), 9)
+        self.assertEqual(cartesian_product[0], ('A', 1))
+        self.assertEqual(cartesian_product[-1], ('C', 3))
+
+
 #
 # Main
 #
