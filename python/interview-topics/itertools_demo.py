@@ -5,6 +5,7 @@ https://docs.python.org/3/library/itertools.html
 """
 import itertools
 import unittest
+import math
 from dataclasses import dataclass
 
 
@@ -199,11 +200,39 @@ class IterToolsCombinatricTest(unittest.TestCase):
     def test_product(self):
         letters = list('ABC')
         nums = [1, 2, 3]
+
         cartesian_product = list(itertools.product(letters, nums))
 
         self.assertEqual(len(cartesian_product), 9)
         self.assertEqual(cartesian_product[0], ('A', 1))
         self.assertEqual(cartesian_product[-1], ('C', 3))
+
+    def test_permutations(self):
+        iterable = ['A', 'B', 'C', 1, 2, 3]
+
+        permutations = list(itertools.permutations(iterable))
+
+        self.assertEqual(len(permutations), math.factorial(len(iterable)))
+        self.assertEqual(permutations[0], ('A', 'B', 'C', 1, 2, 3))
+        self.assertEqual(permutations[-1], (3, 2, 1, 'C', 'B', 'A'))
+
+    def test_combinations(self):
+        iterable = ['A', 'B', 'C', 1, 2, 3]
+
+        combinations = list(itertools.combinations(iterable, 3))
+
+        self.assertEqual(len(combinations), 20)
+        self.assertEqual(combinations[0], ('A', 'B', 'C'))
+        self.assertEqual(combinations[-1], (1, 2, 3))
+
+    def test_combinations_with_replacement(self):
+        iterable = ['A', 'B', 'C', 1, 2, 3]
+
+        combinations = list(itertools.combinations_with_replacement(iterable, 3))
+
+        self.assertEqual(len(combinations), 56)
+        self.assertEqual(combinations[0], ('A', 'A', 'A'))
+        self.assertEqual(combinations[-1], (3, 3, 3))
 
 
 #
