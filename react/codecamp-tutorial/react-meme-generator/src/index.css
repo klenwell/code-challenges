@@ -46,13 +46,13 @@ main {
 /*
  * Meme Form
  */
-form.meme-form {
+div.meme-form {
   display: grid;
   grid-template: 40px 40px / 1fr 1fr;
   gap: 1em;
 }
 
-form.meme-form input[type="text"] {
+div.meme-form input[type="text"] {
   border-radius: 0.5em;
   border: 1px solid #CCCCCC;
   text-indent: 0.5em;
@@ -61,7 +61,7 @@ form.meme-form input[type="text"] {
     sans-serif;
 }
 
-form.meme-form button {
+div.meme-form button {
   background-color: purple;
   color: white;
   grid-column: 1 / -1;
