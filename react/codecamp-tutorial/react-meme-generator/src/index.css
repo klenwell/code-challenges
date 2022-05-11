@@ -72,3 +72,7 @@ div.meme-form button {
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
 }
+
+div.meme-form img {
+  max-width: 80%;
+}
