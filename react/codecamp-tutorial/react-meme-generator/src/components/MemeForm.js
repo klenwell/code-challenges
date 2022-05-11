@@ -2,28 +2,22 @@ import memesData from '../data/memes'
 import React from 'react'
 
 
-export default function MemeForm() {
-  const [meme, setMeme] = React.useState(getRandomMeme())
-
-  function getRandomMeme() {
-    const memes = memesData['data']['memes']
-    const randomIndex = randomInteger(0, memes.length)
-    return memes[randomIndex]
-  }
-
+export default function MemeForm(props) {
   function handleClick() {
-    setMeme(prevMeme => {
+    props.setCaptionedMeme(prevMeme => {
+      const newMeme = props.getRandomMeme()
       console.log(prevMeme)
-      return getRandomMeme()
+      return {
+        // TODO: Replace with input values.
+        topText: newMeme.name,
+        bottomText: "TODO",
+        meme: newMeme
+      }
     })
   }
 
   function handleMouseOver(e) {
     console.log("Mouse over!", e)
-  }
-
-  function randomInteger(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
   return (
@@ -35,7 +29,6 @@ export default function MemeForm() {
         onMouseOver={handleMouseOver}>
         Get a new meme image
       </button>
-      <img src={meme.url} alt={meme.name} />
     </div>
   )
 }
