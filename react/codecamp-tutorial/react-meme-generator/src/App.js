@@ -27,9 +27,6 @@ export default function App() {
 
   return (
     <div className="container">
-      <SignUpForm />
-      <hr />
-      
       <Header />
       <main>
         <MemeForm

@@ -8,9 +8,9 @@ export default function MemeImage(props) {
 
   return (
     <div className="meme-image">
-      <h4>{captionedMeme.topText}</h4>
-      <h4>{captionedMeme.bottomText}</h4>
       <img src={src} alt={alt} />
+      <h2 className="top">{captionedMeme.topText}</h2>
+      <h2 className="bottom">{captionedMeme.bottomText}</h2>
     </div>
   )
 }
