@@ -5,6 +5,9 @@ import MemeForm from './components/MemeForm'
 import MemeImage from './components/MemeImage'
 import memesData from './data/memes'
 
+// Side Challenge: Sign Up Form
+import SignUpForm from './components/SignUpForm'
+
 export default function App() {
   const [captionedMeme, setCaptionedMeme] = React.useState({
     topText: "",
@@ -24,6 +27,9 @@ export default function App() {
 
   return (
     <div className="container">
+      <SignUpForm />
+      <hr />
+      
       <Header />
       <main>
         <MemeForm
