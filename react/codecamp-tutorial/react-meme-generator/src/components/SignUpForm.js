@@ -5,17 +5,17 @@ export default function SignUpForm(props) {
   const [formData, setFormData] = React.useState({
     email: "",
     password: '',
-    pw_confirm: '',
-    newsletter: false
+    passwordConfirm: '',
+    joinNewsletter: false
   })
 
   function handleSubmit(e) {
     e.preventDefault()
 
-    if ( !formData.password || !formData.pw_confirm ) {
+    if ( !formData.password || !formData.passwordConfirm ) {
       console.log('Must input a password')
     }
-    else if ( formData.password !== formData.pw_confirm ) {
+    else if ( formData.password !== formData.passwordConfirm ) {
       console.log('Passwords do not match')
     }
     else {
@@ -39,9 +39,9 @@ export default function SignUpForm(props) {
     <form className="sign-up" onSubmit={handleSubmit}>
       <input name="email" type="email" value={formData.email.value} onChange={handleChange} placeholder="user@example.com" />
       <input name="password" type="password" value={formData.password.value} onChange={handleChange} placeholder="password" />
-      <input name="pw_confirm" type="password" value={formData.pw_confirm.value} onChange={handleChange} placeholder="confirm password" />
+      <input name="passwordConfirm" type="password" value={formData.passwordConfirm.value} onChange={handleChange} placeholder="confirm password" />
       <label>
-        <input name="newsletter" type="checkbox" value={formData.newsletter.value} onChange={handleChange} />
+        <input name="joinNewsletter" type="checkbox" value={formData.joinNewsletter.value} onChange={handleChange} />
         I want to join the newsletter
       </label>
       <button>Sign Up</button>

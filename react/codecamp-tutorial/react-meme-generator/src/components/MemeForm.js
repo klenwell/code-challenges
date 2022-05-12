@@ -1,4 +1,3 @@
-import memesData from '../data/memes'
 import React from 'react'
 
 
