@@ -1,0 +1,118 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/*
+ * Header
+ */
+header {
+   display: flex;
+   align-items: center;
+   padding: 20px;
+   background-color: purple;
+   color: white;
+ }
+
+header img.logo {
+  height: 2em;
+  margin-right: 0.5em;
+}
+
+header h2 {
+  margin-right: auto;
+}
+
+header h4 {
+  font-weight: 500;
+}
+
+/*
+ * Main
+ */
+main {
+  padding: 1em;
+}
+
+/*
+ * Meme Form
+ */
+div.meme-form {
+  display: grid;
+  grid-template: 40px 40px / 1fr 1fr;
+  gap: 1em;
+}
+
+div.meme-form input[type="text"] {
+  border-radius: 0.5em;
+  border: 1px solid #CCCCCC;
+  text-indent: 0.5em;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+div.meme-form button {
+  background-color: purple;
+  color: white;
+  grid-column: 1 / -1;
+  border-radius: 0.5em;
+  border: none;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+}
+
+/*
+ * Meme Image
+ */
+div.meme-image {
+  position: relative;
+}
+
+div.meme-image img {
+  max-width: 80%;
+}
+
+div.meme-image h2 {
+  position: absolute;
+  width: 80%;
+  text-align: center;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 15px 0;
+  padding: 0 5px;
+  font-family: impact, sans-serif;
+  font-size: 2em;
+  text-transform: uppercase;
+  color: white;
+  letter-spacing: 1px;
+  text-shadow:
+      2px 2px 0 #000,
+      -2px -2px 0 #000,
+      2px -2px 0 #000,
+      -2px 2px 0 #000,
+      0 2px 0 #000,
+      2px 0 0 #000,
+      0 -2px 0 #000,
+      -2px 0 0 #000,
+      2px 2px 5px #000;
+}
+
+div.meme-image h2.top {
+    top: 0;
+}
+
+div.meme-image h2.bottom {
+    bottom: 0;
+}
