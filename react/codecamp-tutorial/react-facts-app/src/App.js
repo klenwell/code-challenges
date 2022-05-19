@@ -6,7 +6,7 @@ import CsvTable from './components/CsvTable'
 
 
 const SHEET_ID = '1M7BfyPuwHQiavFtH59sgI9lJ7HjBpjXdBB-5BWv15K4'
-const API_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Data`
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Data`
 
 
 function onFetchComplete(results, setStateFn) {
@@ -30,23 +30,24 @@ function onFetchError(err, file) {
 function App() {
   let Papa = window.Papa
 
-  const [ocCovidData, setocCovidData] = React.useState({})
+  const [ocCovidData, setOcCovidData] = React.useState([])
 
   function fetchCovidData() {
     const papaConfig = {
   		header: true,
   		dynamicTyping: true,
   		skipEmptyLines: true,
-  		complete: function(results) { onFetchComplete(results, setocCovidData) },
+  		complete: function(results) { onFetchComplete(results, setOcCovidData) },
   		error: onFetchError,
   		download: true
   	}
 
-    Papa.parse(API_URL, papaConfig)
     console.log('Fetching data...')
+    Papa.parse(CSV_URL, papaConfig)
   }
 
   React.useEffect(() => {
+    console.log('useEffect')
     fetchCovidData()
   }, [])
 
@@ -54,7 +55,7 @@ function App() {
     <div className="container">
       <Navbar />
       <Main />
-      <CsvTable />
+      {ocCovidData.length > 0 && <CsvTable data={ocCovidData} />}
     </div>
   )
 }
