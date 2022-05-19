@@ -3,7 +3,7 @@ import React from 'react'
 
 export default function CsvTable() {
   return (
-    <div class="csv-table">
+    <div className="csv-table">
       <table>
         <thead>
           <tr>
