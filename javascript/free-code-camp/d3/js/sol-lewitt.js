@@ -23,33 +23,46 @@ class SolLewittSvg {
 
     // Create SVG and append to parent element
     const sol = new SolLewittSvg()
-    const svg = sol.createSvgEl('svg', {width: canvasWidth, height: canvasHeight})
-    parent.appendChild(svg)
 
-    // Create columns
-    const colWidth = 10
-    const numCols = canvasWidth / colWidth / 2
-    for (let i = 0; i < numCols; i++) {
-      let x = (i * 20) + 10
-      let col = sol.createRect(colWidth, canvasHeight, x, 0)
-      //row.setAttribute('mask', 'url(#col-mask)')
-      svg.appendChild(col)
-    }
+    // Create background SVG: rows
+    const bgSvg = sol.createSvgEl('svg', {width: canvasWidth, height: canvasHeight})
 
-    // Create rows
     const rowHeight = 10
-    const numRows = canvasHeight / rowHeight / 2
+    const numRows = canvasHeight / rowHeight
     for (let i = 0; i < numRows; i++) {
-      let y = (i * 20) + 10
-      let row = sol.createRect(canvasWidth, rowHeight, 0, y)
-      //row.setAttribute('mask', 'url(#row-mask)')
-      svg.appendChild(row)
+      let fillColor = i % 2 == 0 ? 'black' : 'white'
+      let y = i * 10
+      let row = sol.createRect(canvasWidth, rowHeight, 0, y, {fill: fillColor})
+      bgSvg.appendChild(row)
     }
+
+    parent.appendChild(bgSvg)
+
+    // Create foreground SVG: columns in circle
+    const circleRadius = canvasHeight / 3
+    const fgSvg = sol.createSvgEl('svg', {
+      width: canvasWidth,
+      height: canvasHeight
+    })
+    fgSvg.style.position = 'absolute'
+    fgSvg.style.top = `${(canvasHeight / 2) - circleRadius}px`
+    fgSvg.style.left = '0px'
+
+    const colWidth = 10
+    const numCols = canvasWidth / colWidth
+    for (let i = 0; i < numCols; i++) {
+      let fillColor = i % 2 == 0 ? 'black' : 'white'
+      let x = i * 10
+      let col = sol.createRect(colWidth, canvasHeight, x, 0, {fill: fillColor})
+      fgSvg.appendChild(col)
+    }
+
+    parent.appendChild(fgSvg)
 
     // Create column mask: cut out columns in circle
     const colMask = sol.createSvgEl('mask')
     colMask.setAttribute('id', 'col-mask')
-    svg.appendChild(colMask)
+    fgSvg.appendChild(colMask)
 
     const colMaskRect = sol.createSvgEl('rect')
     colMaskRect.setAttribute('width', canvasWidth)
@@ -64,27 +77,7 @@ class SolLewittSvg {
     colMaskCircle.setAttribute('fill', 'white')
     colMask.append(colMaskCircle)
 
-    // Create row mask: cut out rows not in column
-    const rowMask = sol.createSvgEl('mask')
-    rowMask.setAttribute('id', 'row-mask')
-    svg.appendChild(rowMask)
-
-    const rowMaskRect = sol.createSvgEl('rect')
-    rowMaskRect.setAttribute('width', canvasWidth)
-    rowMaskRect.setAttribute('height', canvasHeight)
-    rowMaskRect.setAttribute('fill', 'white')
-    rowMask.append(rowMaskRect)
-
-    const rowMaskCircle = sol.createSvgEl('circle')
-    rowMaskCircle.setAttribute('cx', canvasWidth / 2)
-    rowMaskCircle.setAttribute('cy', canvasHeight / 2)
-    rowMaskCircle.setAttribute('r', canvasHeight / 3)
-    rowMaskCircle.setAttribute('fill', 'black')
-    rowMask.append(rowMaskCircle)
-
-    // Apply masks
-    svg.setAttribute('mask', 'url(#col-mask)')
-    svg.setAttribute('mask', 'url(#row-mask)')
+    fgSvg.setAttribute('mask', 'url(#col-mask)')
   }
 
   /*
