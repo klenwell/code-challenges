@@ -10,7 +10,7 @@
       body {
         margin: 0;
         padding: 4px;
-        overflow: hidden;
+        overflow: scroll;
         font-family: 'Share Tech', sans-serif;
       }
       text {
@@ -27,9 +27,18 @@
       section#sol-lewitt-exercise svg {
         border: 1px solid red;
       }
+
+      section#sol-lewitt-homework svg {
+        border: 2px solid red;
+        background-color: #fff;
+      }
     </style>
   </head>
   <body>
+    <section id="sol-lewitt-homework">
+      <h2>Lesson 3 Homework: LeWitt Orbiter</h2>
+    </section>
+
     <section id="sol-lewitt-exercise">
       <h2>Sol LeWitt Reproduction</h2>
     </section>
@@ -60,6 +69,7 @@
       document.addEventListener("DOMContentLoaded", function() {
         console.log('document ready')
         SolLewittSvg.reproduce('sol-lewitt-exercise');
+        SolLewittSvg.circler('sol-lewitt-homework');
       })
     </script>
 
