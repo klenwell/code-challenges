@@ -16,7 +16,7 @@ class SolLewittSvg {
   /*
    * Static Methods
   **/
-  static circler(parentId) {
+  static orbiter(parentId) {
     const parent = document.getElementById(parentId)
 
     // Artwork parameters
