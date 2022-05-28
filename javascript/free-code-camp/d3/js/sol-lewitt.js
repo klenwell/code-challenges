@@ -16,6 +16,47 @@ class SolLewittSvg {
   /*
    * Static Methods
   **/
+  static orbiter(parentId) {
+    const parent = document.getElementById(parentId)
+
+    // Artwork parameters
+    const canvasWidth = 400
+    const canvasHeight = 400
+    const numCircles = 50
+    const startRadius = 4
+    const angleStep = 360.0 / numCircles
+    const centerX = canvasWidth / 2
+    const centerY = canvasHeight / 2
+
+    // Create SVG and append to parent element
+    const sol = new SolLewittSvg()
+    const artSvg = sol.createSvgEl('svg', {width: canvasWidth, height: canvasHeight})
+    parent.appendChild(artSvg)
+
+    for (let n=0; n <= numCircles; n++) {
+      if ( n > 16000 ) {
+        throw "Stop before you run out of memory!"
+      }
+
+      let angle = angleStep * n
+      let radius = startRadius * n
+      let cx = centerX + (radius * Math.cos( angle ))
+      let cy = centerY + (radius * Math.sin( angle ))
+      let fill = n % 2 == 0 ? 'black' : 'white'
+      let stroke = n % 2 == 1 ? 'white' : 'black'
+      let opacity = 1.0 - (n / numCircles)
+      //console.log(radius, [cx, cy], fill, opacity)
+      let nextCircle = sol.createCircle(
+        radius,
+        cx,
+        cy,
+        {fill: fill, stroke: 'transparent'}
+      )
+      nextCircle.style.opacity = opacity
+      artSvg.append(nextCircle)
+    }
+  }
+
   static reproduce(parentId) {
     const canvasWidth = 400
     const canvasHeight = 400
@@ -70,11 +111,12 @@ class SolLewittSvg {
     colMaskRect.setAttribute('fill', 'black')
     colMask.append(colMaskRect)
 
-    const colMaskCircle = sol.createSvgEl('circle')
-    colMaskCircle.setAttribute('cx', canvasWidth / 2)
-    colMaskCircle.setAttribute('cy', canvasHeight / 2)
-    colMaskCircle.setAttribute('r', canvasHeight / 3)
-    colMaskCircle.setAttribute('fill', 'white')
+    const colMaskCircle = sol.createCircle(
+      circleRadius,
+      canvasWidth / 2,
+      canvasHeight / 2,
+      {fill: 'white'}
+    )
     colMask.append(colMaskCircle)
 
     fgSvg.setAttribute('mask', 'url(#col-mask)')
@@ -83,9 +125,6 @@ class SolLewittSvg {
   /*
    * Getters
   **/
-  get foo() {
-    return 'foo'
-  }
 
   /*
    * Methods
@@ -108,6 +147,16 @@ class SolLewittSvg {
     }
     const elAttrs = Object.assign(rectAttrs, attrs)
     return this.createSvgEl('rect', elAttrs)
+  }
+
+  createCircle(r, cx, cy, attrs) {
+    const rectAttrs = {
+      r: r,
+      cx: cx,
+      cy: cy
+    }
+    const elAttrs = Object.assign(rectAttrs, attrs)
+    return this.createSvgEl('circle', elAttrs)
   }
 
   createMask(el, id) {
