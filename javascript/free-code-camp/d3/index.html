@@ -22,6 +22,7 @@
 
       section#sol-lewitt-exercise {
         border: 4px solid #CCC;
+        position: relative;
       }
       section#sol-lewitt-exercise svg {
         border: 1px solid red;
@@ -31,80 +32,6 @@
   <body>
     <section id="sol-lewitt-exercise">
       <h2>Sol LeWitt Reproduction</h2>
-
-      <script>
-        const canvasWidth = 400
-        const canvasHeight = 400
-
-        const thisSection = document.getElementById('sol-lewitt-exercise')
-        const createSvgEl = (el) => document.createElementNS('http://www.w3.org/2000/svg', el)
-
-        function createRect(width, height, x, y) {
-          const rect = createSvgEl('rect')
-          rect.setAttribute('width', width)
-          rect.setAttribute('height', height)
-          rect.setAttribute('x', x)
-          rect.setAttribute('y', y)
-          return rect
-        }
-
-        const svg = createSvgEl('svg')
-        svg.setAttribute('width', canvasWidth)
-        svg.setAttribute('height', canvasHeight)
-        thisSection.appendChild(svg)
-
-        const rowMask = createSvgEl('mask')
-        rowMask.setAttribute('id', 'row-mask')
-        svg.appendChild(rowMask)
-
-        const rowMaskRect = createSvgEl('rect')
-        rowMaskRect.setAttribute('width', canvasWidth)
-        rowMaskRect.setAttribute('height', canvasHeight)
-        rowMaskRect.setAttribute('fill', 'white')
-        rowMask.append(rowMaskRect)
-
-        const rowMaskCircle = createSvgEl('circle')
-        rowMaskCircle.setAttribute('cx', canvasWidth / 2)
-        rowMaskCircle.setAttribute('cy', canvasHeight / 2)
-        rowMaskCircle.setAttribute('r', canvasHeight / 3)
-        rowMaskCircle.setAttribute('fill', 'black')
-        rowMask.append(rowMaskCircle)
-
-        const colMask = createSvgEl('mask')
-        colMask.setAttribute('id', 'col-mask')
-        svg.appendChild(colMask)
-
-        const colMaskRect = createSvgEl('rect')
-        colMaskRect.setAttribute('width', canvasWidth)
-        colMaskRect.setAttribute('height', canvasHeight)
-        colMaskRect.setAttribute('fill', 'black')
-        colMask.append(colMaskRect)
-
-        const colMaskCircle = createSvgEl('circle')
-        colMaskCircle.setAttribute('cx', canvasWidth / 2)
-        colMaskCircle.setAttribute('cy', canvasHeight / 2)
-        colMaskCircle.setAttribute('r', canvasHeight / 3)
-        colMaskCircle.setAttribute('fill', 'white')
-        colMask.append(colMaskCircle)
-
-        const colWidth = 10
-        const numCols = canvasWidth / colWidth / 2
-        for (let i = 0; i < numCols; i++) {
-          let x = (i * 20) + 10
-          let col = createRect(colWidth, canvasHeight, x, 0)
-          col.setAttribute('mask', 'url(#col-mask)')
-          svg.appendChild(col)
-        }
-
-        const rowHeight = 10
-        const numRows = canvasHeight / rowHeight / 2
-        for (let i = 0; i < numRows; i++) {
-          let y = (i * 20) + 10
-          let row = createRect(canvasWidth, rowHeight, 0, y)
-          row.setAttribute('mask', 'url(#row-mask)')
-          svg.appendChild(row)
-        }
-      </script>
     </section>
 
     <section id="svg-fundamentals">
@@ -125,5 +52,16 @@
         <text x="10" y="140">I love SVG!</text>
       </svg>
     </section>
+
+    <!-- Scripts -->
+    <script src="js/sol-lewitt.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        console.log('document ready')
+        SolLewittSvg.reproduce('sol-lewitt-exercise');
+      })
+    </script>
+
   </body>
 </html>
