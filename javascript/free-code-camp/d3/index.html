@@ -22,8 +22,11 @@
 
       section.sol-lewitt {
         border-bottom: 4px solid #CCC;
+      }
+      section.sol-lewitt div.canvas {
         position: relative;
       }
+
       section#sol-lewitt-exercise svg {
         border: 1px solid red;
       }
@@ -37,6 +40,7 @@
   <body>
     <section id="sol-lewitt-d3" class="sol-lewitt">
       <h2>Lesson 4: Sol LeWitt D3</h2>
+      <div class="canvas"></div>
     </section>
 
     <section id="sol-lewitt-homework" class="sol-lewitt">
@@ -45,6 +49,7 @@
 
     <section id="sol-lewitt-exercise" class="sol-lewitt">
       <h2>Sol LeWitt Reproduction</h2>
+      <div class="canvas"></div>
     </section>
 
     <section id="svg-fundamentals">
@@ -79,9 +84,14 @@
     <script>
       document.addEventListener("DOMContentLoaded", function() {
         console.log('document ready')
-        SolLewittD3.circle('sol-lewitt-d3');
+        // Lesson 4
+        const sol = new SolLewittD3('section#sol-lewitt-d3 div.canvas', 400, 400);
+        sol.renderCircle()
+        sol.renderTriangle()
+
+        // Lesson 3
         SolLewittSvg.orbiter('sol-lewitt-homework');
-        SolLewittSvg.reproduce('sol-lewitt-exercise');
+        SolLewittSvg.reproduce('section#sol-lewitt-exercise div.canvas');
       })
     </script>
 

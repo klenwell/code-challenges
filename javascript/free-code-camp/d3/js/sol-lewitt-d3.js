@@ -12,71 +12,119 @@ SVG_NS_URL = 'http://www.w3.org/2000/svg'
 
 
 class SolLewittD3 {
-  constructor() {
+  constructor(parentSel, canvasWidth, canvasHeight) {
+    this.parentSel = parentSel
+    this.canvasWidth = 400
+    this.canvasHeight = 400
+    this.parent = d3.select(parentSel)
+    console.log(this.parent)
   }
 
   /*
    * Static Methods
   **/
-  static circle(parentId) {
-    const canvasWidth = 400
-    const canvasHeight = 400
-    const parent = d3.select(`#${parentId}`)
-
-    // Create SVG
-    const svg = parent
-      .append('svg')
-      .attr('width', canvasWidth)
-      .attr('height', canvasHeight)
+  renderCircle() {
+    const circleRadius = this.canvasHeight / 3
 
     // Create SVG background: columns
+    const bgSvg = this.appendBgAsColumns()
+
+    // Create SVG foreground: rows in circle
+    const fgSvg = this.appendBgAsRows()
+    const posLeft = 0
+    const posTop = 0
+    const styleAttr = `position: absolute; left: ${posLeft}px; top: ${posTop}px`
+    fgSvg.attr('style', styleAttr)
+
+    // Create column mask: cut out columns in circle
+    const fgMaskId = 'col-mask'
+    const fgMask = fgSvg.append('mask').attr('id', fgMaskId)
+    const fgMaskRect = fgMask.append('rect')
+      .attr('width', this.canvasWidth)
+      .attr('height', this.canvasHeight)
+      .attr('fill', 'black')
+    const fgMaskCircle = fgMask.append('circle')
+      .attr('r', circleRadius)
+      .attr('cx', this.canvasWidth / 2)
+      .attr('cy', this.canvasHeight / 2)
+      .attr('fill', 'white')
+
+    // Apply mask
+    fgSvg.attr('mask', `url(#${fgMaskId})`)
+  }
+
+  renderTriangle() {
+    const fgMaskId = 'fg-triangle-mask'
+
+    // Create SVG background: columns
+    const bgSvg = this.appendBgAsColumns()
+
+    // Create SVG foreground: rows in circle
+    const fgSvg = this.appendBgAsRows()
+    const posLeft = this.canvasWidth
+    const posTop = 0
+    const styleAttr = `position: absolute; left: ${posLeft}px; top: ${posTop}px`
+    fgSvg.attr('style', styleAttr)
+
+    // Create column mask: cut out columns in circle
+    const fgMask = fgSvg.append('mask').attr('id', fgMaskId)
+    fgMask
+      .append('rect')
+      .attr('width', this.canvasWidth)
+      .attr('height', this.canvasHeight)
+      .attr('fill', 'black')
+
+    const dSymbol = d3.symbol(d3.symbols[1], 40000)
+    fgMask
+      .append('g')
+      .attr('transform', `translate(200, 200)`)
+      .append('path')
+      .attr('d', dSymbol())
+      .attr('fill', 'white')
+
+    // Apply mask
+    fgSvg.attr('mask', `url(#${fgMaskId})`)
+  }
+
+  appendBgAsColumns() {
     const colWidth = 10
-    const numCols = canvasWidth / colWidth
+    const numCols = this.canvasWidth / colWidth
+
+    const svg = this.parent
+      .append('svg')
+      .attr('width', this.canvasWidth)
+      .attr('height', this.canvasHeight)
+
     svg.selectAll('rect')
       .data(d3.range(numCols))
       .join('rect')
       .attr('x', (n) => n * 10)
       .attr('y', 0)
       .attr('width', colWidth)
-      .attr('height', canvasHeight)
+      .attr('height', this.canvasHeight)
       .attr('fill', (n) => n % 2 == 0 ? 'black' : 'white')
 
-    // Create SVG foreground: columns in circle
-    const circleRadius = canvasHeight / 3
-    const rowHeight = 10
-    const numRows = canvasHeight / rowHeight
-    const posLeft = 0
-    const posTop = (canvasHeight / 2) - circleRadius
-    const styleAttr = `position: absolute; left: ${posLeft}px; top: ${posTop}px`
-    const fgSvg = parent
-      .append('svg')
-      .attr('width', canvasWidth)
-      .attr('height', canvasHeight)
-      .attr('style', styleAttr)
+    return svg
+  }
 
-    fgSvg.selectAll('rect')
+  appendBgAsRows() {
+    const rowHeight = 10
+    const numRows = this.canvasHeight / rowHeight
+
+    const svg = this.parent
+      .append('svg')
+      .attr('width', this.canvasWidth)
+      .attr('height', this.canvasHeight)
+
+    svg.selectAll('rect')
       .data(d3.range(numRows))
       .join('rect')
       .attr('y', (n) => n * 10)
-      .attr('width', canvasWidth)
+      .attr('width', this.canvasWidth)
       .attr('height', rowHeight)
       .attr('fill', (n) => n % 2 == 0 ? 'black' : 'white')
 
-    // Create column mask: cut out columns in circle
-    const colMaskId = 'col-mask'
-    const colMask = fgSvg.append('mask').attr('id', colMaskId)
-    const colMaskRect = colMask.append('rect')
-      .attr('width', canvasWidth)
-      .attr('height', canvasHeight)
-      .attr('fill', 'black')
-    const colMaskCircle = colMask.append('circle')
-      .attr('r', circleRadius)
-      .attr('cx', canvasWidth / 2)
-      .attr('cy', canvasHeight / 2)
-      .attr('fill', 'white')
-
-    // Apply mask
-    fgSvg.attr('mask', `url(#${colMaskId})`)
+    return svg
   }
 
   /*

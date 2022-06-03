@@ -57,10 +57,10 @@ class SolLewittSvg {
     }
   }
 
-  static reproduce(parentId) {
+  static reproduce(parentSel) {
     const canvasWidth = 400
     const canvasHeight = 400
-    const parent = document.getElementById(parentId)
+    const parent = document.querySelector(parentSel)
 
     // Create SVG and append to parent element
     const sol = new SolLewittSvg()
@@ -86,7 +86,7 @@ class SolLewittSvg {
       height: canvasHeight
     })
     fgSvg.style.position = 'absolute'
-    fgSvg.style.top = `${(canvasHeight / 2) - circleRadius}px`
+    fgSvg.style.top = '0px'
     fgSvg.style.left = '0px'
 
     const colWidth = 10
