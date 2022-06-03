@@ -6,7 +6,6 @@
  * Uses JS Class template:
  * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Classes
 **/
-console.log(d3.selection)
 
 
 SVG_NS_URL = 'http://www.w3.org/2000/svg'
@@ -19,45 +18,35 @@ class SolLewittD3 {
   /*
    * Static Methods
   **/
-  static orbiter(parentId) {
-    const parent = document.getElementById(parentId)
-
-    // Artwork parameters
+  static dev(parentId) {
     const canvasWidth = 400
     const canvasHeight = 400
-    const numCircles = 50
-    const startRadius = 4
-    const angleStep = 360.0 / numCircles
-    const centerX = canvasWidth / 2
-    const centerY = canvasHeight / 2
 
-    // Create SVG and append to parent element
-    const sol = new SolLewittSvg()
-    const artSvg = sol.createSvgEl('svg', {width: canvasWidth, height: canvasHeight})
-    parent.appendChild(artSvg)
+    const svg = d3.select(`#${parentId}`)
+      .append('svg')
+      .attr('width', canvasWidth)
+      .attr('height', canvasHeight)
 
-    for (let n=0; n <= numCircles; n++) {
-      if ( n > 16000 ) {
-        throw "Stop before you run out of memory!"
+      const rowHeight = 10
+      const numRows = canvasHeight / rowHeight
+      const marks = []
+      for (let i = 0; i < numRows; i++) {
+        marks.push({
+          y: i * 10,
+          width: canvasWidth,
+          height: rowHeight,
+          fill: i % 2 == 0 ? 'black' : 'white'
+        })
       }
 
-      let angle = angleStep * n
-      let radius = startRadius * n
-      let cx = centerX + (radius * Math.cos( angle ))
-      let cy = centerY + (radius * Math.sin( angle ))
-      let fill = n % 2 == 0 ? 'black' : 'white'
-      let stroke = n % 2 == 1 ? 'white' : 'black'
-      let opacity = 1.0 - (n / numCircles)
-      //console.log(radius, [cx, cy], fill, opacity)
-      let nextCircle = sol.createCircle(
-        radius,
-        cx,
-        cy,
-        {fill: fill, stroke: 'transparent'}
-      )
-      nextCircle.style.opacity = opacity
-      artSvg.append(nextCircle)
-    }
+      svg
+        .selectAll('rect')
+        .data(marks)
+        .join('rect')
+        .attr('y', (d) => d.y)
+        .attr('width', (d) => d.width)
+        .attr('height', (d) => d.height)
+        .attr('fill', (d) => d.fill)
   }
 
   static reproduce(parentId) {
@@ -66,7 +55,7 @@ class SolLewittD3 {
     const parent = document.getElementById(parentId)
 
     // Create SVG and append to parent element
-    const sol = new SolLewittSvg()
+    const sol = new SolLewittD3()
 
     // Create background SVG: rows
     const bgSvg = sol.createSvgEl('svg', {width: canvasWidth, height: canvasHeight})
