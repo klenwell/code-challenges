@@ -20,10 +20,13 @@
         padding: 4px;
       }
 
-      section#sol-lewitt-exercise {
-        border: 4px solid #CCC;
+      section.sol-lewitt {
+        border-bottom: 4px solid #CCC;
+      }
+      section.sol-lewitt div.canvas {
         position: relative;
       }
+
       section#sol-lewitt-exercise svg {
         border: 1px solid red;
       }
@@ -35,12 +38,18 @@
     </style>
   </head>
   <body>
-    <section id="sol-lewitt-homework">
+    <section id="sol-lewitt-d3" class="sol-lewitt">
+      <h2>Lesson 4: Sol LeWitt D3</h2>
+      <div class="canvas"></div>
+    </section>
+
+    <section id="sol-lewitt-homework" class="sol-lewitt">
       <h2>Lesson 3 Homework: LeWitt Orbiter</h2>
     </section>
 
-    <section id="sol-lewitt-exercise">
+    <section id="sol-lewitt-exercise" class="sol-lewitt">
       <h2>Sol LeWitt Reproduction</h2>
+      <div class="canvas"></div>
     </section>
 
     <section id="svg-fundamentals">
@@ -63,13 +72,26 @@
     </section>
 
     <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.4.4/d3.min.js"
+            integrity="sha512-hnFpvCiJ8Fr1lYLqcw6wLgFUOEZ89kWCkO+cEekwcWPIPKyknKV1eZmSSG3UxXfsSuf+z/SgmiYB1zFOg3l2UQ=="
+            crossorigin="anonymous"
+            referrerpolicy="no-referrer">
+    </script>
+
     <script src="js/sol-lewitt.js"></script>
+    <script src="js/sol-lewitt-d3.js"></script>
 
     <script>
       document.addEventListener("DOMContentLoaded", function() {
         console.log('document ready')
-        SolLewittSvg.reproduce('sol-lewitt-exercise');
+        // Lesson 4
+        const sol = new SolLewittD3('section#sol-lewitt-d3 div.canvas', 400, 400);
+        sol.renderCircle()
+        sol.renderTriangle()
+
+        // Lesson 3
         SolLewittSvg.orbiter('sol-lewitt-homework');
+        SolLewittSvg.reproduce('section#sol-lewitt-exercise div.canvas');
       })
     </script>
 
