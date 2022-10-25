@@ -1,4 +1,4 @@
-from random import randint
+from random import randint, choice
 from datetime import datetime
 
 class SessionLog():
@@ -32,7 +32,14 @@ class SessionLog():
 
     @staticmethod
     def bug_expired_card_failure(*args):
-        return []
+        timestamp = args[0]
+        log = SessionLog(timestamp)
+        log.login().home().pay_bug()
+
+        for n in range(choice([0, 0, 0, 1, 1, 2])):
+            log.pay_bug()
+
+        return [str(log)]
 
     @staticmethod
     def bug_expired_card_success(*args):
@@ -59,6 +66,9 @@ class SessionLog():
         self.uid =randint(1, 999999999)
         self.action_stream = ''
 
+    #
+    # Action Stream Actions
+    #
     def login(self):
         self.action_stream += 'L'
         return self
@@ -75,12 +85,17 @@ class SessionLog():
         self.action_stream += 'BP*B'
         return self
 
+    def pay_bug(self):
+        self.action_stream += 'BP*H'
+        return self
+
     def card(self):
         self.action_stream += 'C'
         return self
 
     def clean(self):
         self.action_stream = self.action_stream.replace('BB', 'B')
+        return self
 
     def __str__(self):
         f = '{}{:09d}{}'
