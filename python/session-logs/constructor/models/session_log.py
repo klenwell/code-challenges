@@ -43,14 +43,42 @@ class SessionLog():
 
     @staticmethod
     def bug_expired_card_success(*args):
-        return []
+        timestamp = args[0]
+        log = SessionLog(timestamp)
+        log.login().home().pay_bug()
+
+        for n in range(choice([0, 0, 0, 1, 1, 2])):
+            log.pay_bug()
+
+        log.card().pay()
+
+        return [str(log)]
 
     @staticmethod
     def bug_expired_card_relogin_success(*args):
-        return []
+        # Session 1
+        timestamp = args[0]
+        log1 = SessionLog(timestamp)
+        log1.login().home().pay_bug()
+
+        # Session 2
+        log2 = SessionLog(timestamp + randint(200, 600))
+        log2.login().home().card().pay()
+        log2.uid = log1.uid
+        return [str(log1), str(log2)]
 
     @staticmethod
     def bug_expired_card_relogin_failure(*args):
+        # Session 1
+        timestamp = args[0]
+        log1 = SessionLog(timestamp)
+        log1.login().home().pay_bug()
+
+        # Session 2
+        log2 = SessionLog(timestamp + randint(30, 300))
+        log2.login().home().pay_bug()
+        log2.uid = log1.uid
+        return [str(log1), str(log2)]
         return []
 
     @staticmethod
