@@ -102,12 +102,15 @@ class SessionLog():
             session.uid = uid
             sessions.append(str(session))
 
-        breakpoint()
         return sessions
 
     @staticmethod
     def invalid(*args):
-        return []
+        timestamp = args[0]
+        session = SessionLog(timestamp)
+        session.login().home().pay_bug()
+        log = '{}{}'.format(timestamp, session.action_stream)
+        return [log]
 
     def __init__(self, timestamp=None):
         self.timestamp = timestamp if timestamp else datetime.now().timestamp()

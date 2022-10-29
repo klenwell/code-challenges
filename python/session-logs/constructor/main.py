@@ -68,11 +68,41 @@ def generate(sessions, start_at, duration):
 def test_log(serialized_log):
     logs = json.loads(serialized_log)
     sessions = [(log[:10], log[10:19], log[19:]) for log in logs]
+    sessions = sorted(sessions, key=lambda s: s[0])
+
+    started_at = sessions[0][0]
+    ended_at = sessions[-1][0]
+    hours = (int(ended_at) - int(started_at)) / 3600
+
+    invalid_sessions = [session for session in sessions if not session[1].isdigit()]
+    valid_sessions = [s for s in sessions if s[1].isdigit()]
+    failed_sessions = [s for s in sessions if '*' in s[2]]
+    successful_sessions = [s for s in sessions if '$' in s[2]]
+
     users = set([session[1] for session in sessions])
+    valid_users = set([session[1] for session in valid_sessions])
+
+    successful_payments = 0
+    failed_payments = 0
+    for log in logs:
+        successful_payments += log.count('$')
+        failed_payments += log.count('*')
+    payment_attempts = successful_payments + failed_payments
 
     return {
         'sessions': len(sessions),
-        'users': len(users)
+        'hours': hours,
+        'sessions_per_hour': len(sessions) / hours,
+        'users': len(users),
+        'valid_users': len(valid_users),
+        'successes': len(successful_sessions),
+        'failures': len(failed_sessions),
+        'valid_sessions': len(valid_sessions),
+        'invalid_sessions': len(invalid_sessions),
+        'payment_attempts': payment_attempts,
+        'successful_payments': successful_payments,
+        'failed_payments': failed_payments,
+        'success %': successful_payments / payment_attempts * 100
     }
 
 
@@ -81,10 +111,11 @@ def main():
     results = test_log(serialized_log)
     print(results)
 
-    encoded_log = str(base64.b64encode(serialized_log.encode()), 'ascii')
-    print((serialized_log[:20],  type(serialized_log), len(serialized_log)),
-          (encoded_log[:20],  type(encoded_log), len(encoded_log)))
-
+    #encoded_log = str(base64.b64encode(serialized_log.encode()), 'ascii')
+    #print((serialized_log[:20],  type(serialized_log), len(serialized_log)),
+    #      (encoded_log[:20],  type(encoded_log), len(encoded_log)))
+    print(serialized_log)
+    #breakpoint()
 
 #
 # Main
