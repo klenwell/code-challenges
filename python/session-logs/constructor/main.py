@@ -1,5 +1,21 @@
 """
-'["1667203472786351643LHBP$B", "1667203754520021531LHBP$B", "1667204690638492524LHBP$B", "1667205551252182275LHBP$B", "1667207687693856677LHBP$B", "1667207893813198027LHBP$B", "1667207991378831675LHBP$B", "1667208394990284308LHBP$B", "1667209898214212671LHBP$B", "1667209902985120989LHBP$B", "1667210306727135789LHBP$B", "1667210481916452736LHBP$B", "1667210518360277326LHBP$B", "1667211285100757812LHBP$B", "1667211437701388520LHBP$B", "1667211640896145439LHBP$B", "1667212545872017431LHBP$B", "1667214277417428555LHBP$B", "1667217586810068733LHBP$B", "1667217819383215013LHBP$B", "1667217889178441925LHBP$B", "1667218516263657257LHBP$B", "1667218754055350470LHBP$B", "1667220136940094742LHBP$B", "1667220263180744033LHBP$B", "1667220725601885947LHBP$B", "1667220968094888262LHBP$B", "1667220985279838369LHBP$B", "1667221712919010382LHBP$B"]'
+A client is reporting some issues with one of their payment flows. They're seeing
+an unusally high numbers of failed payments. They've asked you to investigate by
+reviewing some logs they sent over.
+
+Regrettably, a really clever engineer created his own log format years ago. You've
+been asked to parse them. All your client knows about the format is:
+
+- Each log represents a user session
+- First 10 chars are a timestamp
+- Next 9 chars are a user id
+- Remain characters represent a sequence of user page visits in the payment flow
+- In payment flow string:
+  - $ = successful payment
+  - * = failed payment request
+  - letters are different sites pages or views
+
+It's our own proprietry format: timestamp(10)|uid(9)|pageseq(var)
 """
 import json
 import base64

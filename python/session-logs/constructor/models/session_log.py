@@ -1,4 +1,4 @@
-from random import randint, choice
+from random import randint, choice, shuffle
 from datetime import datetime
 
 class SessionLog():
@@ -79,11 +79,31 @@ class SessionLog():
         log2.login().home().pay_bug()
         log2.uid = log1.uid
         return [str(log1), str(log2)]
-        return []
 
     @staticmethod
     def scammer(*args):
-        return []
+        pay_successes, pay_failures, timestamp = args
+        results = ([1] * pay_successes) + ([0] * pay_failures)
+        shuffle(results)
+
+        sessions = []
+        original_session = SessionLog(timestamp)
+        uid = original_session.uid
+
+        for result in results:
+            timestamp = timestamp + randint(20, 120)
+            session = SessionLog(timestamp)
+
+            if result == 1:
+                session.login().home().pay_bug()
+            else:
+                session.login().home().pay()
+
+            session.uid = uid
+            sessions.append(str(session))
+
+        breakpoint()
+        return sessions
 
     @staticmethod
     def invalid(*args):
