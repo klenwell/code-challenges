@@ -1,9 +1,25 @@
 import random
+from datetime import datetime
 
 
 class Fizzer:
+    @staticmethod
+    def is_mistake(log):
+        ts = log[:10]
+        value = log[10:]
+        fizz = Fizzer(ts)
+        return value != fizz.buzz()
+
     def __init__(self, number):
         self.number = int(number)
+
+    @property
+    def datetime(self):
+        return datetime.fromtimestamp(self.number)
+
+    @property
+    def day_of_week(self):
+        return self.datetime.strftime('%A')
 
     def buzz(self):
         if self.is_fizzbuzz():
@@ -34,7 +50,7 @@ class FaultyFizzer(Fizzer):
         self.error_rate = error_rate
 
     def is_error(self):
-        return self.error_rate < random.random()
+        return random.random() < self.error_rate
 
     def buzz(self):
         options = ['fizz', 'buzz', 'fizzbuzz', '']

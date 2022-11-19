@@ -1,31 +1,13 @@
-"""
-New-line separated string, base64-encoded, of about 100 lines. Format:
-
-- unix-timestamp
-- fizzbuzz computation: <blank> | 'fizz' | 'buzz' | 'fizzbuzz'
-- Computation is based on timestamp
-
-Examples:
-- `1668817445fizzbuzz`
-- `1668817504`
-- Encoded: `MTY2ODgxNzQ0NWZpenpidXp6CjE2Njg4MTc1MDQ=`
-
-Questions:
-
-- How many records are there?
-- When were the records generated?
-- What day of the week had the most 'fizzbuzz' computations?
-- How many records had an incorrect computation?
-- Which computation was miscalculated most frequently?
-
-"""
 import base64
 from datetime import datetime, timedelta
 from random import randint
+from functools import cached_property
 from models.fizzer import FaultyFizzer
 
 
 class Puzzler:
+    ERROR_RATE = 0.10
+
     @staticmethod
     def construct():
         count = 122
@@ -37,6 +19,7 @@ class Puzzler:
         self.count = count
         self.start_date = start_date
         self.days = days
+        self.fname = None
 
     @property
     def start_ts(self):
@@ -46,12 +29,12 @@ class Puzzler:
     def end_ts(self):
         return int((self.start_date + timedelta(days=self.days)).timestamp())
 
-    @property
+    @cached_property
     def logs(self):
         logs = []
         for n in range(self.count):
             timestamp = randint(self.start_ts, self.end_ts)
-            fizzer = FaultyFizzer(timestamp, .08)
+            fizzer = FaultyFizzer(timestamp, self.ERROR_RATE)
             logs.append(fizzer.to_log())
         return logs
 
@@ -68,10 +51,17 @@ class Puzzler:
         delim = '\n'
         return (base64.b64decode(encoded_logs).decode()).split(delim)
 
+    def to_file(self, fname='encoded_log.txt'):
+        self.fname = fname
+        with open(self.fname, 'w') as f:
+            f.write(self.encoded_logs)
+        return self.fname
+
     def report(self):
         return {
             'encoded_logs': self.encoded_logs,
             'len(serialized_logs)': len(self.serialized_logs),
             'len(encoded_logs)': len(self.encoded_logs),
-            'logs': self.logs
+            'logs': self.logs,
+            'file': self.fname
         }
