@@ -19,45 +19,16 @@ Questions:
 - Which computation was miscalculated most frequently?
 
 """
-import base64
-from datetime import datetime, timedelta
-from random import randint
-from models.fizzer import FaultyFizzer
+from pprint import pprint
+from puzzler import Puzzler
+from solver import Solver
 
 
 def main():
-    """
-    Create a series of random fizzers between given dates.
-    """
-    # Params
-    count = 122
-    start_date = datetime(2023, 1, 1)
-    delim = '\n'
+    puzzle = Puzzler.construct()
+    solution = Solver.solve(puzzle.encoded_logs)
+    pprint(puzzle.report())
+    pprint(solution.report())
 
-    # Fizzers
-    fizzers = []
-    start_ts = int(start_date.timestamp())
-    end_ts = int((start_date + timedelta(days=7)).timestamp())
 
-    # Generate
-    for n in range(count):
-        timestamp = randint(start_ts, end_ts)
-        fizzer = FaultyFizzer(timestamp, .08)
-        fizzers.append(fizzer)
-
-    # Serialize
-    serialized_fizzers = delim.join([f.to_s() for f in fizzer])
-    encoded_str = str(base64.b64encode(serialized_log.encode()), 'ascii')
-
-    # Report
-    report = {
-        'serial len': len(serialized_fizzers),
-        'encoded_len': len(encoded_str),
-        'encoded': encoded_str,
-        'lines': (base64.b64decode(encoded_str).decode()).split(delim)
-    }
-
-#
-# Main
-#
 main()
