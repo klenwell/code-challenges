@@ -3,6 +3,9 @@ from datetime import datetime
 
 
 class Session:
+    #
+    # Generators
+    #
     @staticmethod
     def successful_payment(*args):
         payments = args[0]
@@ -110,6 +113,17 @@ class Session:
         session.login().home().pay_bug()
         return [session]
 
+    @staticmethod
+    def from_log(log):
+        timestamp = log[:10]
+        session = Session(timestamp)
+        session.uid = log[10:19]
+        session.action_stream = log[19:]
+        return session
+
+    #
+    # Instance Methods
+    #
     def __init__(self, timestamp=None):
         self.timestamp = timestamp if timestamp else datetime.now().timestamp()
         self.uid =randint(1, 999999999)
@@ -118,6 +132,18 @@ class Session:
     def to_log(self):
         f = '{}{:09d}{}'
         return f.format(self.timestamp, self.uid, self.action_stream)
+
+    def paid(self):
+        return '$' in self.action_stream
+
+    def failed(self):
+        return '*' in self.action_stream
+
+    @property
+    def datetime(self):
+        if not self.timestamp:
+            return None
+        return datetime.fromtimestamp(int(self.timestamp))
 
     #
     # Action Stream Actions

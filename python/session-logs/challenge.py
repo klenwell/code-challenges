@@ -24,9 +24,9 @@ Examples:
 To get started, please answer the following questions:
 
 - How many sessions are in the logs?
-- How many users succeeded in making a payment?
-- How many users failed to make a payment?
-- On what date(s) did they visit?
+- How many sessions saw a payment fail?
+- How many sessions saw a payment succeed?
+- On what date(s) did the sessions occur?
 
 JSON data:
 
@@ -39,7 +39,7 @@ from solver import Solver
 
 def new():
     puzzle = Puzzler.construct()
-    solution = Solver.solve()
+    solution = Solver.solve(puzzle.serialized_logs)
     pprint(puzzle.report())
     pprint(solution.report())
     print(puzzle.to_file())
