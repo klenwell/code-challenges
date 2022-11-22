@@ -66,7 +66,7 @@ class Session:
         # Session 2
         session2 = Session(timestamp + randint(200, 600))
         session2.login().home().card().pay()
-        session2.uid = session1.uid
+        session2.user_id = session1.user_id
         return [session1, session2]
 
     @staticmethod
@@ -79,7 +79,7 @@ class Session:
         # Session 2
         session2 = Session(timestamp + randint(30, 300))
         session2.login().home().pay_bug()
-        session2.uid = session1.uid
+        session2.user_id = session1.user_id
         return [session1, session2]
 
     @staticmethod
@@ -90,7 +90,7 @@ class Session:
 
         sessions = []
         original_session = Session(timestamp)
-        uid = original_session.uid
+        user_id = original_session.user_id
 
         for result in results:
             timestamp = timestamp + randint(20, 120)
@@ -101,7 +101,7 @@ class Session:
             else:
                 session.login().home().pay()
 
-            session.uid = uid
+            session.user_id = user_id
             sessions.append(session)
 
         return sessions
@@ -115,9 +115,10 @@ class Session:
 
     @staticmethod
     def from_log(log):
+        """Note: this does not validate."""
         timestamp = log[:10]
         session = Session(timestamp)
-        session.uid = log[10:19]
+        session.user_id = log[10:19]
         session.action_stream = log[19:]
         return session
 
@@ -126,12 +127,13 @@ class Session:
     #
     def __init__(self, timestamp=None):
         self.timestamp = timestamp if timestamp else datetime.now().timestamp()
-        self.uid =randint(1, 999999999)
+        self.user_id =randint(1, 999999999)
         self.action_stream = ''
+        self.error = None
 
     def to_log(self):
         f = '{}{:09d}{}'
-        return f.format(self.timestamp, self.uid, self.action_stream)
+        return f.format(self.timestamp, self.user_id, self.action_stream)
 
     def paid(self):
         return '$' in self.action_stream
@@ -139,8 +141,32 @@ class Session:
     def failed(self):
         return '*' in self.action_stream
 
+    def is_valid(self):
+        try:
+            self.validate()
+            return True
+        except AssertionError as e:
+            self.error = e
+            return False
+
+    def validate(self):
+        assert(self.user_id.isdigit())
+        assert(self.created_at.__class__ is datetime)
+
     @property
-    def datetime(self):
+    def payments_attempted(self):
+        return self.payments_succeeded + self.payments_failed
+
+    @property
+    def payments_succeeded(self):
+        return self.action_stream.count('$')
+
+    @property
+    def payments_failed(self):
+        return self.action_stream.count('*')
+
+    @property
+    def created_at(self):
         if not self.timestamp:
             return None
         return datetime.fromtimestamp(int(self.timestamp))
@@ -175,6 +201,10 @@ class Session:
     def clean(self):
         self.action_stream = self.action_stream.replace('BB', 'B')
         return self
+
+    def __repr__(self):
+        f = '<Session created_at={} user_id={} actions={}>'
+        return f.format(self.created_at, self.user_id, self.action_stream)
 
 
 class InvalidSession(Session):

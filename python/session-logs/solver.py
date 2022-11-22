@@ -38,23 +38,23 @@ class Solver:
     @property
     def sessions(self):
         sessions = [Session.from_log(log) for log in self.logs]
-        return sorted(sessions, key=lambda s: s.datetime)
+        return sorted(sessions, key=lambda s: s.created_at)
 
     @property
     def user_sessions(self):
         users = {}
         for session in self.sessions:
-            if session.uid in users:
-                users[session.uid].append(session)
+            if session.user_id in users:
+                users[session.user_id].append(session)
             else:
-                users[session.uid] = [session]
+                users[session.user_id] = [session]
         return users
 
     @property
     def users(self):
         users = []
-        for uid, sessions in self.user_sessions.items():
-            user = User(uid, sessions)
+        for user_id, sessions in self.user_sessions.items():
+            user = User(user_id, sessions)
             users.append(user)
         return users
 
@@ -70,23 +70,100 @@ class Solver:
     def paid_users(self):
         return [u for u in self.users if u.paid()]
 
+    @property
+    def failed_users(self):
+        return [u for u in self.users if u.failed()]
+
+    @property
+    def failed_paid_users(self):
+        return [u for u in self.users if u.failed_then_paid()]
+
+    @property
+    def payments_attempted(self):
+        return sum([s.payments_attempted for s in self.sessions])
+
+    @property
+    def payments_succeeed(self):
+        return sum([s.payments_succeeed for s in self.sessions])
+
+    @property
+    def payments_failed(self):
+        return sum([s.payments_failed for s in self.sessions])
+
+    @property
+    def users_failed_pct(self):
+        failed_user_count = len(self.failed_users)
+        failed_paid_user_count = len(self.failed_paid_users)
+        return (failed_user_count - failed_paid_user_count) / len(self.users) * 100
+
+    @property
+    def user_with_most_sessions(self):
+        return sorted(self.users, key=lambda u: len(u.sessions))[-1]
+
+    @property
+    def invalid_sessions(self):
+        return [session for session in self.sessions if not session.is_valid()]
+
+    @property
+    def failure_types(self):
+        types = {}
+        for session in self.sessions:
+            if not '*' in session.action_stream:
+                continue
+            for i, char in enumerate(session.action_stream):
+                if char == '*':
+                    before = session.action_stream[i-1]
+                    after = session.action_stream[i+1]
+                    if (before, after) in types:
+                        types[(before, after)].append(session)
+                    else:
+                        types[(before, after)] = [session]
+        return types
+
+    def recoveries_by_seq(self, seq):
+        recoveries = []
+        sessions = self.failure_types.get(seq)
+
+        for session in sessions:
+            _, tail = session.action_stream.rsplit('*', 1)
+            if '$' in tail:
+                recoveries.append(session)
+
+        return recoveries
+
+    def recoveries_by_seq_pct(self, seq):
+        recoveries = self.recoveries_by_seq(seq)
+        failures = self.failure_types[seq]
+        return len(recoveries) / len(failures) * 100
+
     def report(self):
         return {
             # Basic Questions
-            'sessions': len(self.sessions),
-            'sessions failed': len(self.failed_sessions),
-            'sessions paid': len(self.paid_sessions),
-            'when': (self.sessions[0].datetime, self.sessions[-1].datetime),
+            'basic': {
+                'sessions': len(self.sessions),
+                'sessions failed': len(self.failed_sessions),
+                'sessions paid': len(self.paid_sessions),
+                'when': (self.sessions[0].created_at, self.sessions[-1].created_at)
+            },
 
             # Intermediate Questions
-            'unique users': len(self.users),
-            'users paid': len(self.paid_users),
-            'users failed': 0,
-            'users failed then paid': 0,
-            'payments attempted': 0,
-            'payments failed': 0,
-            'payment failed %': 0.0,
-            'user failed %': 0.0
+            'intermediate': {
+                'unique users': len(self.users),
+                'users paid': len(self.paid_users),
+                'users failed': len(self.failed_users),
+                'users failed then paid': len(self.failed_paid_users),
+                'payments attempted': self.payments_attempted,
+                'payments failed': self.payments_failed,
+                'payment failed %': self.payments_failed / self.payments_attempted * 100,
+                'user failed %': self.users_failed_pct
+            },
 
             # Advanced Questions
+            'advanced': {
+                'user with most sessions': self.user_with_most_sessions,
+                'invalid sessions': self.invalid_sessions,
+                'failure types': dict([(k, len(v)) for (k,v) in self.failure_types.items()]),
+                'recoveries post-P*H': self.recoveries_by_seq_pct(('P', 'H')),
+                'recoveries post-P*B': self.recoveries_by_seq_pct(('P', 'B'))
+            }
         }
