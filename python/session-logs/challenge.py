@@ -42,7 +42,7 @@ def new():
     solution = Solver.solve(puzzle.serialized_logs)
     pprint(puzzle.report())
     pprint(solution.report())
-    print(puzzle.to_file())
+    #print(puzzle.to_file())
 
 
 def existing():

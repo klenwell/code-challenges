@@ -160,7 +160,10 @@ class Solver:
 
             # Advanced Questions
             'advanced': {
-                'user with most sessions': self.user_with_most_sessions,
+                'user with most sessions': (
+                    self.user_with_most_sessions,
+                    self.user_with_most_sessions.sessions_span
+                ),
                 'invalid sessions': self.invalid_sessions,
                 'failure types': dict([(k, len(v)) for (k,v) in self.failure_types.items()]),
                 'recoveries post-P*H': self.recoveries_by_seq_pct(('P', 'H')),

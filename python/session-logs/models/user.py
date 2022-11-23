@@ -20,6 +20,13 @@ class User:
             return False
         return self.paid()
 
+    @property
+    def sessions_span(self):
+        if len(self.sessions) < 2:
+            return None
+        sorted_sessions = sorted(self.sessions, key=lambda s: s.created_at)
+        return sorted_sessions[-1].created_at - sorted_sessions[0].created_at
+
     def __repr__(self):
         f = '<User id={} sessions={}>'
         return f.format(self.id, len(self.sessions))
