@@ -25,7 +25,6 @@ class Solution:
             total_score += self.score_game(opp, you)
         return total_score
 
-
     @property
     def second(self):
         total_score = 0
@@ -54,6 +53,14 @@ class Solution:
         score += self.outcome(opp, you)
         score += shape_score[you]
         return score
+
+    def outcome(self, opp, you):
+        if you == self.draw(opp):
+            return 3
+        elif you == self.win(opp):
+            return 6
+        else:
+            return 0
 
     def pick_move(self, opp, outcome):
         outcome_map = {'X': 'lose', 'Y': 'draw', 'Z': 'win'}
@@ -89,30 +96,6 @@ class Solution:
             'C': 'X'
         }
         return map[opp]
-
-    def outcome(self, opp, you):
-        # A, X = Rock
-        # B, Y = Paper
-        # C, Z = Scissors
-        rock = 0
-        paper = 1
-        scissors = 2
-        opp_map = {'A': rock, 'B': paper, 'C': scissors}
-        you_map = {'X': rock, 'Y': paper, 'Z': scissors}
-
-        opp_played = opp_map[opp]
-        you_played = you_map[you]
-
-        if opp_played == you_played:
-            return 3
-
-        if (you_played == rock and opp_played == scissors) or \
-            (you_played == paper and opp_played == rock) or \
-            (you_played == scissors and opp_played == paper):
-            return 6
-
-        return 0
-
 
 
 #
