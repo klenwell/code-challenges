@@ -45,8 +45,8 @@ class Solution:
         elf_packs = '-'.join(inputs).split('--')
         for pack in elf_packs:
             cals = pack.split('-')
-            total_cals = sum([int(c) for c in cals])
-            calories.append(total_cals)
+            summed = sum([int(c) for c in cals])
+            calories.append(summed)
 
         return calories
 
