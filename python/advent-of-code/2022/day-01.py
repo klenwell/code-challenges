@@ -21,7 +21,6 @@ class Solution:
     def first(self):
         return max(self.elf_calories(self.input_lines))
 
-
     @property
     def second(self):
         sorted_cals = sorted(self.elf_calories(self.input_lines), reverse=True)

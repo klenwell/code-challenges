@@ -22,30 +22,16 @@ class Solution:
     #
     @property
     def first(self):
-        containers = []
-
+        redundancies = []
         for line in self.input_lines:
             sec1, sec2 = line.split(',')
             if self.section_contains_other(sec1, sec2):
-                containers.append((sec1, sec2))
-
-        return len(containers)
-
-    def section_contains_other(self, sec1, sec2):
-        start1, end1 = sec1.split('-')
-        start2, end2 = sec2.split('-')
-
-        if int(start1) <= int(start2) and int(end1) >= int(end2):
-            return True
-
-        if int(start2) <= int(start1) and int(end2) >= int(end1):
-            return True
-
-        return False
+                redundancies.append((sec1, sec2))
+        return len(redundancies)
 
     @property
     def second(self):
-        containers = []
+        overlaps = []
 
         for line in self.input_lines:
             sec1, sec2 = line.split(',')
@@ -54,14 +40,12 @@ class Solution:
 
             set1 = set(range(int(start1), int(end1)+1))
             set2 = set(range(int(start2), int(end2)+1))
-            overlaps = list(set1.intersection(set2))
+            overlapping_sections = list(set1.intersection(set2))
 
-            print(sec1, sec2, set1, set2, overlaps)
+            if len(overlapping_sections) > 0:
+                overlaps.append(overlapping_sections)
 
-            if len(overlaps) > 0:
-                containers.append((sec1, sec2))
-
-        return len(containers)
+        return len(overlaps)
 
     #
     # Properties
@@ -75,6 +59,17 @@ class Solution:
     #
     # Methods
     #
+    def section_contains_other(self, sec1, sec2):
+        start1, end1 = sec1.split('-')
+        start2, end2 = sec2.split('-')
+
+        if int(start1) <= int(start2) and int(end1) >= int(end2):
+            return True
+
+        if int(start2) <= int(start1) and int(end2) >= int(end1):
+            return True
+
+        return False
 
 
 #
