@@ -24,8 +24,6 @@ STACKS_DRAWING = """
 [Q] [Q] [B] [D] [J] [W] [H] [R] [J]
 """
 
-print(len('[F]     [S]     [T]     [R]     [B]'))
-
 
 class Solution:
     def __init__(self, input_file):
@@ -38,69 +36,19 @@ class Solution:
     def first(self):
         stacks = self.parse_stacks(STACKS_DRAWING)
         for line in self.input_lines:
-            num, from_col, to_col = self.parse_step(line)
+            num, from_col, to_col = self.parse_crate_movement(line)
             stacks = self.move_crates(stacks, num, from_col, to_col)
-        return ''.join([stacks[n+1][0] for n in range(9)])
+        stack_tops = [stacks[n+1][0] for n in range(9)]
+        return ''.join(stack_tops)
 
     @property
     def second(self):
         stacks = self.parse_stacks(STACKS_DRAWING)
         for line in self.input_lines:
-            num, from_col, to_col = self.parse_step(line)
-            stacks = self.move_crates_9001(stacks, num, from_col, to_col)
-        return ''.join([stacks[n+1][0] for n in range(9)])
-
-    def move_crates_9001(self, stacks, num, from_col, to_col):
-        crates = stacks[from_col][0:num]
-        stacks[from_col] = stacks[from_col][num:]
-        stacks[to_col] = crates + stacks[to_col]
-        return stacks
-
-    def move_crates(self, stacks, num, from_col, to_col):
-        for n in range(num):
-            crate = stacks[from_col].pop(0)
-            stacks[to_col].insert(0, crate)
-        return stacks
-
-    def parse_step(self, line):
-        # https://stackoverflow.com/a/4289557/1093087
-        num, from_col, to_col = [int(s) for s in line.split() if s.isdigit()]
-        return num, from_col, to_col
-
-    def parse_stacks(self, drawing):
-        stacks = dict([(n+1, []) for n in range(9)])
-        lines = drawing.split("\n")
-        print(lines)
-
-        for line in lines:
-            if len(line) < 1:
-                continue
-
-            #print(line)
-            crates = self.parse_crates_in_row(line)
-            print(crates)
-            for n in range(9):
-                #print(n)
-                col = n+1
-                crate = crates[n].strip()
-
-                if len(crate) > 0:
-                    stacks[col].append(crate)
-
-        return stacks
-
-    def parse_crates_in_row(self, line):
-        columns = []
-        step = 4
-        for n in range(1, 35, step):
-            print(n)
-            try:
-                crate = line[n]
-            except IndexError:
-                crate = ''
-            print(crate)
-            columns.append(crate)
-        return columns
+            num, from_col, to_col = self.parse_crate_movement(line)
+            stacks = self.move_crates_with_9001(stacks, num, from_col, to_col)
+        stack_tops = [stacks[n+1][0] for n in range(9)]
+        return ''.join(stack_tops)
 
     #
     # Properties
@@ -114,6 +62,51 @@ class Solution:
     #
     # Methods
     #
+    def move_crates_with_9001(self, stacks, num, from_col, to_col):
+        crates = stacks[from_col][0:num]
+        stacks[from_col] = stacks[from_col][num:]
+        stacks[to_col] = crates + stacks[to_col]
+        return stacks
+
+    def move_crates(self, stacks, num, from_col, to_col):
+        for n in range(num):
+            crate = stacks[from_col].pop(0)
+            stacks[to_col].insert(0, crate)
+        return stacks
+
+    def parse_crate_movement(self, line):
+        # https://stackoverflow.com/a/4289557/1093087
+        num, from_col, to_col = [int(s) for s in line.split() if s.isdigit()]
+        return num, from_col, to_col
+
+    def parse_stacks(self, drawing):
+        stacks = dict([(n+1, []) for n in range(9)])
+        lines = drawing.split("\n")
+
+        for line in lines:
+            if len(line) < 1:
+                continue
+
+            crates = self.parse_crates_in_row(line)
+
+            for n in range(9):
+                col = n+1
+                crate = crates[n].strip()
+                if crate:
+                    stacks[col].append(crate)
+
+        return stacks
+
+    def parse_crates_in_row(self, line):
+        columns = []
+        step = 4
+        for n in range(1, 35, step):
+            try:
+                crate = line[n]
+            except IndexError:
+                crate = ' '
+            columns.append(crate)
+        return columns
 
 
 #
