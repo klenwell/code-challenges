@@ -1,11 +1,6 @@
 """
 Advent of Code 2022 - Day 6
 https://adventofcode.com/2022/day/6
-
-References:
-2981
-2980
-2982
 """
 from os.path import join as path_join
 from functools import cached_property
@@ -25,39 +20,12 @@ class Solution:
     @property
     def first(self):
         input = self.input_lines[0]
-        print(len(input))
-
-        for n in range(len(input)):
-            if n < 3:
-                continue
-
-            c1 = input[n-3]
-            c2 = input[n-2]
-            c3 = input[n-1]
-            c4 = input[n]
-            word = '{}{}{}{}'.format(c1,c2,c3,c4)
-
-            if len(set(word)) == len(word):
-                print(word, n)
-                return n+1
+        return self.detect_message_marker(input, 4)
 
     @property
     def second(self):
         input = self.input_lines[0]
-        print(len(input))
-        #input = 'zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw'
-
-        for n in range(len(input)):
-            if n < 14:
-                continue
-
-            word = input[n-14:n]
-            #print(word)
-            #breakpoint()
-
-            if len(set(word)) == len(word):
-                print(word, len(word), n)
-                return n
+        return self.detect_message_marker(input, 14)
 
     #
     # Properties
@@ -71,6 +39,15 @@ class Solution:
     #
     # Methods
     #
+    def detect_message_marker(self, input, marker_len):
+        for n in range(len(input)):
+            if n < marker_len:
+                continue
+
+            word = input[n-marker_len:n]
+
+            if len(set(word)) == len(word):
+                return n
 
 
 #
