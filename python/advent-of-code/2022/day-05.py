@@ -24,6 +24,8 @@ STACKS_DRAWING = """
 [Q] [Q] [B] [D] [J] [W] [H] [R] [J]
 """
 
+NUM_STACKS = 9
+
 
 class Solution:
     def __init__(self, input_file):
@@ -38,7 +40,7 @@ class Solution:
         for line in self.input_lines:
             num, from_col, to_col = self.parse_crate_movement(line)
             stacks = self.move_crates(stacks, num, from_col, to_col)
-        stack_tops = [stacks[n+1][0] for n in range(9)]
+        stack_tops = [stacks[n+1][0] for n in range(NUM_STACKS)]
         return ''.join(stack_tops)
 
     @property
@@ -47,7 +49,7 @@ class Solution:
         for line in self.input_lines:
             num, from_col, to_col = self.parse_crate_movement(line)
             stacks = self.move_crates_with_9001(stacks, num, from_col, to_col)
-        stack_tops = [stacks[n+1][0] for n in range(9)]
+        stack_tops = [stacks[n+1][0] for n in range(NUM_STACKS)]
         return ''.join(stack_tops)
 
     #
@@ -80,7 +82,7 @@ class Solution:
         return num, from_col, to_col
 
     def parse_stacks(self, drawing):
-        stacks = dict([(n+1, []) for n in range(9)])
+        stacks = dict([(n+1, []) for n in range(NUM_STACKS)])
         lines = drawing.split("\n")
 
         for line in lines:
@@ -89,7 +91,7 @@ class Solution:
 
             crates = self.parse_crates_in_row(line)
 
-            for n in range(9):
+            for n in range(NUM_STACKS):
                 col = n+1
                 crate = crates[n].strip()
                 if crate:
@@ -100,7 +102,7 @@ class Solution:
     def parse_crates_in_row(self, line):
         columns = []
         step = 4
-        for n in range(1, 35, step):
+        for n in range(1, NUM_STACKS*step, step):
             try:
                 crate = line[n]
             except IndexError:
