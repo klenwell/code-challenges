@@ -48,6 +48,33 @@ class ElfOS:
     def dirs(self):
         return self.root.dirs
 
+    def parse_commands(self, lines):
+        commands = []
+        in_ls = False
+        group = []
+
+        for line in lines:
+            if not line:
+                continue
+
+            if line.startswith('$'):
+                if line.startswith('$ cd'):
+                    in_ls = False
+                    if group:
+                        commands.append(group)
+                        group = []
+                    commands.append([line])
+                else:  # ls
+                    in_ls = True
+                    group = [line]
+            else:
+                group.append(line)
+
+        if in_ls:
+            commands.append(group)
+
+        return commands
+
     def run(self, commands):
         command = commands[0]
         if command.startswith('$ cd'):
@@ -57,7 +84,6 @@ class ElfOS:
             self.ls(commands[1:])
 
     def cd(self, name):
-        print('cd', name)
         if name == '..':
             self.cwd = self.cwd.parent
         else:
@@ -68,7 +94,6 @@ class ElfOS:
         return self.cwd
 
     def ls(self, objects):
-        print('ls', objects)
         for object in objects:
             if object.startswith('dir'):
                 name = object.split(' ')[-1]
@@ -124,34 +149,6 @@ class Solution:
     def __init__(self, input_file):
         self.input_file = input_file
 
-    def group_commands(self, lines):
-        commands = []
-        in_ls = False
-        group = []
-
-        for line in lines:
-            #print(line)
-            if not line:
-                continue
-
-            if line.startswith('$'):
-                if line.startswith('$ cd'):
-                    in_ls = False
-                    if group:
-                        commands.append(group)
-                        group = []
-                    commands.append([line])
-                else: # ls
-                    in_ls = True
-                    group = [line]
-            else:
-                group.append(line)
-
-        if in_ls:
-            commands.append(group)
-
-        return commands
-
     #
     # Solutions
     #
@@ -160,49 +157,43 @@ class Solution:
         lines = TEST_INPUT.split("\n")
 
         os = ElfOS()
-        commands = self.group_commands(lines)
-        print(commands)
-        #breakpoint()
+        commands = os.parse_commands(lines)
 
         for command in commands:
             os.run(command)
-            print(os)
 
-        print(os.dirs)
         small_dirs = [d for d in os.dirs if d.size <= 100000]
         return sum([d.size for d in small_dirs])
-
 
     @property
     def first(self):
         os = ElfOS()
-        commands = self.group_commands(self.input_lines)
+        commands = os.parse_commands(self.input_lines)
 
         for command in commands:
             os.run(command)
 
         small_dirs = [d for d in os.dirs if d.size <= 100000]
-        print(len(small_dirs))
         return sum([d.size for d in small_dirs])
 
     @property
     def second(self):
         TOTAL_DISK_SPACE = 70000000
         UPDATE_SPACE = 30000000
+
         os = ElfOS()
-        commands = self.group_commands(self.input_lines)
+        commands = os.parse_commands(self.input_lines)
 
         for command in commands:
             os.run(command)
 
         unused_space = TOTAL_DISK_SPACE - os.root.size
         need_space = UPDATE_SPACE - unused_space
-        dirs = sorted(os.dirs, key=lambda d:d.size)
-        print(unused_space, need_space)
+        dirs = sorted(os.dirs, key=lambda d: d.size)
 
         for dir in dirs:
             if dir.size >= need_space:
-                return dir
+                return dir.size
 
     #
     # Properties
