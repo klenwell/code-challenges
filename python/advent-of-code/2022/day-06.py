@@ -41,13 +41,10 @@ class Solution:
     #
     def detect_message_marker(self, input, marker_len):
         for n in range(len(input)):
-            if n < marker_len:
-                continue
+            word = input[n:n+marker_len]
 
-            word = input[n-marker_len:n]
-
-            if len(set(word)) == len(word):
-                return n
+            if len(set(word)) == marker_len:
+                return n + marker_len
 
 
 #
