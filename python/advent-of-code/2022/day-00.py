@@ -12,6 +12,9 @@ from config import INPUT_DIR
 
 INPUT_FILE = path_join(INPUT_DIR, 'day-00.txt')
 
+TEST_INPUT = """\
+"""
+
 
 class Solution:
     def __init__(self, input_file):
@@ -20,6 +23,10 @@ class Solution:
     #
     # Solutions
     #
+    @property
+    def test(self):
+        return self.test_input_lines
+
     @property
     def first(self):
         pass
@@ -37,6 +44,10 @@ class Solution:
             lines = file.readlines()
             return [line.strip() for line in lines]
 
+    @cached_property
+    def test_input_lines(self):
+        return [line.strip() for line in TEST_INPUT.split("\n")]
+
     #
     # Methods
     #
@@ -46,5 +57,6 @@ class Solution:
 # Main
 #
 solution = Solution(INPUT_FILE)
+print("test solution: {}".format(solution.test))
 print("pt 1 solution: {}".format(solution.first))
 print("pt 2 solution: {}".format(solution.second))

@@ -154,6 +154,7 @@ class Solution:
     #
     @property
     def test(self):
+        MAX_DIR_SIZE = 100000
         lines = TEST_INPUT.split("\n")
 
         os = ElfOS()
@@ -162,18 +163,20 @@ class Solution:
         for command in commands:
             os.run(command)
 
-        small_dirs = [d for d in os.dirs if d.size <= 100000]
+        small_dirs = [d for d in os.dirs if d.size <= MAX_DIR_SIZE]
         return sum([d.size for d in small_dirs])
 
     @property
     def first(self):
+        MAX_DIR_SIZE = 100000
+
         os = ElfOS()
         commands = os.parse_commands(self.input_lines)
 
         for command in commands:
             os.run(command)
 
-        small_dirs = [d for d in os.dirs if d.size <= 100000]
+        small_dirs = [d for d in os.dirs if d.size <= MAX_DIR_SIZE]
         return sum([d.size for d in small_dirs])
 
     @property
@@ -188,11 +191,11 @@ class Solution:
             os.run(command)
 
         unused_space = TOTAL_DISK_SPACE - os.root.size
-        need_space = UPDATE_SPACE - unused_space
+        needed_space = UPDATE_SPACE - unused_space
         dirs = sorted(os.dirs, key=lambda d: d.size)
 
         for dir in dirs:
-            if dir.size >= need_space:
+            if dir.size >= needed_space:
                 return dir.size
 
     #
