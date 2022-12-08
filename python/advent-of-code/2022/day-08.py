@@ -24,6 +24,9 @@ class TreeGrid:
     def __init__(self, input_rows):
         self.input_rows = input_rows
 
+    #
+    # Properties
+    #
     @property
     def visible_trees(self):
         visible_trees = []
@@ -37,16 +40,6 @@ class TreeGrid:
         return sorted(set(visible_trees))
 
     @property
-    def all_trees(self):
-        trees = []
-
-        for x in range(len(self.rows)):
-            for y in range(len(self.cols)):
-                trees.append((x,y))
-
-        return trees
-
-    @property
     def highest_scenic_score(self):
         scores = []
         for tree in self.all_trees:
@@ -54,6 +47,35 @@ class TreeGrid:
             scores.append(score)
         return max(scores)
 
+    @property
+    def all_trees(self):
+        trees = []
+        for x in range(len(self.rows)):
+            for y in range(len(self.cols)):
+                trees.append((x, y))
+        return trees
+
+    @cached_property
+    def rows(self):
+        rows = []
+        for input_row in self.input_rows:
+            row = [int(n) for n in list(input_row)]
+            rows.append(row)
+        return rows
+
+    @cached_property
+    def cols(self):
+        cols = []
+        for n in range(len(self.rows)):
+            col = []
+            for row in self.rows:
+                col.append(row[n])
+            cols.append(col)
+        return cols
+
+    #
+    # Methods
+    #
     def compute_scenic_score(self, tree):
         left = self.look_left(tree)
         right = self.look_right(tree)
@@ -109,25 +131,6 @@ class TreeGrid:
                 return score
         return score
 
-
-    @cached_property
-    def rows(self):
-        rows = []
-        for input_row in self.input_rows:
-            row = [int(n) for n in list(input_row)]
-            rows.append(row)
-        return rows
-
-    @cached_property
-    def cols(self):
-        cols = []
-        for n in range(len(self.rows)):
-            col = []
-            for row in self.rows:
-                col.append(row[n])
-            cols.append(col)
-        return cols
-
     def check_row(self, x, row):
         visible_trees = []
 
@@ -147,7 +150,7 @@ class TreeGrid:
                 high_tree = tree_ht
                 visible_trees.append((x, y))
 
-        #print(row, '->', list(set(visible_trees)))
+        # print(row, '->', list(set(visible_trees)))
         return list(set(visible_trees))
 
     def check_col(self, y, col):
@@ -183,14 +186,14 @@ class Solution:
     @property
     def test(self):
         grid = TreeGrid(self.test_input_lines)
-        #print(grid.rows)
-        #print(grid.cols)
+        # print(grid.rows)
+        # print(grid.cols)
         return len(grid.visible_trees)
 
     @property
     def test2(self):
         grid = TreeGrid(self.test_input_lines)
-        print(grid.all_trees)
+        # print(grid.all_trees)
         return grid.highest_scenic_score
 
     @property
@@ -215,10 +218,6 @@ class Solution:
     @cached_property
     def test_input_lines(self):
         return [line.strip() for line in TEST_INPUT.split("\n")]
-
-    #
-    # Methods
-    #
 
 
 #
