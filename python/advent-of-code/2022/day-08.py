@@ -1,9 +1,6 @@
 """
 Advent of Code 2022 - Day 8
 https://adventofcode.com/2022/day/8
-
-References:
-
 """
 from os.path import join as path_join
 from functools import cached_property
@@ -100,7 +97,7 @@ class TreeGrid:
         x, y = tree
         row = self.rows[y]
         tree_ht = row[x]
-        neighbors = list(reversed(row[:x]))
+        neighbors = reversed(row[:x])
         for ht in neighbors:
             score += 1
             if ht >= tree_ht:
@@ -124,7 +121,7 @@ class TreeGrid:
         x, y = tree
         col = self.cols[x]
         tree_ht = col[y]
-        neighbors = list(reversed(col[:y]))
+        neighbors = reversed(col[:y])
         for ht in neighbors:
             score += 1
             if ht >= tree_ht:
