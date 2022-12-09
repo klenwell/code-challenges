@@ -1,8 +1,6 @@
 """
 Advent of Code 2022 - Day 9
 https://adventofcode.com/2022/day/9
-
-References:
 """
 from os.path import join as path_join
 from functools import cached_property
@@ -24,17 +22,15 @@ R 2"""
 
 class Rope:
     def __init__(self):
-        self.head = [0,0]
-        self.tail = [0,0]
+        self.head = [0, 0]
+        self.tail = [0, 0]
         self.tail_pts = [tuple(self.tail)]
 
     def simulate(self, motions):
         for motion in motions:
             dir, steps = motion.split(' ')
-            print(dir, steps)
             for n in range(int(steps)):
                 self.move_head(dir)
-                print(motion, self.head, self.tail)
 
     def move_head(self, dir):
         if dir == 'R':
@@ -107,7 +103,7 @@ class Rope:
 
 class KnottyRope:
     def __init__(self, knots):
-        self.knots = [[0,0] for knot in range(knots)]
+        self.knots = [[0, 0] for knot in range(knots)]
         self.tail_pts = []
 
     def simulate(self, motions):
@@ -115,7 +111,6 @@ class KnottyRope:
             dir, steps = motion.split(' ')
             for n in range(int(steps)):
                 self.move_head(dir)
-                print(motion, n, self.knots)
 
     def move_head(self, dir):
         self.move_knot(self.knots[0], dir)
@@ -198,7 +193,6 @@ class Solution:
 
     @property
     def test2(self):
-        expected = 36
         INPUT = """\
 R 5
 U 8
@@ -212,17 +206,13 @@ U 20"""
         motions = [line.strip() for line in INPUT.split("\n")]
         rope = KnottyRope(10)
         rope.simulate(motions)
-        tail_pts = len(set(rope.tail_pts))
-        print(set(rope.tail_pts))
-        return tail_pts, tail_pts == expected, expected
-
+        return len(set(rope.tail_pts))
 
     @property
     def first(self):
         motions = self.input_lines
         rope = Rope()
         rope.simulate(motions)
-        print(rope.tail_pts)
         return len(set(rope.tail_pts))
 
     @property
@@ -245,10 +235,6 @@ U 20"""
     def test_input_lines(self):
         return [line.strip() for line in TEST_INPUT.split("\n")]
 
-    #
-    # Methods
-    #
-
 
 #
 # Main
@@ -256,5 +242,5 @@ U 20"""
 solution = Solution(INPUT_FILE)
 print("test 1 solution: {}".format(solution.test1))
 print("test 2 solution: {}".format(solution.test2))
-#print("pt 1 solution: {}".format(solution.first))
+print("pt 1 solution: {}".format(solution.first))
 print("pt 2 solution: {}".format(solution.second))
