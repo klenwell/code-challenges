@@ -264,20 +264,6 @@ addx -5"""
         with open(self.input_file) as file:
             return file.read().strip()
 
-    @cached_property
-    def input_lines(self):
-        with open(self.input_file) as file:
-            lines = file.readlines()
-            return [line.strip() for line in lines]
-
-    @cached_property
-    def test_input_lines(self):
-        return [line.strip() for line in TEST_INPUT.split("\n")]
-
-    #
-    # Methods
-    #
-
 
 #
 # Main
