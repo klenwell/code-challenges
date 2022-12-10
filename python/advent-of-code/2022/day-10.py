@@ -1,9 +1,6 @@
 """
 Advent of Code 2022 - Day 10
 https://adventofcode.com/2022/day/10
-
-References:
-
 """
 from os.path import join as path_join
 from functools import cached_property
@@ -160,6 +157,7 @@ noop
 noop
 noop"""
 
+
 class ElfCpu:
     def __init__(self, program):
         self.instructions = program.split("\n")
@@ -177,11 +175,11 @@ class ElfCpu:
         for instruction in self.instructions:
             self.run(instruction)
 
-    def run(self, command):
-        if command.startswith('noop'):
+    def run(self, instruction):
+        if instruction.startswith('noop'):
             self.noop()
         else:
-            self.addx(command)
+            self.addx(instruction)
 
     def noop(self):
         self.tape.append(self.x)
@@ -230,10 +228,7 @@ addx -5"""
         cpu = ElfCpu(larger_program)
         cpu.execute()
         cycles = [20, 60, 100, 140, 180, 220]
-        print(cpu.tape)
-        print(cpu.tape[219:222])
         signals = [cpu.signal_strength(c) for c in cycles]
-        print(signals)
         return sum(signals)
 
     @property
@@ -242,9 +237,7 @@ addx -5"""
         cpu = ElfCpu(program)
         cpu.execute()
         cycles = [20, 60, 100, 140, 180, 220]
-        print(len(cpu.tape))
         signals = [cpu.signal_strength(c) for c in cycles]
-        print(signals)
         return sum(signals)
 
     @property
@@ -253,6 +246,7 @@ addx -5"""
         cpu = ElfCpu(larger_program)
         cpu.execute()
         cpu.render_image()
+        return '(see image above)'
 
     @property
     def second(self):
@@ -260,6 +254,7 @@ addx -5"""
         cpu = ElfCpu(program)
         cpu.execute()
         cpu.render_image()
+        return '(see image above)'
 
     #
     # Properties
