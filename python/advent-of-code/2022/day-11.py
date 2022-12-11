@@ -116,8 +116,8 @@ class Monkey:
 
     def __repr__(self):
         items = ', '.join([str(i.worry) for i in self.items])
-        return "<Monkey #{} items={} op='{}' test={} t={} f={} inspections={}>".format(
-            self.number, items, self.op, self.test, self.true, self.false, self.inspections)
+        return "<Monkey #{} items={} op='{}' test_int={} t={} f={} inspections={}>".format(
+            self.number, items, self.op, self.test_int, self.true, self.false, self.inspections)
 
 
 class Item:
@@ -187,7 +187,7 @@ class Solution:
         for n in range(rounds):
             for monkey in monkeys:
                 monkey.take_turn(monkeys)
-                self.take_anxiety_med(anxiety_med, monkeys)
+            self.take_anxiety_med(anxiety_med, monkeys)
 
         active_monkeys = sorted(monkeys, key=lambda m: m.inspections, reverse=True)
         monkey_business = active_monkeys[0].inspections * active_monkeys[1].inspections
@@ -206,7 +206,7 @@ class Solution:
         for n in range(rounds):
             for monkey in monkeys:
                 monkey.take_turn(monkeys)
-                self.take_anxiety_med(anxiety_med, monkeys)
+            self.take_anxiety_med(anxiety_med, monkeys)
 
         active_monkeys = sorted(monkeys, key=lambda m: m.inspections, reverse=True)
         monkey_business = active_monkeys[0].inspections * active_monkeys[1].inspections
