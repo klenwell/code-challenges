@@ -6,7 +6,7 @@ from os.path import join as path_join
 from functools import cached_property
 from config import INPUT_DIR
 
-from math import floor
+from math import floor, prod
 
 
 INPUT_FILE = path_join(INPUT_DIR, 'day-11.txt')
@@ -135,10 +135,10 @@ class Item:
         return "<Item worry={}>".format(self.worry)
 
 
-class EfficientMonkey(Monkey):
+class AnxietyMonkey(Monkey):
     def parse_items(self, line):
         item_csv = line.split(':')[-1]
-        items = [EfficientItem(v) for v in item_csv.split(',')]
+        items = [PrimeItem(v) for v in item_csv.split(',')]
         return items
 
     def inspect(self, item):
@@ -146,49 +146,54 @@ class EfficientMonkey(Monkey):
         self.inspections += 1
         item = self.change_worry_level(item)
         #print(item)roundop_val
-        #item.worry = int(floor(item.worry / 3.0))
+        # Manage worry levels: https://github.com/gwendolyn-harris/sketchbook/blob/main/AoC/2022/Day11.py#L58
+        item.worry = item.worry % item.primer
 
     def change_worry_level(self, item):
-        if self.op[0] != 'old':
-            raise ValueError('Unexpected op[0]: {}'.format(self.op[0]))
-
         op = self.op[1]
         val = self.op[-1]
+        int_val = item.worry if val == 'old' else int(self.op[-1])
 
         if op == '+':
-            item.add(val)
+            item.worry = item.worry + int_val
         elif op == '*':
-            item.mult(val)
-
+            item.worry = item.worry * int_val
         return item
 
-    def throw(self, item, monkeys):
-        div_val = self.test[-1]
+    def __repr__(self):
+        return "<Monkey #{} inspections={}".format(
+            self.number, self.inspections)
 
-        if item.lcd_counts[div_val] > 0:
-            throws_to = self.true
-        else:
-            throws_to = self.false
 
-        monkey = [m for m in monkeys if m.number == throws_to][0]
+class PrimeItem(Item):
+    TEST_VALUES = [13, 19, 5, 2, 17, 11, 7, 3]
 
-        #print('THROW', self.number, 'to', monkey.number, item.worry)
-        monkey.items.append(item)
+    def __init__(self, input):
+        self.primer = prod(self.TEST_VALUES)
+        super().__init__(input)
+
+    def manage_worry_level(self):
+        if item.worry % item.primer == 0:
+            print('manageable!')
+            breakpoint()
+            item.worry = item.worry // item.primer
 
 
 class EfficientItem:
-    DIVISIBLES = [13, 19, 5, 2, 17, 11, 7, 3] + [23]
+    TEST_VALUES = [13, 17, 19, 23]
+    #TEST_VALUES = [13, 19, 5, 2, 17, 11, 7, 3]
 
     def __init__(self, input):
         value = int(input.strip())
-        self.lcd_counts = dict([(lcd, 0) for lcd in self.DIVISIBLES])
+        self.primes = sorted(self.TEST_VALUES)
+        self.prime_counts = dict([(prime, 0) for prime in self.primes])
         self.decompose(value)
 
     @property
     def worry(self):
         value = 1
 
-        for lcd, count in self.lcd_counts.items():
+        for lcd, count in self.prime_counts.items():
             if count == 0:
                 continue
             value = value * lcd * count
@@ -197,25 +202,25 @@ class EfficientItem:
 
     def mult(self, value):
         if value == 'old':
-            for lcd in self.DIVISIBLES:
-                self.lcd_counts[lcd] += 1
+            for prime in self.primes:
+                self.prime_counts[prime] *= 2
         else:
             value = int(value)
-            self.lcd_counts[value] += 1
+            self.prime_counts[value] += 1
 
     def add(self, value):
         value = self.worry + int(value)
         self.decompose(value)
 
     def decompose(self, value):
-        for lcd in self.DIVISIBLES:
-            if value % lcd == 0:
-                self.lcd_counts[lcd] = value / lcd
+        for prime in self.primes:
+            if value % prime == 0:
+                self.prime_counts[prime] = value / prime
             else:
-                self.lcd_counts[lcd] = 0
+                self.prime_counts[prime] = 0
 
     def __repr__(self):
-        return "<Item lcd_counts={}>".format(self.lcd_counts)
+        return "<Item prime_counts={}>".format(self.prime_counts)
 
 
 class Solution:
@@ -269,26 +274,45 @@ class Solution:
 
     @property
     def test2(self):
+        expects = 2713310158
         rounds = 10000
         notebook = TEST_INPUT
 
         monkeys_notes = notebook.split('\n\n')
-        monkeys = [EfficientMonkey(monkey_notes) for monkey_notes in monkeys_notes]
+        monkeys = [AnxietyMonkey(monkey_notes) for monkey_notes in monkeys_notes]
 
         for n in range(rounds):
             print('Round', n)
             for monkey in monkeys:
                 monkey.take_turn(monkeys)
+
+            if n+1 in [1, 20, 1000, 2000]:
+                print(monkeys)
+                #breakpoint()
             #breakpoint()
 
         active_monkeys = sorted(monkeys, key=lambda m: m.inspections, reverse=True)
         print(active_monkeys)
         monkey_business = active_monkeys[0].inspections * active_monkeys[1].inspections
+        print(monkey_business, expects)
+        assert(monkey_business == expects)
         return monkey_business
 
     @property
     def second(self):
-        pass
+        rounds = 10000
+        notebook = self.input
+
+        monkeys_notes = notebook.split('\n\n')
+        monkeys = [AnxietyMonkey(monkey_notes) for monkey_notes in monkeys_notes]
+
+        for n in range(rounds):
+            for monkey in monkeys:
+                monkey.take_turn(monkeys)
+
+        active_monkeys = sorted(monkeys, key=lambda m: m.inspections, reverse=True)
+        monkey_business = active_monkeys[0].inspections * active_monkeys[1].inspections
+        return monkey_business
 
     #
     # Properties
@@ -316,6 +340,6 @@ class Solution:
 #
 solution = Solution(INPUT_FILE)
 print("test 1 solution: {}".format(solution.test1))
-print("test 2 solution: {}".format(solution.test2))
+#print("test 2 solution: {}".format(solution.test2))
 print("pt 1 solution: {}".format(solution.first))
 print("pt 2 solution: {}".format(solution.second))
