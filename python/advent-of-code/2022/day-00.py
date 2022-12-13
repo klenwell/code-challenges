@@ -1,9 +1,6 @@
 """
 Advent of Code 2022 - Day 0
 https://adventofcode.com/2022/day/0
-
-References:
-
 """
 from os.path import join as path_join
 from functools import cached_property
@@ -43,10 +40,13 @@ class Solution:
     # Properties
     #
     @cached_property
-    def input_lines(self):
+    def file_input(self):
         with open(self.input_file) as file:
-            lines = file.readlines()
-            return [line.strip() for line in lines]
+            return file.read().strip()
+
+    @cached_property
+    def input_lines(self):
+        return [line.strip() for line in self.file_input.split("\n")]
 
     @cached_property
     def test_input_lines(self):
