@@ -73,7 +73,7 @@ class ElevationMap:
 
     def find_shortest_path(self, start_pt):
         path = []
-        steps = self.dijkstra_improved(start_pt)
+        steps = self.fast_dijkstra(start_pt)
 
         path_found = steps.get(self.end_pt)
         if not path_found:
@@ -90,7 +90,7 @@ class ElevationMap:
         letter = 'z' if letter == 'E' else letter
         return ord(letter)
 
-    def dijkstra(self, start_at):
+    def slow_dijkstra(self, start_at):
         dists = {}
         steps = {}
         queue = []
@@ -123,7 +123,7 @@ class ElevationMap:
 
         return steps
 
-    def dijkstra_improved(self, start_at):
+    def fast_dijkstra(self, start_at):
         open_paths = [(0, start_at)]
         steps = {start_at: None}
         costs = {start_at: 0}
@@ -177,7 +177,6 @@ class Solution:
         path_steps = []
         map = ElevationMap(TEST_INPUT)
         low_points = [pt for pt, ht in map.grid.items() if ht == ord('a')]
-        print(low_points)
 
         for start_pt in low_points:
             path = map.find_shortest_path(start_pt)
@@ -185,7 +184,6 @@ class Solution:
                 continue
 
             steps = len(path) - 1
-            print(start_pt, steps)
             path_steps.append(steps)
 
         return min(path_steps)
@@ -201,7 +199,6 @@ class Solution:
         path_steps = []
         map = ElevationMap(self.file_input)
         low_points = [pt for pt, ht in map.grid.items() if ht == ord('a')]
-        print(len(low_points))
 
         for start_pt in low_points:
             path = map.find_shortest_path(start_pt)
@@ -209,7 +206,6 @@ class Solution:
                 continue
 
             steps = len(path) - 1
-            print(start_pt, steps)
             path_steps.append(steps)
 
         return min(path_steps)
@@ -221,18 +217,6 @@ class Solution:
     def file_input(self):
         with open(self.input_file) as file:
             return file.read().strip()
-
-    @cached_property
-    def input_lines(self):
-        return [line.strip() for line in self.file_input.split("\n")]
-
-    @cached_property
-    def test_input_lines(self):
-        return [line.strip() for line in TEST_INPUT.split("\n")]
-
-    #
-    # Methods
-    #
 
 
 #
