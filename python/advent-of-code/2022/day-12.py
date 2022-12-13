@@ -6,6 +6,8 @@ from os.path import join as path_join
 from functools import cached_property
 from config import INPUT_DIR
 
+import heapq
+
 
 INPUT_FILE = path_join(INPUT_DIR, 'day-12.txt')
 
@@ -71,11 +73,10 @@ class ElevationMap:
 
     def find_shortest_path(self, start_pt):
         path = []
-        steps = self.dijkstra(start_pt)
-        print(len(steps), steps[self.end_pt])
+        steps = self.dijkstra_improved(start_pt)
 
-        # No path found
-        if not steps[self.end_pt]:
+        path_found = steps.get(self.end_pt)
+        if not path_found:
             return None
 
         step = self.end_pt
@@ -119,6 +120,30 @@ class ElevationMap:
                 if dist < dists[next_pt]:
                     dists[next_pt] = dist
                     steps[next_pt] = pt
+
+        return steps
+
+    def dijkstra_improved(self, start_at):
+        open_paths = [(0, start_at)]
+        steps = {start_at: None}
+        costs = {start_at: 0}
+
+        while open_paths:
+            _, pt = heapq.heappop(open_paths)
+
+            if pt == self.end_pt:
+                break
+
+            for next_pt in self.neighbors(pt):
+                if self.grid[next_pt] - self.grid[pt] > 1:
+                    continue
+                if next_pt in costs:
+                    continue
+
+                cost = costs[pt] + 1
+                costs[next_pt] = cost
+                heapq.heappush(open_paths, (cost, next_pt))
+                steps[next_pt] = pt
 
         return steps
 
