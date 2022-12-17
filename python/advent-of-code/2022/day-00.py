@@ -25,12 +25,12 @@ class Solution:
         return self.test_input_lines
 
     @property
-    def test2(self):
-        pass
-
-    @property
     def first(self):
         return self.input_lines
+
+    @property
+    def test2(self):
+        pass
 
     @property
     def second(self):
@@ -62,6 +62,6 @@ class Solution:
 #
 solution = Solution(INPUT_FILE)
 print("test 1 solution: {}".format(solution.test1))
-print("test 2 solution: {}".format(solution.test2))
 print("pt 1 solution: {}".format(solution.first))
+print("test 2 solution: {}".format(solution.test2))
 print("pt 2 solution: {}".format(solution.second))
