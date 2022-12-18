@@ -89,19 +89,79 @@ class Sensor:
         return range(self.y_min, self.y_max)
 
     def range_at_row(self, y):
-        if y not in self.y_range:
+        if self.min_x_at_row(y) is None:
             return set()
+        return range(self.min_x_at_row(y), self.max_x_at_row(y) + 1)
+
+    def min_x_at_row(self, y):
+        if y not in self.y_range:
+            return None
 
         dy = abs(y - self.y)
         x_width = self.beacon_dist - dy
-        x_min = self.x - x_width
-        x_max = self.x + x_width + 1
-        return set(range(x_min, x_max))
+        return self.x - x_width
+
+    def max_x_at_row(self, y):
+        if y not in self.y_range:
+            return None
+
+        dy = abs(y - self.y)
+        x_width = self.beacon_dist - dy
+        return self.x + x_width
+
+    def scan_at_row(self, y):
+        return set(self.range_at_row(y))
 
     def __repr__(self):
         return '<Sensor pt={} beacon={} dist={}>'.format(
             self.pt, self.beacon_pt, self.beacon_dist)
 
+
+class Device:
+    def __init__(self, input, max_i):
+        self.sensors = Sensor.deploy_all(input)
+        self.max_i = max_i
+
+    @property
+    def tuning_frequency(self):
+        x, y = self.find_dead_spot()
+        return x * 4000000 + y
+
+    def find_dead_spot(self):
+        for y in range(self.max_i + 1):
+            x = self.detect_dead_spot_at_row(y)
+            if x:
+                return x, y
+
+            if y % 10000 == 0:
+                print('scanning row:', y)
+
+        raise Exception('Dead spot not found!')
+
+    def detect_dead_spot_at_row(self, y):
+        row_min_x = 0
+        row_max_x = 0
+
+        sensors = [s for s in self.sensors if y in s.y_range]
+        sorted_sensors = sorted(sensors, key=lambda s: s.min_x_at_row(y))
+
+        # Chomp dead spots at row
+        for sensor in sorted_sensors:
+            sensor_min_x = sensor.min_x_at_row(y)
+            sensor_max_x = sensor.max_x_at_row(y)
+            #print('range:', sensor_min_x, ',', sensor_max_x)
+
+            if sensor_min_x > row_min_x + 1:
+                return row_min_x + 1
+
+            if sensor_max_x > row_min_x:
+                row_min_x = sensor_max_x
+
+            if row_min_x > self.max_i:
+                return None
+
+    def __repr__(self):
+        return '<Device sensors={}>'.format(len(self.sensors))
 
 
 class Solution:
@@ -119,7 +179,7 @@ class Solution:
         # Tests
         test_sensor = sensors[6]
         test_sensor_range = test_sensor.range_at_row(target_row)
-        assert test_sensor_range == set(range(2, 15)), test_sensor_range
+        assert test_sensor_range == range(2, 15), test_sensor_range
         assert sensors[0].beacon_pt[0] == -2, sensors[0].beacon_pt[0]
 
         # Solve
@@ -127,7 +187,7 @@ class Solution:
         beacon_spots = set()
 
         for sensor in sensors:
-            dead_spots = dead_spots.union(sensor.range_at_row(target_row))
+            dead_spots = dead_spots.union(sensor.scan_at_row(target_row))
 
             beacon_y = sensor.beacon_pt[1]
             if beacon_y == target_row:
@@ -149,7 +209,7 @@ class Solution:
         beacon_spots = set()
 
         for sensor in sensors:
-            sensor_dead_spots = sensor.range_at_row(target_row)
+            sensor_dead_spots = sensor.scan_at_row(target_row)
             dead_spots = dead_spots.union(sensor_dead_spots)
             print(sensor.x_min, sensor.x, sensor.x_max, len(sensor_dead_spots))
 
@@ -163,11 +223,28 @@ class Solution:
 
     @property
     def test2(self):
-        pass
+        max_i = 20
+        device = Device(TEST_INPUT, max_i)
+        print(device)
+
+        dead_spots = []
+
+        for y in range(max_i + 1):
+            x = device.detect_dead_spot_at_row(y)
+            if x:
+             dead_spots.append((x, y))
+
+        print(dead_spots)
+        dead_spot = dead_spots[0]
+        tuning_freq = dead_spot[0] * 4000000 + dead_spot[1]
+
+        return tuning_freq
 
     @property
     def second(self):
-        pass
+        max_i = 4000000
+        device = Device(self.file_input, max_i)
+        return device.tuning_frequency
 
     #
     # Properties
@@ -195,6 +272,6 @@ class Solution:
 #
 solution = Solution(INPUT_FILE)
 print("test 1 solution: {}".format(solution.test1))
-print("pt 1 solution: {}".format(solution.first))
+#print("pt 1 solution: {}".format(solution.first))
 print("test 2 solution: {}".format(solution.test2))
 print("pt 2 solution: {}".format(solution.second))
