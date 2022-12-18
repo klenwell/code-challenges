@@ -30,7 +30,7 @@ class AbysmalCave:
 
     @cached_property
     def y_max(self):
-        return max([y for x,y in self.rock_pts])
+        return max([y for x, y in self.rock_pts])
 
     @cached_property
     def rock_pts(self):
@@ -60,10 +60,10 @@ class AbysmalCave:
                 # If that tile is blocked
                 if grain in self.filled_pts:
 
-                    # the unit of sand attempts to instead move diagonally one step down and to the right
+                    # instead move diagonally one step down and to the right
                     grain = (grain[0]+2, grain[1])
 
-                    # If all three possible destinations are blocked, the unit of sand comes to rest and no longer moves
+                    # If all three possible destinations are blocked, grain comes to rest
                     if grain in self.filled_pts:
                         grain = (grain[0]-1, grain[1]-1)
                         falling = False
@@ -121,7 +121,6 @@ class FlooredCave(AbysmalCave):
 
         return False
 
-
     def drop_grain(self):
         grain = (self.sand_source[0], self.sand_source[1])
         falling = True
@@ -137,16 +136,16 @@ class FlooredCave(AbysmalCave):
             # If the tile immediately below is blocked (by rock or sand)
             if self.tile_is_blocked(grain):
 
-                # the unit of sand attempts to instead move diagonally one step down and to the left
+                # instead move diagonally one step down and to the left
                 grain = (grain[0]-1, grain[1])
 
                 # If that tile is blocked
                 if self.tile_is_blocked(grain):
 
-                    # the unit of sand attempts to instead move diagonally one step down and to the right
+                    # instead move diagonally one step down and to the right
                     grain = (grain[0]+2, grain[1])
 
-                    # If all three possible destinations are blocked, the unit of sand comes to rest and no longer moves
+                    # If all three possible destinations are blocked, grain comes to rest
                     if self.tile_is_blocked(grain):
                         grain = (grain[0]-1, grain[1]-1)
                         falling = False
@@ -169,7 +168,6 @@ class Solution:
     @property
     def test1(self):
         cave = AbysmalCave(TEST_INPUT)
-        print(cave.y_max, sorted(cave.filled_pts))
 
         while not cave.sand_reached_abyss:
             print(cave.drop_grain())
@@ -190,7 +188,7 @@ class Solution:
         cave = FlooredCave(TEST_INPUT)
 
         while not cave.blocked:
-            print(cave.drop_grain())
+            cave.drop_grain()
 
         return len(cave.grains)
 
@@ -200,8 +198,6 @@ class Solution:
 
         while not cave.blocked:
             cave.drop_grain()
-            if len(cave.grains) % 100 == 0:
-                print(len(cave.grains))
 
         return len(cave.grains)
 
@@ -212,18 +208,6 @@ class Solution:
     def file_input(self):
         with open(self.input_file) as file:
             return file.read().strip()
-
-    @cached_property
-    def input_lines(self):
-        return [line.strip() for line in self.file_input.split("\n")]
-
-    @cached_property
-    def test_input_lines(self):
-        return [line.strip() for line in TEST_INPUT.split("\n")]
-
-    #
-    # Methods
-    #
 
 
 #
