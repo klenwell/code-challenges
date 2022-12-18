@@ -133,15 +133,13 @@ class Device:
             if x:
                 return x, y
 
-            if y % 10000 == 0:
+            if y % 100000 == 0:
                 print('scanning row:', y)
 
         raise Exception('Dead spot not found!')
 
     def detect_dead_spot_at_row(self, y):
         row_min_x = 0
-        row_max_x = 0
-
         sensors = [s for s in self.sensors if y in s.y_range]
         sorted_sensors = sorted(sensors, key=lambda s: s.min_x_at_row(y))
 
@@ -149,7 +147,7 @@ class Device:
         for sensor in sorted_sensors:
             sensor_min_x = sensor.min_x_at_row(y)
             sensor_max_x = sensor.max_x_at_row(y)
-            #print('range:', sensor_min_x, ',', sensor_max_x)
+            # print('range:', sensor_min_x, ',', sensor_max_x)
 
             if sensor_min_x > row_min_x + 1:
                 return row_min_x + 1
@@ -201,17 +199,13 @@ class Solution:
         target_row = 2000000
         sensors = Sensor.deploy_all(self.file_input)
 
-        min_x = min(s.x_min for s in sensors)
-        max_x = max(s.x_max for s in sensors)
-        print(min_x, max_x, max_x - min_x)
-
         dead_spots = set()
         beacon_spots = set()
 
         for sensor in sensors:
             sensor_dead_spots = sensor.scan_at_row(target_row)
             dead_spots = dead_spots.union(sensor_dead_spots)
-            print(sensor.x_min, sensor.x, sensor.x_max, len(sensor_dead_spots))
+            # print(sensor.x_min, sensor.x, sensor.x_max, len(sensor_dead_spots))
 
             beacon_y = sensor.beacon_pt[1]
             if beacon_y == target_row:
@@ -219,25 +213,21 @@ class Solution:
 
         dead_spots = dead_spots - beacon_spots
         return len(dead_spots)
-        #5716882
 
     @property
     def test2(self):
         max_i = 20
         device = Device(TEST_INPUT, max_i)
-        print(device)
 
         dead_spots = []
-
         for y in range(max_i + 1):
             x = device.detect_dead_spot_at_row(y)
             if x:
-             dead_spots.append((x, y))
+                dead_spots.append((x, y))
+        # print(dead_spots)
 
-        print(dead_spots)
         dead_spot = dead_spots[0]
         tuning_freq = dead_spot[0] * 4000000 + dead_spot[1]
-
         return tuning_freq
 
     @property
@@ -254,24 +244,12 @@ class Solution:
         with open(self.input_file) as file:
             return file.read().strip()
 
-    @cached_property
-    def input_lines(self):
-        return [line.strip() for line in self.file_input.split("\n")]
-
-    @cached_property
-    def test_input_lines(self):
-        return [line.strip() for line in TEST_INPUT.split("\n")]
-
-    #
-    # Methods
-    #
-
 
 #
 # Main
 #
 solution = Solution(INPUT_FILE)
 print("test 1 solution: {}".format(solution.test1))
-#print("pt 1 solution: {}".format(solution.first))
+print("pt 1 solution: {}".format(solution.first))
 print("test 2 solution: {}".format(solution.test2))
 print("pt 2 solution: {}".format(solution.second))
