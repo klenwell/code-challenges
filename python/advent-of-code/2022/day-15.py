@@ -149,6 +149,7 @@ class Device:
             sensor_max_x = sensor.max_x_at_row(y)
             # print('range:', sensor_min_x, ',', sensor_max_x)
 
+            # We found the dead spot! (This assumes it's the only one.)
             if sensor_min_x > row_min_x + 1:
                 return row_min_x + 1
 
