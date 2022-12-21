@@ -36,7 +36,7 @@ class Cube:
         return (self.x, self.y, self.z)
 
     @cached_property
-    def neighbors(self):
+    def neighbor_pts(self):
         return [
             (self.x-1, self.y, self.z),
             (self.x+1, self.y, self.z),
@@ -61,7 +61,7 @@ class LavaDroplet:
         for cube in self.cubes:
             area += 6
             pts.add(cube.pt)
-            for pt in cube.neighbors:
+            for pt in cube.neighbor_pts:
                 if pt in pts:
                     area -= 2
         return area
@@ -73,7 +73,7 @@ class LavaDroplet:
         for cube in self.cubes:
             area += 6
             pts.add(cube.pt)
-            for pt in cube.neighbors:
+            for pt in cube.neighbor_pts:
                 if pt in pts:
                     area -= 2
                 elif pt in self.trapped_interior_pts:
@@ -113,7 +113,7 @@ class LavaDroplet:
 
     @cached_property
     def exterior_pts(self):
-        """Start at 0,0,0 and use BFS to search out all exposed empty external cube pts.
+        """Start at 0,0,0 and use BFS to sweep out all exposed empty external cube pts.
         """
         empty_pts = set()
         visited_pts = set()
@@ -127,13 +127,13 @@ class LavaDroplet:
             visited_pts.add(pt)
 
             # if n % 1000 == 0:
-            #     print(n, pt, len(pts_to_visit), len(set(pts_to_visit)), len(visited_pts), len(empty_pts))
+            #     print(n, pt, len(pts_to_visit), len(visited_pts), len(empty_pts))
 
             if pt not in self.cube_pts:
                 empty_pts.add(pt)
 
             cube = Cube(*pt)
-            for new_pt in cube.neighbors:
+            for new_pt in cube.neighbor_pts:
                 if new_pt in visited_pts:
                     continue
                 if new_pt in self.cube_pts:
@@ -244,7 +244,7 @@ class Solution:
             x, y, z = [int(n) for n in line.split(',')]
             cube = Cube(x, y, z)
             pts.add(cube.pt)
-            for pt in cube.neighbors:
+            for pt in cube.neighbor_pts:
                 if pt in pts:
                     area -= 2
         return area
@@ -257,17 +257,13 @@ class Solution:
     @property
     def test2(self):
         droplet = LavaDroplet(self.test_input_lines)
-        print(droplet.interior_air_pts, droplet.trapped_interior_pts)
         assert droplet.trapped_interior_pts == set([(2, 2, 5)])
         return droplet.exterior_surface_area
 
     @property
     def second(self):
         droplet = LavaDroplet(self.input_lines)
-        print(len(droplet.interior_air_pts), len(droplet.trapped_interior_pts))
         return droplet.exterior_surface_area
-        # 972 (too low)
-        # 2470 (too low)
 
     #
     # Properties
