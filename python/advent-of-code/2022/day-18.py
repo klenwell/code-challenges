@@ -1,6 +1,8 @@
 """
 Advent of Code 2022 - Day 18
 https://adventofcode.com/2022/day/18
+
+https://stats.stackexchange.com/a/588492
 """
 from os.path import join as path_join
 from functools import cached_property
@@ -46,6 +48,156 @@ class Cube:
             (self.x, self.y, self.z+1)
         ]
 
+    def __repr__(self):
+        return '<Cube pt={}>'.format(self.pt)
+
+
+class LavaDroplet:
+    def __init__(self, scan_lines):
+        self.scan_lines = scan_lines
+
+    @cached_property
+    def surface_area(self):
+        area = 0
+        pts = set()
+        for cube in self.cubes:
+            area += 6
+            pts.add(cube.pt)
+            for pt in cube.neighbors:
+                if pt in pts:
+                    area -= 2
+        return area
+
+    @cached_property
+    def exterior_surface_area(self):
+        area = 0
+        pts = set()
+        for cube in self.cubes:
+            area += 6
+            neg = 0
+            pts.add(cube.pt)
+            for pt in cube.neighbors:
+                if pt in pts:
+                    neg += 2
+                elif pt in self.air_cube_pts:
+                    neg += 1
+            area -= neg
+            # if neg >= 6:
+            #     print('neg', neg, cube.pt)
+            #     print([(p in pts) for p in cube.neighbors])
+            #     print([(p in self.air_cube_pts) for p in cube.neighbors])
+            #     breakpoint()
+            #print(cube.pt, area)
+        return area
+
+    @cached_property
+    def min_x(self):
+        return min([c.x for c in self.cubes])
+
+    @cached_property
+    def max_x(self):
+        return max([c.x for c in self.cubes])
+
+    @cached_property
+    def min_y(self):
+        return min([c.y for c in self.cubes])
+
+    @cached_property
+    def max_y(self):
+        return max([c.y for c in self.cubes])
+
+    @cached_property
+    def min_z(self):
+        return min([c.z for c in self.cubes])
+
+    @cached_property
+    def max_z(self):
+        return max([c.z for c in self.cubes])
+
+    @cached_property
+    def cubes(self):
+        cubes = []
+        for line in self.scan_lines:
+            x, y, z = [int(n) for n in line.split(',')]
+            cube = Cube(x, y, z)
+            cubes.append(cube)
+        return cubes
+
+    @cached_property
+    def air_cube_pts(self):
+        cube_pts = []
+        for x in range(self.min_x, self.max_x + 1):
+            for y in range(self.min_y, self.max_y + 1):
+                for z in range(self.min_z, self.max_z + 1):
+                    pt = (x, y, z)
+                    if pt in self.cube_pts:
+                        continue
+                    if self.pt_is_trapped(pt):
+                        cube_pts.append(pt)
+        return cube_pts
+
+    def pt_is_trapped(self, pt):
+        (x, y, z) = pt
+        #print('pt_is_trapped', pt) if pt == (2, 2, 5) else None
+        #print('xs', (y, z), self.yz_slices.get((y, z))) if pt == (2, 2, 5) else None
+        #print('ys', (x, z), self.xz_slices.get((x, z))) if pt == (2, 2, 5) else None
+        #print('zs', (x, y), self.xy_slices.get((x, y))) if pt == (2, 2, 5) else None
+
+        # In row (x)
+        xs = self.yz_slices.get((y, z))
+        if not xs or x <= min(xs) or x >= max(xs):
+            return False
+
+        # In col (y)
+        ys = self.xz_slices.get((x, z))
+        if not ys or y <= min(ys) or y >= max(ys):
+            return False
+
+        # In tube (z)
+        zs = self.xy_slices.get((x, y))
+        if not zs or z <= min(zs) or z >= max(zs):
+            return False
+
+        # It is trapped
+        return True
+
+    @cached_property
+    def yz_slices(self):
+        yz_slices = {}
+        for x, y, z in self.cube_pts:
+            yz = (y, z)
+            if yz in yz_slices:
+                yz_slices[yz].append(x)
+            else:
+                yz_slices[yz] = [x]
+        return yz_slices
+
+    @cached_property
+    def xz_slices(self):
+        xz_slices = {}
+        for x, y, z in self.cube_pts:
+            xz = (x, z)
+            if xz in xz_slices:
+                xz_slices[xz].append(y)
+            else:
+                xz_slices[xz] = [y]
+        return xz_slices
+
+    @cached_property
+    def xy_slices(self):
+        xy_slices = {}
+        for x, y, z in self.cube_pts:
+            xy = (x, y)
+            if xy in xy_slices:
+                xy_slices[xy].append(z)
+            else:
+                xy_slices[xy] = [z]
+        return xy_slices
+
+    @cached_property
+    def cube_pts(self):
+        return [c.pt for c in self.cubes]
+
 
 class Solution:
     def __init__(self, input_file):
@@ -70,98 +222,29 @@ class Solution:
 
     @property
     def first(self):
-        area = 0
-        pts = set()
-        for line in self.input_lines:
-            area += 6
-            x, y, z = [int(n) for n in line.split(',')]
-            cube = Cube(x, y, z)
-            pts.add(cube.pt)
-            for pt in cube.neighbors:
-                if pt in pts:
-                    area -= 2
-        return area
+        droplet = LavaDroplet(self.input_lines)
+        return droplet.surface_area
 
     @property
     def test2(self):
-        surface_area = 0
-        filled_pts = set()
-        all_pts = set()
-        for line in self.test_input_lines:
-            surface_area += 6
-            x, y, z = [int(n) for n in line.split(',')]
-            cube = Cube(x, y, z)
-            filled_pts.add(cube.pt)
-            for pt in cube.neighbors:
-                all_pts.add(pt)
-                if pt in filled_pts:
-                    surface_area -= 2
-
-        empty_pts = all_pts - filled_pts
-
-        min_x = min([p[0] for p in filled_pts])
-        max_x = max([p[0] for p in filled_pts])
-        min_y = min([p[1] for p in filled_pts])
-        max_y = max([p[1] for p in filled_pts])
-        min_z = min([p[2] for p in filled_pts])
-        max_z = max([p[2] for p in filled_pts])
-
-        inner_empty_pts = set()
-        for x, y, z in empty_pts:
-            inner_x = x > min_x and x < max_x
-            inner_y = y > min_y and y < max_y
-            inner_z = z > min_z and z < max_z
-            if inner_x and inner_y and inner_z:
-                inner_empty_pts.add((x, y, z))
-
-        print(inner_empty_pts)
-
-        return surface_area - (len(inner_empty_pts) * 6)
+        droplet = LavaDroplet(self.test_input_lines)
+        print(droplet.air_cube_pts)
+        return droplet.exterior_surface_area
 
     @property
     def second(self):
-        surface_area = 0
-        filled_pts = set()
-        all_pts = set()
-        for line in self.input_lines:
-            surface_area += 6
-            x, y, z = [int(n) for n in line.split(',')]
-            cube = Cube(x, y, z)
-            filled_pts.add(cube.pt)
-            for pt in cube.neighbors:
-                all_pts.add(pt)
-                if pt in filled_pts:
-                    surface_area -= 2
+        from pprint import pprint
+        droplet = LavaDroplet(self.input_lines)
+        print(len(droplet.cubes), len(droplet.air_cube_pts))
+        #pprint(droplet.xy_slices)
+        print([pt for pt in droplet.cube_pts if pt[0] == 10 and pt[1] == 10])
+        print([pt for pt in droplet.air_cube_pts if pt[0] == 10 and pt[1] == 10])
+        print(droplet.min_z, droplet.max_z)
 
-        empty_pts = all_pts - filled_pts
-
-        min_x = min([p[0] for p in filled_pts])
-        max_x = max([p[0] for p in filled_pts])
-        min_y = min([p[1] for p in filled_pts])
-        max_y = max([p[1] for p in filled_pts])
-        min_z = min([p[2] for p in filled_pts])
-        max_z = max([p[2] for p in filled_pts])
-
-        inner_empty_pts = set()
-        for x, y, z in empty_pts:
-            inner_x = x > min_x and x < max_x
-            inner_y = y > min_y and y < max_y
-            inner_z = z > min_z and z < max_z
-            if inner_x and inner_y and inner_z:
-                inner_empty_pts.add((x, y, z))
-
-        print(len(filled_pts), len(inner_empty_pts), surface_area)
-
-        # Subtract inner area pts
-        for x, y, z in filled_pts:
-            cube = Cube(x, y, z)
-            for pt in cube.neighbors:
-                if pt in inner_empty_pts:
-                    print(cube.pt, pt)
-                    surface_area -= 2
-
-        return surface_area
+        return droplet.exterior_surface_area
         # 972 (too low)
+        # (884) (worse)
+        # 2470 (too low)
 
     #
     # Properties
