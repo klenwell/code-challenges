@@ -1,8 +1,6 @@
 """
 Advent of Code 2022 - Day 18
 https://adventofcode.com/2022/day/18
-
-https://stats.stackexchange.com/a/588492
 """
 from os.path import join as path_join
 from functools import cached_property
@@ -74,20 +72,12 @@ class LavaDroplet:
         pts = set()
         for cube in self.cubes:
             area += 6
-            neg = 0
             pts.add(cube.pt)
             for pt in cube.neighbors:
                 if pt in pts:
-                    neg += 2
+                    area -= 2
                 elif pt in self.air_cube_pts:
-                    neg += 1
-            area -= neg
-            # if neg >= 6:
-            #     print('neg', neg, cube.pt)
-            #     print([(p in pts) for p in cube.neighbors])
-            #     print([(p in self.air_cube_pts) for p in cube.neighbors])
-            #     breakpoint()
-            #print(cube.pt, area)
+                    area -= 1
         return area
 
     @cached_property
@@ -124,38 +114,36 @@ class LavaDroplet:
         return cubes
 
     @cached_property
+    def cube_pts(self):
+        return [c.pt for c in self.cubes]
+
+    @cached_property
     def air_cube_pts(self):
         cube_pts = []
         for x in range(self.min_x, self.max_x + 1):
             for y in range(self.min_y, self.max_y + 1):
                 for z in range(self.min_z, self.max_z + 1):
                     pt = (x, y, z)
-                    if pt in self.cube_pts:
-                        continue
-                    if self.pt_is_trapped(pt):
+                    if pt not in self.cube_pts and self.is_interior_pt(pt):
                         cube_pts.append(pt)
         return cube_pts
 
-    def pt_is_trapped(self, pt):
+    def is_interior_pt(self, pt):
         (x, y, z) = pt
-        #print('pt_is_trapped', pt) if pt == (2, 2, 5) else None
-        #print('xs', (y, z), self.yz_slices.get((y, z))) if pt == (2, 2, 5) else None
-        #print('ys', (x, z), self.xz_slices.get((x, z))) if pt == (2, 2, 5) else None
-        #print('zs', (x, y), self.xy_slices.get((x, y))) if pt == (2, 2, 5) else None
 
         # In row (x)
         xs = self.yz_slices.get((y, z))
-        if not xs or x <= min(xs) or x >= max(xs):
+        if not xs or x < min(xs) or x > max(xs):
             return False
 
         # In col (y)
         ys = self.xz_slices.get((x, z))
-        if not ys or y <= min(ys) or y >= max(ys):
+        if not ys or y < min(ys) or y > max(ys):
             return False
 
-        # In tube (z)
+        # In tube (z) - https://stats.stackexchange.com/a/588492
         zs = self.xy_slices.get((x, y))
-        if not zs or z <= min(zs) or z >= max(zs):
+        if not zs or z < min(zs) or z > max(zs):
             return False
 
         # It is trapped
@@ -194,10 +182,6 @@ class LavaDroplet:
                 xy_slices[xy] = [z]
         return xy_slices
 
-    @cached_property
-    def cube_pts(self):
-        return [c.pt for c in self.cubes]
-
 
 class Solution:
     def __init__(self, input_file):
@@ -228,22 +212,14 @@ class Solution:
     @property
     def test2(self):
         droplet = LavaDroplet(self.test_input_lines)
-        print(droplet.air_cube_pts)
+        assert droplet.air_cube_pts == [(2, 2, 5)]
         return droplet.exterior_surface_area
 
     @property
     def second(self):
-        from pprint import pprint
         droplet = LavaDroplet(self.input_lines)
-        print(len(droplet.cubes), len(droplet.air_cube_pts))
-        #pprint(droplet.xy_slices)
-        print([pt for pt in droplet.cube_pts if pt[0] == 10 and pt[1] == 10])
-        print([pt for pt in droplet.air_cube_pts if pt[0] == 10 and pt[1] == 10])
-        print(droplet.min_z, droplet.max_z)
-
         return droplet.exterior_surface_area
         # 972 (too low)
-        # (884) (worse)
         # 2470 (too low)
 
     #
