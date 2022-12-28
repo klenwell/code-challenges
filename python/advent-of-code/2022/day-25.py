@@ -69,9 +69,6 @@ class SnafuNumber:
             output += 5**n * int
         return output
 
-    def __add__(self, other):
-        places = max(len(self.input), len(other.input))
-        return
 
 class Solution:
     def __init__(self, input_file):
@@ -109,7 +106,6 @@ class Solution:
     def first(self):
         sum = 0
         for n in self.input_lines:
-            print(n)
             sum += SnafuNumber(n).decimal
         return SnafuNumber.from_dec(sum)
 
