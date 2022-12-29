@@ -90,10 +90,6 @@ class Factory:
         return self.resources['geode']
 
     @property
-    def geode_bots(self):
-        return self.robots['geode']
-
-    @property
     def quality(self):
         return self.geodes * self.blueprint_id
 
@@ -104,10 +100,6 @@ class Factory:
             inputs += [self.robots[type], self.resources[type]]
         return ':'.join([str(i) for i in inputs])
 
-    @property
-    def sort_key(self):
-        return (self.robots['geode'], self.robots['obsidian'])
-
     def init_resources(self):
         resources = {}
         for resource in RESOURCES:
@@ -117,11 +109,9 @@ class Factory:
     def maximize_geodes(self, minutes):
         completed = []
         purged = 0
-        lf = 1000  # log frequency
         queue = [self.clone()]
         n = 0
         minute = 1
-        hashes = []
 
         while queue:
             n += 1
@@ -135,7 +125,6 @@ class Factory:
 
                 if minute > 16:
                     queue = factory.purge_suboptimals(queue)
-
 
                 # Cap
                 cap = int(len(queue) * .75)
@@ -194,20 +183,11 @@ class Factory:
         return optimals
 
     def meets_specs(self, max_bots):
-        max_ore_cost = max(c[0] for c in self.costs.values())
-        min_ore_cost = min(c[0] for c in self.costs.values())
-        clay_cost = self.costs['obsidian'][1]
-        obsid_cost = self.costs['geode'][1]
+        ore_bots_ok = self.robots['ore'] <= self.max_costs['ore']
 
-        ore_bots_ok = self.robots['ore'] <= max_ore_cost
-        clay_bots_ok = self.robots['clay'] <= clay_cost
-        obsid_bots_ok = self.robots['obsidian'] <= obsid_cost
-        geo_bots_ok = self.robots['geode'] >= max_bots['geode']
-
-        ore_ok = self.resources['ore'] <= self.max_costs['ore'] + 1
+        #ore_ok = self.resources['ore'] <= self.max_costs['ore'] + 1
         #clay_ok = self.resources['clay'] <= max_clay_cost if clay_bots_ok else True
         #obsid_ok = self.resources['obsidian'] <= max_obsid_cost if obsid_bots_ok else True
-        obsid_ok = self.resources['obsidian'] <= obsid_cost + 4
 
         bot_productivity_ok = True
         for resource in RESOURCES:
@@ -224,15 +204,12 @@ class Factory:
         output_ok = True
 
         specs = [
-            #ore_bots_ok,
-            #clay_bots_ok,
-            #obsid_bots_ok,
-            #geo_bots_ok,
-            ore_ok,
+            ore_bots_ok,
+            #ore_ok,
             #clay_ok,
             #obsid_ok,
-            bot_productivity_ok,
-            #bot_allocation_ok
+            #bot_productivity_ok,
+            bot_allocation_ok
         ]
 
         return all(specs)
