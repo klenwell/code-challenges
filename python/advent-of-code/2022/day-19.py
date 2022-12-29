@@ -63,6 +63,25 @@ class Factory:
         return orders
 
     @property
+    def recommended_orders(self):
+        """Try to filter out orders that would be a waste of time.
+        """
+        orders = []
+        for robot in self.possible_orders:
+            if robot in self.max_costs and self.robots[robot] >= self.max_costs[robot]:
+                continue
+            orders.append(robot)
+        return orders
+
+    @cached_property
+    def max_costs(self):
+        return {
+            'ore': max(c[0] for c in self.costs.values()),
+            'clay': self.costs['obsidian'][1],
+            'obsidian': self.costs['geode'][1]
+        }
+
+    @property
     def minute(self):
         return len(self.orders)
 
@@ -101,42 +120,32 @@ class Factory:
         lf = 1000  # log frequency
         queue = [self.clone()]
         n = 0
+        minute = 1
         hashes = []
 
         while queue:
             n += 1
 
             factory = queue.pop(0)
-            print(n, len(queue), len(completed), purged, factory) if n % lf == 0 else None
+            if factory.minute > minute:
+                minute = factory.minute
 
-            # Purge
-            if n % 1000 == 0:
                 before = len(queue)
                 queue = factory.purge_redundancies(queue)
+
+                if minute > 16:
+                    queue = factory.purge_suboptimals(queue)
+
+
+                # Cap
+                cap = int(len(queue) * .75)
+                if len(queue) > cap and minute > 10:
+                    sorted_clones = sorted(queue, key=lambda c: c.value, reverse=True)
+                    print('capped', (sorted_clones[0].value, sorted_clones[cap].value, sorted_clones[-1].value), len(sorted_clones) - cap)
+                    queue = sorted_clones[:cap]
+
                 purged += before - len(queue)
-                print('redundancies', before - len(queue), factory.hash) if n % lf == 0 else None
-
-            if n % 100 == 0:
-                before = len(queue)
-                queue = factory.purge_suboptimals(queue)
-                purged += before - len(queue)
-                print('suboptimals', before - len(queue), factory.resources) if n % lf == 0 else None
-
-            # Decimate
-            # if max_obsids > 1 and n % lf == 0 and len(queue) > 10000:
-            #     before = len(queue)
-            #     queue = factory.decimate(queue)
-            #     purged += before - len(queue)
-            #     print('purged', before - len(queue), factory, factory.sort_key)
-
-            # Purge laggards
-            # if n % 1000 == 0:
-            #     if max_geodes > 0:
-            #         before = len(queue)
-            #         queue = factory.decimate(queue)
-            #         purged += before - len(queue)
-            #         print('purged', purged, factory, factory.sort_key)
-
+                print(minute, n, len(queue), purged, factory)
 
             for order in factory.possible_orders:
                 clone = factory.clone()
@@ -156,49 +165,93 @@ class Factory:
     def purge_redundancies(self, clones):
         uniques = []
         redundancies = {}
+
         for clone in clones:
             if clone.hash in redundancies:
                 redundancies[clone.hash] += 1
             else:
                 redundancies[clone.hash] = 1
                 uniques.append(clone)
+
+        print('purge_redundancies', len(clones) - len(uniques))
         return uniques
 
-    def meets_specs(self, min_geode_bots, minute):
+    def purge_suboptimals(self, clones):
+        optimals = []
+
+        if not clones:
+            return clones
+
+        max_bots = {}
+        for resource in RESOURCES:
+            max_bots[resource] = max(c.robots[resource] for c in clones)
+
+        for clone in clones:
+            if clone.meets_specs(max_bots):
+                optimals.append(clone)
+
+        print('purge_suboptimals', len(clones) - len(optimals))
+        return optimals
+
+    def meets_specs(self, max_bots):
         max_ore_cost = max(c[0] for c in self.costs.values())
         min_ore_cost = min(c[0] for c in self.costs.values())
-        max_clay_cost = self.costs['obsidian'][1]
-        max_obsid_cost = self.costs['geode'][1]
+        clay_cost = self.costs['obsidian'][1]
+        obsid_cost = self.costs['geode'][1]
 
         ore_bots_ok = self.robots['ore'] <= max_ore_cost
-        clay_bots_ok = self.robots['clay'] <= max_clay_cost
-        obsid_bots_ok = self.robots['obsidian'] <= max_obsid_cost
-        geo_bots_ok = self.robots['geode'] >= min_geode_bots if self.minute == minute else True
+        clay_bots_ok = self.robots['clay'] <= clay_cost
+        obsid_bots_ok = self.robots['obsidian'] <= obsid_cost
+        geo_bots_ok = self.robots['geode'] >= max_bots['geode']
 
-        ore_ok = self.resources['ore'] <= max_ore_cost + 1 if ore_bots_ok else True
+        ore_ok = self.resources['ore'] <= self.max_costs['ore'] + 1
         #clay_ok = self.resources['clay'] <= max_clay_cost if clay_bots_ok else True
         #obsid_ok = self.resources['obsidian'] <= max_obsid_cost if obsid_bots_ok else True
-        obsid_ok = self.resources['obsidian'] <= max_obsid_cost + min_ore_cost
+        obsid_ok = self.resources['obsidian'] <= obsid_cost + 4
+
+        bot_productivity_ok = True
+        for resource in RESOURCES:
+            if self.robots[resource] == 0 and max_bots[resource] > 1:
+                bot_productivity_ok = False
+                break
+
+        bot_allocation_ok = True
+        for resource in self.max_costs.keys():
+            if self.robots[resource] > self.max_costs[resource]:
+                bot_allocation_ok = False
+                break
+
+        output_ok = True
 
         specs = [
-            ore_bots_ok,
+            #ore_bots_ok,
             #clay_bots_ok,
             #obsid_bots_ok,
-            geo_bots_ok,
+            #geo_bots_ok,
             ore_ok,
             #clay_ok,
-            obsid_ok
+            #obsid_ok,
+            bot_productivity_ok,
+            #bot_allocation_ok
         ]
 
         return all(specs)
 
-    def purge_suboptimals(self, clones):
-        optimals = []
-        min_geode_bots, minute = max((c.geode_bots, c.minute) for c in clones)
-        for clone in clones:
-            if clone.meets_specs(min_geode_bots, minute):
-                optimals.append(clone)
-        return optimals
+    @cached_property
+    def robot_values(self):
+        values = {}
+        values['ore'] = self.costs['ore'][0]
+        values['clay'] = self.costs['clay'][0]
+        values['obsidian'] = self.costs['obsidian'][0] + (self.costs['obsidian'][1] * values['clay'])
+        values['geode'] = self.costs['geode'][0] + (self.costs['geode'][1] * values['obsidian'])
+        return values
+
+    @property
+    def value(self):
+        value = 0
+        for robot, count in self.robots.items():
+            value += self.robot_values[robot] * count
+        return value
 
     def decimate(self, clones, ratio=.5):
         idx = int(len(clones) * (1 - ratio))
@@ -285,6 +338,7 @@ class Solution:
 
     @property
     def first(self):
+        #breakpoint()
         blueprints = self.input_lines
         minutes = 24
         logs = []
@@ -302,6 +356,7 @@ class Solution:
         pprint.pprint(logs)
         return sum
         # 1234 too low
+        # 1237 too low
 
     @property
     def test2(self):
