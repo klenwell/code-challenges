@@ -8,6 +8,7 @@ from config import INPUT_DIR
 
 import re
 from enum import Enum
+import time, pprint
 
 
 INPUT_FILE = path_join(INPUT_DIR, 'day-19.txt')
@@ -127,10 +128,19 @@ class Factory:
                     queue = factory.purge_suboptimals(queue)
 
                 # Cap
-                cap = int(len(queue) * .75)
-                if len(queue) > cap and minute > 10:
+                min_cap = .75
+                max_cap = .6
+                cap_start_minute = 10
+                steps = minutes - cap_start_minute
+                cap_step = (min_cap - max_cap) / steps
+                cap_minute = minute - cap_start_minute
+                queue_ratio = min_cap - (cap_minute * cap_step)
+                dynamic_cap = int(len(queue) * queue_ratio)
+                hard_cap = 50000
+                cap = min(dynamic_cap, hard_cap)
+                if len(queue) > cap and minute > cap_start_minute:
                     sorted_clones = sorted(queue, key=lambda c: c.value, reverse=True)
-                    print('capped', (sorted_clones[0].value, sorted_clones[cap].value, sorted_clones[-1].value), len(sorted_clones) - cap)
+                    print('capped', (queue_ratio, cap), (sorted_clones[0].value, sorted_clones[cap].value, sorted_clones[-1].value), len(sorted_clones) - cap)
                     queue = sorted_clones[:cap]
 
                 purged += before - len(queue)
@@ -312,15 +322,12 @@ class Solution:
         assert solution == 33
         return solution
 
-
     @property
     def first(self):
         #breakpoint()
         blueprints = self.input_lines
         minutes = 24
         logs = []
-
-        import time, pprint
 
         sum = 0
         for bp in blueprints:
@@ -331,17 +338,45 @@ class Solution:
             sum += factory.quality
 
         pprint.pprint(logs)
+        assert sum == 1480, sum
         return sum
         # 1234 too low
         # 1237 too low
 
     @property
     def test2(self):
-        pass
+        blueprints = TEST_INPUT.split('\n')
+        minutes = 32
+
+        # Factory 1 Test
+        factories = [Factory.from_blueprint(bp) for bp in blueprints]
+        first = factories[0].maximize_geodes(minutes)
+        assert first.geodes == 56, first
+
+        # Factory 2 Test
+        second = factories[1].maximize_geodes(minutes)
+        assert second.geodes == 62, second
+
+        solution = first.geodes * second.geodes
+        return solution
 
     @property
     def second(self):
-        pass
+        blueprints = self.input_lines[:3]
+        minutes = 32
+
+        logs = []
+
+        product = 1
+        for bp in blueprints:
+            t0 = time.process_time()
+            factory = Factory.from_blueprint(bp)
+            factory = factory.maximize_geodes(minutes)
+            logs.append((factory, time.process_time() - t0))
+            product *= factory.geodes
+
+        pprint.pprint(logs)
+        return product
 
     #
     # Properties
