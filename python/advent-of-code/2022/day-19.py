@@ -7,15 +7,17 @@ from functools import cached_property
 from config import INPUT_DIR
 
 import re
-from enum import Enum
-import time, pprint
+import time
+import pprint
 
 
 INPUT_FILE = path_join(INPUT_DIR, 'day-19.txt')
 
 TEST_INPUT = """\
-Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.
-Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian."""
+Blueprint 1: Each ore robot costs 4 ore. Each clay robot costs 2 ore. \
+Each obsidian robot costs 3 ore and 14 clay. Each geode robot costs 2 ore and 7 obsidian.
+Blueprint 2: Each ore robot costs 2 ore. Each clay robot costs 3 ore. \
+Each obsidian robot costs 3 ore and 8 clay. Each geode robot costs 3 ore and 12 obsidian."""
 
 RESOURCES = ['ore', 'clay', 'obsidian', 'geode']
 
@@ -61,17 +63,6 @@ class Factory:
         for robot in self.robots.keys():
             if self.can_afford(robot):
                 orders.append(robot)
-        return orders
-
-    @property
-    def recommended_orders(self):
-        """Try to filter out orders that would be a waste of time.
-        """
-        orders = []
-        for robot in self.possible_orders:
-            if robot in self.max_costs and self.robots[robot] >= self.max_costs[robot]:
-                continue
-            orders.append(robot)
         return orders
 
     @cached_property
@@ -120,28 +111,14 @@ class Factory:
             factory = queue.pop(0)
             if factory.minute > minute:
                 minute = factory.minute
-
                 before = len(queue)
-                queue = factory.purge_redundancies(queue)
+
+                queue = factory.prune_redundancies(queue)
 
                 if minute > 16:
-                    queue = factory.purge_suboptimals(queue)
+                    queue = factory.prune_suboptimals(queue)
 
-                # Cap
-                min_cap = .75
-                max_cap = .6
-                cap_start_minute = 10
-                steps = minutes - cap_start_minute
-                cap_step = (min_cap - max_cap) / steps
-                cap_minute = minute - cap_start_minute
-                queue_ratio = min_cap - (cap_minute * cap_step)
-                dynamic_cap = int(len(queue) * queue_ratio)
-                hard_cap = 50000
-                cap = min(dynamic_cap, hard_cap)
-                if len(queue) > cap and minute > cap_start_minute:
-                    sorted_clones = sorted(queue, key=lambda c: c.value, reverse=True)
-                    print('capped', (queue_ratio, cap), (sorted_clones[0].value, sorted_clones[cap].value, sorted_clones[-1].value), len(sorted_clones) - cap)
-                    queue = sorted_clones[:cap]
+                queue = factory.prune_by_value(queue, minutes)
 
                 purged += before - len(queue)
                 print(minute, n, len(queue), purged, factory)
@@ -158,10 +135,35 @@ class Factory:
         clones = sorted(completed, key=lambda f: f.geodes)
         optimal = clones[-1]
         print(len(completed), optimal, clones[0])
-        #breakpoint()
         return optimal
 
-    def purge_redundancies(self, clones):
+    def prune_by_value(self, queue, total_minutes):
+        min_cap = .75
+        max_cap = .6
+        cap_start_minute = 10
+
+        if not self.minute > cap_start_minute:
+            return queue
+
+        steps = total_minutes - cap_start_minute
+        cap_step = (min_cap - max_cap) / steps
+        cap_minute = self.minute - cap_start_minute
+        queue_ratio = min_cap - (cap_minute * cap_step)
+
+        dynamic_cap = int(len(queue) * queue_ratio)
+        hard_cap = 50000
+        cap = min(dynamic_cap, hard_cap)
+
+        if len(queue) > cap:
+            sorted_clones = sorted(queue, key=lambda c: c.value, reverse=True)
+            purged = len(sorted_clones) - cap
+            values = (sorted_clones[0].value, sorted_clones[cap].value, sorted_clones[-1].value)
+            print('prune_by_value', purged, (queue_ratio, cap), values)
+            queue = sorted_clones[:cap]
+
+        return queue
+
+    def prune_redundancies(self, clones):
         uniques = []
         redundancies = {}
 
@@ -172,10 +174,10 @@ class Factory:
                 redundancies[clone.hash] = 1
                 uniques.append(clone)
 
-        print('purge_redundancies', len(clones) - len(uniques))
+        print('prune_redundancies', len(clones) - len(uniques))
         return uniques
 
-    def purge_suboptimals(self, clones):
+    def prune_suboptimals(self, clones):
         optimals = []
 
         if not clones:
@@ -189,21 +191,11 @@ class Factory:
             if clone.meets_specs(max_bots):
                 optimals.append(clone)
 
-        print('purge_suboptimals', len(clones) - len(optimals))
+        print('prune_suboptimals', len(clones) - len(optimals))
         return optimals
 
     def meets_specs(self, max_bots):
         ore_bots_ok = self.robots['ore'] <= self.max_costs['ore']
-
-        #ore_ok = self.resources['ore'] <= self.max_costs['ore'] + 1
-        #clay_ok = self.resources['clay'] <= max_clay_cost if clay_bots_ok else True
-        #obsid_ok = self.resources['obsidian'] <= max_obsid_cost if obsid_bots_ok else True
-
-        bot_productivity_ok = True
-        for resource in RESOURCES:
-            if self.robots[resource] == 0 and max_bots[resource] > 1:
-                bot_productivity_ok = False
-                break
 
         bot_allocation_ok = True
         for resource in self.max_costs.keys():
@@ -211,17 +203,10 @@ class Factory:
                 bot_allocation_ok = False
                 break
 
-        output_ok = True
-
         specs = [
             ore_bots_ok,
-            #ore_ok,
-            #clay_ok,
-            #obsid_ok,
-            #bot_productivity_ok,
             bot_allocation_ok
         ]
-
         return all(specs)
 
     @cached_property
@@ -239,11 +224,6 @@ class Factory:
         for robot, count in self.robots.items():
             value += self.robot_values[robot] * count
         return value
-
-    def decimate(self, clones, ratio=.5):
-        idx = int(len(clones) * (1 - ratio))
-        sorted_clones = sorted(clones, key=lambda f: f.sort_key, reverse=True)
-        return sorted_clones[:idx]
 
     def clone(self):
         return Factory(self.blueprint_id, self.costs, self.robots, self.resources, self.orders)
@@ -324,7 +304,6 @@ class Solution:
 
     @property
     def first(self):
-        #breakpoint()
         blueprints = self.input_lines
         minutes = 24
         logs = []
@@ -340,8 +319,6 @@ class Solution:
         pprint.pprint(logs)
         assert sum == 1480, sum
         return sum
-        # 1234 too low
-        # 1237 too low
 
     @property
     def test2(self):
@@ -393,10 +370,6 @@ class Solution:
     @cached_property
     def test_input_lines(self):
         return [line.strip() for line in TEST_INPUT.split("\n")]
-
-    #
-    # Methods
-    #
 
 
 #
