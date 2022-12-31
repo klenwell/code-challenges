@@ -320,6 +320,9 @@ class PlumberTeam(ElfPlumber):
         pruned = 0
         minute = 0
 
+        from timeit import default_timer as timer
+        t0 = timer()
+
         while queue:
             team = queue.pop(0)
 
@@ -351,7 +354,8 @@ class PlumberTeam(ElfPlumber):
                 queue = team.prune(queue)
 
                 pruned += before - len(queue)
-                print(minute, len(queue), pruned, len(completed), team)
+                print(minute, len(queue), pruned, len(completed), team, timer()-t0)
+                t0 = timer()
 
         teams = sorted(completed, key=lambda n: n.release)
         #breakpoint()
@@ -498,7 +502,8 @@ class PlumberTeam(ElfPlumber):
         if self.elf_is_ready_to_move():
             clones += self.elf_moves(unopened_valves)
 
-        if self.elephant_is_ready_to_move():
+        #if self.elephant_is_ready_to_move():
+        else:
             clones += self.elephant_moves(unopened_valves)
 
         return clones
@@ -628,6 +633,7 @@ class Solution:
         network = PipeNetwork(valve_scans)
         team = PlumberTeam(network)
         team = team.maximize_release(minutes)
+        assert team.release == 2292, team
         return team.release
 
     #
@@ -679,10 +685,6 @@ class Solution:
     @cached_property
     def test_input_lines(self):
         return [line.strip() for line in TEST_INPUT.split("\n")]
-
-    #
-    # Methods
-    #
 
 
 #
