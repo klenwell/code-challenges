@@ -200,7 +200,8 @@ class ElfPlumber:
         return self
 
     def prune(self, clones):
-        clones = self.prune_redundancies(clones)
+        #clones = self.prune_redundancies(clones)
+        clones = self.prune_cohorts(clones)
         return clones
 
     def prune_redundancies(self, clones):
@@ -224,21 +225,21 @@ class ElfPlumber:
         cohorts = {}
 
         for clone in clones:
-            if clone.cohort_key in redundancies:
+            if clone.cohort_key in cohorts:
                 cohorts[clone.cohort_key].append(clone)
             else:
                 cohorts[clone.cohort_key] = [clone]
 
-        for clones in self.cohorts.values():
-            leaders = sort(clones, key=lambda p: p.release, reverse=True)
-            max_release = leaders[0].release
-            for leader in leaders:
-                if leader.release >= max_release:
-                    uniques.append(leader)
+        for clones in cohorts.values():
+            plumbers = sorted(clones, key=lambda p: p.release, reverse=True)
+            max_release = plumbers[0].release
+            for plumber in plumbers:
+                if plumber.release >= max_release:
+                    leaders.append(plumber)
                 else:
                     break
 
-        return uniques
+        return leaders
 
     @property
     def redundancy_key(self):
@@ -337,6 +338,7 @@ class Solution:
         network = PipeNetwork(valve_scans)
         elf = ElfPlumber(network)
         elf = elf.maximize_release(minutes)
+        assert elf.release == 1828, elf
         return elf.release
 
     @property
