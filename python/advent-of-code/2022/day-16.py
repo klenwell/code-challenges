@@ -7,6 +7,7 @@ from functools import cached_property
 from config import INPUT_DIR
 
 import re
+from pprint import pprint
 
 
 INPUT_FILE = path_join(INPUT_DIR, 'day-16.txt')
@@ -325,16 +326,13 @@ class ElfPlumber:
 
 
 class PlumberTeam(ElfPlumber):
-    def __init__(self, network, steps=None, logs=None, open_valves=None, elephant_steps=None):
+    #
+    # Public Interface
+    #
+    def __init__(self, network, steps=None, elephant_steps=None):
         self.network = network
         self.steps = steps.copy() if steps else ['AA']
         self.elephant_steps = elephant_steps.copy() if elephant_steps else ['AA']
-        self.logs = logs.copy() if logs else [()]
-        self.open_valves = open_valves if open_valves else ()
-
-    def clone(self):
-        return PlumberTeam(self.network, self.steps, self.logs, self.open_valves,
-                           self.elephant_steps)
 
     def maximize_release(self, minutes):
         queue = [self]
@@ -382,6 +380,152 @@ class PlumberTeam(ElfPlumber):
         teams = sorted(completed, key=lambda n: n.release)
         return teams[-1]
 
+    #
+    # Properties
+    #
+    @property
+    def logs(self):
+        logs = []
+        open_valves = ()
+
+        for min in range(self.minute+1):
+            logs.append(open_valves)
+            elf_added = self.steps[min-1] if self.steps[min] == 'OPEN' else None
+            elph_added = self.elephant_steps[min-1] if self.elephant_steps[min] == 'OPEN' else None
+
+            if elf_added:
+                open_valves += (elf_added,)
+
+            if elph_added:
+                open_valves += (elph_added,)
+
+        logs.append(open_valves)
+        return logs
+
+    @property
+    def open_valves(self):
+        # Need to override because now we have someone in future that may have already
+        # "claimed" a valve.
+        return self.elf_opened.union(self.elephant_opened)
+
+    @property
+    def elf_opened(self):
+        opened = set()
+        for n, step in enumerate(self.steps):
+            if step == 'OPEN':
+                opened.add(self.steps[n-1])
+        return opened
+
+    @property
+    def elephant_opened(self):
+        opened = set()
+        for n, step in enumerate(self.elephant_steps):
+            if step == 'OPEN':
+                opened.add(self.elephant_steps[n-1])
+        return opened
+
+    @property
+    def minute(self):
+        return min(self.elf_minute, self.elephant_minute)
+
+    @property
+    def elf_minute(self):
+        return len(self.steps)-1
+
+    @property
+    def elephant_minute(self):
+        return len(self.elephant_steps)-1
+
+    @property
+    def current_elephant_valve(self):
+        for step in reversed(self.elephant_steps):
+            if step != 'OPEN':
+                return step
+
+    @property
+    def details(self):
+        logs = []
+        for min in range(self.minute):
+            elph_steps = self.elephant_steps[min]
+            elf_step = self.steps[min-1] if self.steps[min] == 'OPEN' else self.steps[min]
+            elph_step = self.elephant_steps[min-1] if elph_steps == 'OPEN' else elph_steps
+            open_valves = sorted(self.logs[min])
+            pressure = self.flow_at_minute(min)
+            total_pressure = sum(self.flow_at_minute(m) for m in range(min+1))
+            f = "Minute {} at {}: Valves {} released {} pressure for total {}."
+            log = f.format(min, (elf_step, elph_step), open_valves, pressure, total_pressure)
+            logs.append(log)
+        return logs
+
+    @property
+    def pretty_details(self):
+        pprint(self.details)
+
+    @property
+    def cohort_key(self):
+        m = self.minute
+        elf_valve = self.steps[m-1] if self.steps[m] == 'OPEN' else self.steps[m]
+        elph_steps = self.elephant_steps[m]
+        elephant_valve = self.elephant_steps[m-1] if elph_steps == 'OPEN' else elph_steps
+        return (
+            self.minute,
+            elf_valve,
+            elephant_valve
+        )
+
+    #
+    # Methods
+    def clone(self):
+        return PlumberTeam(self.network, self.steps, self.elephant_steps)
+
+    def next_move(self, unopened_valves):
+        clones = []
+
+        # Originally, I had both move if they were ready. This was wasteful. Have
+        # one move and other will catch up.
+        if self.elf_is_ready_to_move():
+            clones += self.elf_moves(unopened_valves)
+        else:
+            clones += self.elephant_moves(unopened_valves)
+
+        return clones
+
+    def elf_moves(self, unopened_valves):
+        clones = []
+        for valve_label in unopened_valves:
+            clone = self.clone()
+            clone.visit(valve_label)
+            clones.append(clone)
+        return clones
+
+    def elephant_moves(self, unopened_valves):
+        clones = []
+        for valve_label in unopened_valves:
+            clone = self.clone()
+            clone.elephant_visit(valve_label)
+            clones.append(clone)
+        return clones
+
+    def elephant_visit(self, valve_label):
+        start = self.current_elephant_valve
+        path = self.network.find_shortest_path(start, valve_label)
+
+        # Walk path updating steps and logs as we go.
+        # Path will start with current valve already in steps so skip it.
+        for step in path[1:]:
+            self.elephant_steps.append(step)
+
+        # Now open the valve and log progress
+        self.elephant_steps.append('OPEN')
+
+        return self
+
+    def elf_is_ready_to_move(self):
+        return self.elf_minute <= self.minute
+
+    def elephant_is_ready_to_move(self):
+        return self.elephant_minute <= self.minute
+
     def prune(self, clones):
         # clones = self.prune_overlaps(clones)
         clones = self.prune_cohorts(clones)
@@ -423,66 +567,6 @@ class PlumberTeam(ElfPlumber):
 
         return leaders
 
-    @property
-    def cohort_key(self):
-        m = self.minute
-        elf_valve = self.steps[m-1] if self.steps[m] == 'OPEN' else self.steps[m]
-        elph_steps = self.elephant_steps[m]
-        elephant_valve = self.elephant_steps[m-1] if elph_steps == 'OPEN' else elph_steps
-        return (
-            self.minute,
-            elf_valve,
-            elephant_valve
-        )
-
-    # TODO: Get rid of these, use parent
-    @property
-    def release_at_current_minute(self):
-        return sum(self.flow_at_minute(m) for m in range(self.minute+1))
-
-    @property
-    def release(self):
-        return self.release_at_current_minute
-
-    def flow_at_minute(self, minute):
-        labels = self.team_logs[minute]
-        return sum(self.network.valves_by_label[l].flow for l in labels)
-
-    @property
-    def team_logs(self):
-        logs = []
-        open_valves = ()
-
-        for min in range(self.minute+1):
-            logs.append(open_valves)
-            elf_added = self.steps[min-1] if self.steps[min] == 'OPEN' else None
-            elph_added = self.elephant_steps[min-1] if self.elephant_steps[min] == 'OPEN' else None
-
-            if elf_added:
-                open_valves += (elf_added,)
-
-            if elph_added:
-                open_valves += (elph_added,)
-
-        logs.append(open_valves)
-        return logs
-
-    @property
-    def elf_opened(self):
-        opened = set()
-        for n, step in enumerate(self.steps):
-            if step == 'OPEN':
-                opened.add(self.steps[n-1])
-        return opened
-
-    @property
-    def elephant_opened(self):
-        opened = set()
-        for n, step in enumerate(self.elephant_steps):
-            if step == 'OPEN':
-                opened.add(self.elephant_steps[n-1])
-        return opened
-
     def stop_at_minute(self, minute):
         let_elephant_catch_up = True if self.elf_minute >= self.elephant_minute else False
 
@@ -498,11 +582,9 @@ class PlumberTeam(ElfPlumber):
 
         self.steps = self.steps[:minute+1]
         self.elephant_steps = self.elephant_steps[:minute+1]
-        self.logs = self.logs[:minute+1]
         return self
 
     def wait(self):
-        self.logs.append(self.open_valves)
         self.elephant_wait()
         self.elf_wait()
         return self
@@ -515,89 +597,10 @@ class PlumberTeam(ElfPlumber):
         self.steps.append(self.current_valve)
         return self
 
-    def next_move(self, unopened_valves):
-        clones = []
-
-        # Originally, I had both move if they were ready. This was wasteful. Have
-        # one move and other will catch up.
-        if self.elf_is_ready_to_move():
-            clones += self.elf_moves(unopened_valves)
-        else:
-            clones += self.elephant_moves(unopened_valves)
-
-        return clones
-
-    def elf_moves(self, unopened_valves):
-        clones = []
-        for valve_label in unopened_valves:
-            clone = self.clone()
-            clone.visit(valve_label)
-            clones.append(clone)
-        return clones
-
-    def elephant_moves(self, unopened_valves):
-        clones = []
-        for valve_label in unopened_valves:
-            clone = self.clone()
-            clone.elephant_visit(valve_label)
-            clones.append(clone)
-        return clones
-
-    def elephant_visit(self, valve_label):
-        start = self.current_elephant_valve
-        path = self.network.find_shortest_path(start, valve_label)
-
-        # Walk path updating steps and logs as we go.
-        # Path will start with current valve already in steps so skip it.
-        for step in path[1:]:
-            self.elephant_steps.append(step)
-            self.logs.append(self.open_valves)
-
-        # Now open the valve and log progress
-        self.elephant_steps.append('OPEN')
-        self.logs.append(self.open_valves)
-
-        # Release won't get logged until next turn
-        self.open_valves = self.open_valves + (valve_label,)
-        return self
-
-    def elf_is_ready_to_move(self):
-        return self.elf_minute <= self.minute
-
-    def elephant_is_ready_to_move(self):
-        return self.elephant_minute <= self.minute
-
-    @property
-    def minute(self):
-        return min(self.elf_minute, self.elephant_minute)
-
-    @property
-    def elf_minute(self):
-        return len(self.steps)-1
-
-    @property
-    def elephant_minute(self):
-        return len(self.elephant_steps)-1
-
-    @property
-    def current_elephant_valve(self):
-        for step in reversed(self.elephant_steps):
-            if step != 'OPEN':
-                return step
-
-    @property
-    def details(self):
-        logs = []
-        for min in range(self.minute):
-            elph_steps = self.elephant_steps[min]
-            elf_step = self.steps[min-1] if self.steps[min] == 'OPEN' else self.steps[min]
-            elph_step = self.elephant_steps[min-1] if elph_steps == 'OPEN' else elph_steps
-            open_valves = sorted(self.team_logs[min])
-            pressure = self.flow_at_minute(min)
-            f = "Minute {} at {}: Valves {} released {} pressure."
-            log = f.format(min, (elf_step, elph_step), open_valves, pressure)
-            logs.append(log)
-        return logs
+    def __repr__(self):
+        min = (self.minute, self.elf_minute, self.elephant_minute)
+        at = (self.current_valve, self.current_elephant_valve)
+        return f"<PlumberTeam minute={min} at={at} release={self.release}>"
 
 
 class Solution:
@@ -642,6 +645,7 @@ class Solution:
         network = PipeNetwork(valve_scans)
         team = PlumberTeam(network)
         team = team.maximize_release(minutes)
+        breakpoint()
         assert team.release == 1707, team
         return team.release
 
