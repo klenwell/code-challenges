@@ -7,7 +7,6 @@ from functools import cached_property
 from config import INPUT_DIR
 
 import re
-from pprint import pprint
 
 
 INPUT_FILE = path_join(INPUT_DIR, 'day-16.txt')
@@ -54,7 +53,7 @@ class PipeNetwork:
     def __init__(self, valve_scans):
         self.valves = [Valve(scan) for scan in valve_scans]
 
-        # Memoize paths
+        # Memoize shortcuts
         self.shortest_paths = {}
 
     @cached_property
@@ -88,7 +87,7 @@ class PipeNetwork:
         while queue:
             path = queue.pop(0)
             current_valve_label = path[-1]
-            #print(key, current_valve_label, path, len(queue))
+            # print(key, current_valve_label, path, len(queue))
 
             for next_valve_label in self.graph[current_valve_label]:
                 if next_valve_label in path:
@@ -102,18 +101,19 @@ class PipeNetwork:
                     queue.append(new_path)
 
         shortest_path = sorted(completed, key=lambda p: len(p))[0]
-        #print('shortest', len(completed), shortest_path)
+        # print('shortest', len(completed), shortest_path)
 
         self.shortest_paths[key] = shortest_path
         return shortest_path
 
 
 class ElfPlumber:
-    def __init__(self, network, steps=None, logs=None, open_valves=None):
+    #
+    # Public
+    #
+    def __init__(self, network, steps=None):
         self.network = network
         self.steps = steps.copy() if steps else ['AA']
-        self.logs = logs.copy() if logs else [()]
-        self.open_valves = open_valves if open_valves else ()
 
     def maximize_release(self, minutes):
         queue = [self]
@@ -157,20 +157,100 @@ class ElfPlumber:
                 print(minute, len(queue), pruned, len(completed), plumber)
 
         plumbers = sorted(completed, key=lambda n: n.release)
-        #breakpoint()
         return plumbers[-1]
+
+    #
+    # Properties
+    #
+    @property
+    def logs(self):
+        logs = []
+        open_valves = ()
+
+        for min in range(self.minute+1):
+            logs.append(open_valves)
+            valve_added = self.steps[min-1] if self.steps[min] == 'OPEN' else None
+
+            if valve_added:
+                open_valves += (valve_added,)
+
+        logs.append(open_valves)
+        return logs
+
+    @property
+    def open_valves(self):
+        return self.logs[-1]
+
+    @property
+    def unopened_working_valves(self):
+        return self.working_valves - set(self.open_valves)
+
+    @property
+    def working_valves(self):
+        return set([v.label for v in self.network.working_valves])
+
+    @property
+    def current_valve(self):
+        i = 0
+        last_step = 'OPEN'
+
+        while last_step == 'OPEN':
+            i -= 1
+            last_step = self.steps[i]
+
+        return last_step
+
+    @property
+    def minute(self):
+        return len(self.steps)-1
+
+    @property
+    def release_at_current_minute(self):
+        return sum(self.flow_at_minute(m) for m in range(self.minute+1))
+
+    @property
+    def release(self):
+        return self.release_at_current_minute
+
+    @property
+    def redundancy_key(self):
+        return (
+            self.minute,
+            self.current_valve,
+            self.release
+        )
+
+    @property
+    def cohort_key(self):
+        return (
+            self.minute,
+            self.current_valve
+        )
+
+    @property
+    def details(self):
+        logs = []
+        for minute, step in enumerate(self.steps):
+            step = step if step != 'OPEN' else self.steps[minute-1]
+            open_valves = sorted(self.logs[minute])
+            pressure = self.flow_at_minute(minute)
+            f = "Minute {} at {}: Valves {} released {} pressure."
+            log = f.format(minute, step, open_valves, pressure)
+            logs.append(log)
+        return logs
+
+    #
+    # Methods
+    #
+    def clone(self):
+        return ElfPlumber(self.network, self.steps)
 
     def stop_at_minute(self, minute):
         while self.minute < minute:
             self.wait()
 
         self.steps = self.steps[:minute+1]
-        self.logs = self.logs[:minute+1]
         return self
-
-    @property
-    def unopened_working_valves(self):
-        return self.working_valves - set(self.open_valves)
 
     def visit(self, label):
         path = self.find_shortest_path_to(label)
@@ -179,28 +259,23 @@ class ElfPlumber:
         # Path will start with current valve already in steps so skip it.
         for step in path[1:]:
             self.steps.append(step)
-            self.logs.append(self.open_valves)
 
         # Now open the valve and log progress
         self.steps.append('OPEN')
-        self.logs.append(self.open_valves)
-
-        # Release won't get logged until next turn
-        self.open_valves = self.open_valves + (label,)
 
         return self
 
     def wait(self):
         self.steps.append(self.current_valve)
-        self.logs.append(self.open_valves)
         return self
 
     def prune(self, clones):
-        #clones = self.prune_redundancies(clones)
+        # clones = self.prune_redundancies(clones)
         clones = self.prune_cohorts(clones)
         return clones
 
     def prune_redundancies(self, clones):
+        # This does not help. :)
         uniques = []
         redundancies = {}
 
@@ -237,67 +312,13 @@ class ElfPlumber:
 
         return leaders
 
-    @property
-    def redundancy_key(self):
-        return (
-            self.minute,
-            self.current_valve,
-            self.release
-        )
-
-    @property
-    def cohort_key(self):
-        return (
-            self.minute,
-            self.current_valve
-        )
-
     def find_shortest_path_to(self, label):
         start = self.current_valve
         return self.network.find_shortest_path(start, label)
 
-    def clone(self):
-        return ElfPlumber(self.network, self.steps, self.logs, self.open_valves)
-
-    @property
-    def working_valves(self):
-        return set([v.label for v in self.network.working_valves])
-
-    @property
-    def current_valve(self):
-        i = 0
-        last_step = 'OPEN'
-
-        while last_step == 'OPEN':
-            i -= 1
-            last_step = self.steps[i]
-
-        return last_step
-
-    @property
-    def minute(self):
-        return len(self.steps)-1
-
-    # TODO: clean this up
-    @property
-    def release(self):
-        return sum(self.flow_at_minute(m) for m in range(len(self.logs)))
-
     def flow_at_minute(self, minute):
         labels = self.logs[minute]
         return sum(self.network.valves_by_label[l].flow for l in labels)
-
-    @property
-    def details(self):
-        logs = []
-        for minute, step in enumerate(self.steps):
-            step = step if step != 'OPEN' else self.steps[minute-1]
-            open_valves = sorted(self.logs[minute])
-            pressure = self.flow_at_minute(minute)
-            f = "Minute {} at {}: Valves {} released {} pressure."
-            log = f.format(minute, step, open_valves, pressure)
-            logs.append(log)
-        return logs
 
     def __repr__(self):
         return f"<Plumber minute={self.minute} at={self.current_valve} release={self.release}>"
@@ -312,7 +333,8 @@ class PlumberTeam(ElfPlumber):
         self.open_valves = open_valves if open_valves else ()
 
     def clone(self):
-        return PlumberTeam(self.network, self.steps, self.logs, self.open_valves, self.elephant_steps)
+        return PlumberTeam(self.network, self.steps, self.logs, self.open_valves,
+                           self.elephant_steps)
 
     def maximize_release(self, minutes):
         queue = [self]
@@ -358,21 +380,19 @@ class PlumberTeam(ElfPlumber):
                 t0 = timer()
 
         teams = sorted(completed, key=lambda n: n.release)
-        #breakpoint()
         return teams[-1]
 
     def prune(self, clones):
-        #clones = self.prune_overlaps(clones)
+        # clones = self.prune_overlaps(clones)
         clones = self.prune_cohorts(clones)
         return clones
 
     def prune_overlaps(self, clones):
+        # This does not help.
         uniques = []
 
         for clone in clones:
             overlaps = self.elf_opened.intersection(self.elephant_opened)
-            #print(self.elf_opened, self.elephant_opened, overlaps)
-            #breakpoint()
 
             if not overlaps:
                 uniques.append(clone)
@@ -407,7 +427,8 @@ class PlumberTeam(ElfPlumber):
     def cohort_key(self):
         m = self.minute
         elf_valve = self.steps[m-1] if self.steps[m] == 'OPEN' else self.steps[m]
-        elephant_valve = self.elephant_steps[m-1] if self.elephant_steps[m] == 'OPEN' else self.elephant_steps[m]
+        elph_steps = self.elephant_steps[m]
+        elephant_valve = self.elephant_steps[m-1] if elph_steps == 'OPEN' else elph_steps
         return (
             self.minute,
             elf_valve,
@@ -473,9 +494,7 @@ class PlumberTeam(ElfPlumber):
                 self.elf_wait()
 
         while self.minute < minute:
-            #print(self.minute, minute)
             self.wait()
-            #breakpoint()
 
         self.steps = self.steps[:minute+1]
         self.elephant_steps = self.elephant_steps[:minute+1]
@@ -499,10 +518,10 @@ class PlumberTeam(ElfPlumber):
     def next_move(self, unopened_valves):
         clones = []
 
+        # Originally, I had both move if they were ready. This was wasteful. Have
+        # one move and other will catch up.
         if self.elf_is_ready_to_move():
             clones += self.elf_moves(unopened_valves)
-
-        #if self.elephant_is_ready_to_move():
         else:
             clones += self.elephant_moves(unopened_valves)
 
@@ -570,8 +589,9 @@ class PlumberTeam(ElfPlumber):
     def details(self):
         logs = []
         for min in range(self.minute):
+            elph_steps = self.elephant_steps[min]
             elf_step = self.steps[min-1] if self.steps[min] == 'OPEN' else self.steps[min]
-            elph_step = self.elephant_steps[min-1] if self.elephant_steps[min] == 'OPEN' else self.elephant_steps[min]
+            elph_step = self.elephant_steps[min-1] if elph_steps == 'OPEN' else elph_steps
             open_valves = sorted(self.team_logs[min])
             pressure = self.flow_at_minute(min)
             f = "Minute {} at {}: Valves {} released {} pressure."

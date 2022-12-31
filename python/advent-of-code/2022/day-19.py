@@ -212,9 +212,10 @@ class Factory:
     @cached_property
     def robot_values(self):
         values = {}
+        obs_clay_cost = self.costs['obsidian'][1]
         values['ore'] = self.costs['ore'][0]
         values['clay'] = self.costs['clay'][0]
-        values['obsidian'] = self.costs['obsidian'][0] + (self.costs['obsidian'][1] * values['clay'])
+        values['obsidian'] = self.costs['obsidian'][0] + (obs_clay_cost * values['clay'])
         values['geode'] = self.costs['geode'][0] + (self.costs['geode'][1] * values['obsidian'])
         return values
 
