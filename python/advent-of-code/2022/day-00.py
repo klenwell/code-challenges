@@ -22,11 +22,13 @@ class Solution:
     #
     @property
     def test1(self):
-        return self.test_input_lines
+        input = self.test_input_lines
+        return input
 
     @property
     def first(self):
-        return self.input_lines
+        input = self.input_lines
+        return input
 
     @property
     def test2(self):
@@ -51,10 +53,6 @@ class Solution:
     @cached_property
     def test_input_lines(self):
         return [line.strip() for line in TEST_INPUT.split("\n")]
-
-    #
-    # Methods
-    #
 
 
 #
