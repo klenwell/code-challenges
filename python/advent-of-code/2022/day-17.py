@@ -14,7 +14,7 @@ INPUT_FILE = path_join(INPUT_DIR, 'day-17.txt')
 TEST_INPUT = """\
 >>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>"""
 
-ROCK_TYPES = """\
+ROCK_PATTERNS = """\
 ####
 
 .#.
@@ -42,11 +42,21 @@ PUFF_OFFSET = {
 
 
 class Rock:
-    def __init__(self, pattern, symbol):
-        self.pattern = pattern
-        self.symbol = symbol
+    def __init__(self, number):
+        self.number = number
         self.x = 0
         self.y = 0
+
+    @property
+    def pattern(self):
+        i = self.number % len(ROCK_SYMBOLS)
+        types = ROCK_PATTERNS.split('\n\n')
+        return types[i]
+
+    @property
+    def symbol(self):
+        i = self.number % len(ROCK_SYMBOLS)
+        return ROCK_SYMBOLS[i]
 
     @property
     def pt(self):
@@ -94,7 +104,142 @@ class Rock:
         return self.y + self.height
 
     def __repr__(self):
-        return f"<Rock {self.symbol} ({self.x}, {self.y})>"
+        return f"<Rock #{self.number} {self.symbol} ({self.x}, {self.y})>"
+
+
+class DroppedRock:
+    def __init__(self, rock, previous_dropped_rock, puff_seq):
+        self.rock = rock
+        self.previous_dropped = previous_dropped_rock
+        self.puff_seq = tuple(puff_seq)
+
+    @property
+    def pt(self):
+        return self.rock.pt
+
+    @property
+    def x(self):
+        return self.rock.x
+
+    @property
+    def y(self):
+        return self.rock.y
+
+    @property
+    def pts(self):
+        return self.rock.pts
+
+    @property
+    def dy(self):
+        # Effectivly pile height change.
+        return self.y - self.previous_dropped.y
+
+    @property
+    def key(self):
+        return (self.rock.symbol, self.puff_seq, self.rock.x, self.dy)
+
+    @property
+    def puff_stream(self):
+        return ''.join(self.puff_seq)
+
+    def __repr__(self):
+        return f"<DroppedRock {self.rock.symbol} {self.pt} puffs={self.puff_stream}>"
+
+
+class Stratum:
+    @staticmethod
+    def from_chamber(chamber):
+        return Stratum(chamber.last_rock_cycle, chamber.height)
+
+    def __init__(self, dropped_rocks, y):
+        # y is the total rock pile height, which could be higher than any rocks in
+        # stratum group
+        self.dropped_rocks = dropped_rocks
+        self.y = y
+
+    def cycles(self, previous_stratum):
+        if not previous_stratum:
+            return False
+
+        if self.key != previous_stratum.key:
+            return False
+
+        return True
+
+    @property
+    def key(self):
+        rock_keys = []
+        for rock in self.dropped_rocks:
+            rock_keys.append(rock.key)
+        return tuple(rock_keys)
+
+    @property
+    def puff_stream(self):
+        return ''.join([dr.puff_stream for dr in self.dropped_rocks])
+
+    @property
+    def rock_pile(self):
+        return ''.join([dr.rock.symbol for dr in self.dropped_rocks])
+
+    @property
+    def height(self):
+        return sum(dr.rock.height for dr in self.dropped_rocks)
+
+    @property
+    def index(self):
+        return (self.dropped_rocks[0].rock.number, self.dropped_rocks[-1].rock.number)
+
+    def __repr__(self):
+        pt = self.dropped_rocks[0].pt
+        return f"<Stratum index={self.index} y={self.y} height={self.height}>"
+
+
+class StrataCycle:
+    def __init__(self, start_stratum, end_stratum, rocks_left):
+        self.start_stratum = start_stratum
+        self.end_stratum = end_stratum
+        self.rocks_left = rocks_left
+
+    @property
+    def cycle_height(self):
+        return self.end_stratum.y - self.start_stratum.y
+
+    @property
+    def cycle_rocks(self):
+        return self.end_stratum.index[1] - self.start_stratum.index[0] + 1
+
+    @property
+    def cycle_strata(self):
+        return self.cycle_rocks / len(self.end_stratum.dropped_rocks)
+
+    @property
+    def cycles(self):
+        return self.rocks_left // self.cycle_rocks
+
+    @property
+    def rock_count(self):
+        return self.cycle_rocks * self.cycles
+
+    @property
+    def strata_count(self):
+        return self.cycle_strata * self.cycles
+
+    @property
+    def height(self):
+        return self.cycles * self.cycle_height
+
+    @property
+    def ys(self):
+        return (self.start_stratum.dropped_rocks[0].y, self.end_stratum.dropped_rocks[-1].y)
+
+    @property
+    def index(self):
+        return (self.start_stratum.index[0], self.end_stratum.index[1])
+
+    def __repr__(self):
+        strata = int(self.strata_count)
+        rocks = self.rock_count
+        return f"<StrataCycle index={self.index} strata={strata} rocks={rocks} height={self.height}>"
 
 
 class TetrisChamber:
@@ -102,9 +247,14 @@ class TetrisChamber:
         self.width = width
         self.jet_queue = list(jet_pattern)
 
-        self.rock_types = list(zip(ROCK_TYPES.split('\n\n'), ROCK_SYMBOLS))
-        self.rocks = []
+        self.dropped_rocks = []
+        self.strata = []
+        self.strata_index = {}
         self.pts = set()
+
+        # See cycle_is_detected method below.
+        self.cycle_index = {}
+        self.cycle_queue = []
 
         self.bottom_y = 0
 
@@ -112,52 +262,211 @@ class TetrisChamber:
         self.start_y = 4
 
     def drop_rocks(self, num):
-        for n in range(num):
-            type, symbol = self.rock_types[n % len(self.rock_types)]
-            rock = Rock(type, symbol)
+        rocks_left = num
+        cycled_strata = None
 
-            print('drop rock', n+1) if n % 1000 == 0 else None
-            self.drop_rock(rock)
+        while rocks_left > 0:
+            rock = Rock(num - rocks_left)
+            dropped_rock = self.drop_rock(rock)
+            self.collect_rock(dropped_rock)
+            rocks_left -= 1
 
-        return self.height
+            print('dropped rock', rock) #if rocks_left % 1000 == 0 else None
+
+            if rocks_left > len(self.jet_queue) and self.cycle_is_detected():
+            #if self.cycle_is_detected():
+                end_stratum = self.last_stratum
+                start_stratum = self.strata_index.get(end_stratum.key)
+                cycled_strata = StrataCycle(start_stratum, end_stratum, rocks_left)
+                rocks_left = num - cycled_strata.rock_count - len(self.dropped_rocks)
+                print('cycle_is_detected', (rock.number, rocks_left), cycled_strata, self)
+
+        print('no mo rox', self, cycled_strata)
+        breakpoint()
+
+        if cycled_strata:
+            print('cycled_strata', self.height, cycled_strata.height, self.height + cycled_strata.height)
+            return self.height + cycled_strata.height
+        else:
+            return self.height
+
+    def cycle_is_detected(self):
+        # Only check for cycle if we've cycled at least one through jet queue.
+        if len(self.strata) < len(self.jet_queue):
+            return False
+
+        end_stratum = self.last_stratum
+        start_stratum = self.strata_index.get(end_stratum.key)
+
+        if end_stratum.cycles(start_stratum):
+            #print('cycle_is_detected', identical_stratum, self.last_stratum)
+            return True
+        else:
+            self.strata_index[self.last_stratum.key] = self.last_stratum
+            return False
+
+    def collect_rock(self, dropped_rock):
+        self.dropped_rocks.append(dropped_rock)
+
+        if not self.last_rock_cycle:
+            return None
+
+        stratum = Stratum.from_chamber(self)
+        self.strata.append(stratum)
+        return stratum
+
+    def compute_cyclical_strata_chunk(self, rocks_left):
+        from collections import namedtuple
+        StrataChunk = namedtuple('StrataChunk', ['cycles', 'rocks', 'height'])
+
+        end_stratum = self.last_stratum
+        start_stratum = self.strata_index.get(end_stratum.key)
+
+        if not end_stratum.cycles(start_stratum):
+            return None
+
+        cycle_height = end_stratum.y - start_stratum.y
+        cycle_rocks = end_stratum.index[1] - start_stratum.index[0]
+
+        cycles = rocks_left // cycle_rocks
+        chunk_rocks = cycle_rocks * cycles
+        #print(2022 - chunk_rocks - len(self.dropped_rocks), rocks_left % cycle_rocks)
+        chunk_height = cycles * cycle_height
+
+        return StrataChunk(cycles, chunk_rocks, chunk_height)
 
     def drop_rock(self, rock):
-        puffs = 0
+        puffs = []
         rock.x = self.start_x
         rock.y = self.height + self.start_y
         dropping = True
 
         #print('rock start:', rock)
         while dropping:
-            puffs += 1
-            rock = self.jet_push_rock(rock)
-            rock.y -= 1
-            collision = rock.overlaps(self) or self.rock_hits_floor(rock)
+            # After a rock appears, it alternates between being
+            # pushed by a jet of hot gas one unit
+            # (in the direction indicated by the next symbol in the jet pattern)
+            init_x = rock.x
+            puff = self.jet_queue.pop(0)
+            rock.x += PUFF_OFFSET[puff]
 
+            # If hits wall or resting rock, restore x
+            if self.rock_hits_wall(rock) or rock.overlaps(self):
+                rock.x = init_x
+
+            puffs.append(puff)
+            self.jet_queue.append(puff)
+
+            # and then falling one unit down.
+            rock.y -= 1
+
+            # If any movement would cause any part of the rock to move into the walls, floor, or a stopped rock,
+            # the movement instead does not occur.
+            collision = rock.overlaps(self) or self.rock_hits_floor(rock)
             if collision:
                 rock.y += 1  # restore to previous point
                 break
-            #print('dropping:', rock)
-        #print('rock stop:', rock)
+
+        #     print('dropping:', rock)
+        # print('rock stop:', rock)
 
         self.pts = self.pts.union(rock.pts)
-        self.rocks.append(rock)
-        return puffs
+        self.scan_surface_pts(self.pts)
 
-    def jet_push_rock(self, rock):
-        init_x = rock.x
+        return DroppedRock(rock, self.last_dropped_rock, puffs)
 
-        puff = self.jet_queue.pop(0)
-        rock.x += PUFF_OFFSET[puff]
-        self.jet_queue.append(puff)
-        #print(init_x, puff, PUFF_OFFSET[puff], rock.x)
+    @property
+    def last_dropped_rock(self):
+        # If no rocks yet, represent floor as a rock
+        if not self.dropped_rocks:
+            floor = Rock(0)
+            return floor
+        else:
+            return self.dropped_rocks[-1]
 
-        # If hits wall or resting rock, restore x
-        if self.rock_hits_wall(rock) or rock.overlaps(self):
-            #print('wall')
-            rock.x = init_x
+    @property
+    def last_stratum(self):
+        return self.strata[-1]
 
-        return rock
+    @property
+    def last_rock_cycle(self):
+        cycle_len = len(ROCK_SYMBOLS) + 7
+        rock_cycle = self.dropped_rocks[-cycle_len:]
+
+        if len(rock_cycle) < cycle_len:
+            return None
+        else:
+            return rock_cycle
+
+    def old_cycle_is_detected(self, rock, puff_seq):
+        rock_key = self.rock_key(rock, puff_seq)
+        cycle_key = self.cycle_key(rock_key)
+
+        if cycle_key in self.cycle_index:
+            print('cycle_is_detected', rock, puff_seq)
+            breakpoint()
+            return True
+        else:
+            self.cycle_index[cycle_key] = self.height
+            self.cycle_queue.append(rock_key)
+            return False
+
+    @property
+    def last_rock(self):
+        if not self.rocks:
+            return None
+        else:
+            return self.rocks[-1]
+
+    def rock_key(self, rock, puff_seq):
+        dy = rock.y - self.last_rock.y if self.last_rock else rock.y
+        return (rock.symbol, tuple(puff_seq), rock.x, dy)
+
+    def cycle_key(self, rock_key):
+        last_4_rocks = self.cycle_queue[-4:]
+        return tuple(last_4_rocks) + (rock_key,)
+
+    def scan_surface_pts(self, pts):
+        # This is kinda slow so do it as infrequently as possible.
+        if len(self.pts) < 500:
+            return False
+
+        # DFS
+        surface_pts = set()
+        start_pt = (0, self.height+1)
+        queue = [start_pt]
+        visited = []
+
+        while queue:
+            pt = queue.pop()
+            visited.append(pt)
+
+            for npt in self.neighbors(pt):
+                if npt in self.pts:
+                    surface_pts.add(npt)
+                elif npt not in visited:
+                    queue.append(npt)
+            #print('scan_surface_pts', len(queue), surface_pts)
+
+        self.pts = surface_pts
+        return True
+
+    def neighbors(self, pt):
+        pts = []
+        x, y = pt
+        nsew = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+
+        for (dx, dy) in nsew:
+            nx = x + dx
+            ny = y + dy
+            #print('npt', pt, (nx, ny))
+            if nx < 0 or nx >= self.width:
+                continue
+            if ny < self.bottom_y or ny > self.height+1:
+                continue
+            pts.append((nx, ny))
+        #print(pts)
+        return pts
 
     def rock_hits_wall(self, rock):
         return rock.x < 0 or rock.max_x > self.width
@@ -167,12 +476,12 @@ class TetrisChamber:
 
     @property
     def height(self):
-        if not self.rocks:
+        if not self.pts:
             return self.bottom_y
         return max(y for _, y in self.pts)
 
     def __repr__(self):
-        return f"<Chamber height={self.height} rocks={len(self.rocks)}>"
+        return f"<Chamber height={self.height} pts={len(self.pts)}>"
 
 
 class Boulder(TetrisChamber):
@@ -213,122 +522,6 @@ class Boulder(TetrisChamber):
         return True
 
 
-class FastTetrisChamber(TetrisChamber):
-    def __init__(self, width, jet_pattern):
-        super().__init__(width, jet_pattern)
-        self.floor_logs = []
-        self.rocks = 0
-
-    def detect_new_floors(self, rock):
-        floors = []
-        for y in range(rock.y, rock.max_y):
-            if self.floor_at_y(y) == '#######':
-                floors.append(y)
-        return floors
-
-    def next_rock(self, num):
-        type, symbol = self.rock_types[num % len(self.rock_types)]
-        return Rock(type, symbol)
-
-    def floor_at_y(self, y):
-        cubes = []
-        for x in range(self.width):
-            cube = '#' if (x, y) in self.pts else '.'
-            cubes.append(cube)
-        return ''.join(cubes)
-
-    def show_rock(self, rock):
-        floors = []
-        for y in range(rock.y, rock.max_y):
-            floor = list(self.floor_at_y(y))
-            xs = [rx for rx, ry in rock.pts if ry == y]
-            c = lambda x: '@' if x in xs else floor[x]
-            cubes = [c(x) for x in range(len(floor))]
-            floors.append(''.join(cubes))
-        return '\n'.join(floors)
-
-    def find_floors(self):
-        for n in range(100000):
-            t0 = time.time()
-            rock = self.next_rock(n)
-            self.drop_rock(rock)
-            new_floors = self.detect_new_floors(rock)
-            if new_floors:
-                for y in new_floors:
-                    self.floor_logs.append((y, n, rock))
-                breakpoint()
-
-            if n % 997 == 0:
-                print('find_floors', n, rock.y, time.time()-t0, f"\n{self.show_rock(rock)}")
-                self.clear_debris()
-        return [y for y, _, _ in self.floor_logs]
-
-    def drop_rocks(self, num):
-        t0 = time.time()
-        for n in range(num):
-            rock = self.next_rock(n)
-
-            print('drop rock', n+1, time.time()-t0, n*100/num) if n % 1000 == 0 else None
-            self.drop_rock(rock)
-            # print(rock, f"\n{self.show_rock(rock)}")
-            # breakpoint() if n % 5 == 0 else None
-
-        return self.height
-
-    def drop_rock(self, rock):
-        puffs = 0
-        rock.x = self.start_x
-        rock.y = self.bottom_y - self.height - rock.height + self.start_y
-        dropping = True
-
-        #print('rock start:', rock)
-        while dropping:
-            puffs += 1
-            rock = self.jet_push_rock(rock)
-            rock.y += 1
-            collision = rock.overlaps(self) or self.rock_hits_floor(rock)
-
-            if collision:
-                rock.y -= 1  # restore to previous point
-                break
-
-            #print('dropping:', rock)
-        print('rock stop:', self.height, self.min_ys, len(self.pts), self.max_min_y, rock)
-
-        self.rocks += 1
-        self.pts = self.pts.union(rock.pts)
-        self.pts = self.clear_debris()
-        return puffs
-
-    def clear_debris(self):
-        # keep only pts above (i.e. y is smaller than) lowest high y (max_min_y)
-        before = len(self.pts)
-        surface_pts = set([(x, y) for x, y in self.pts if y <= self.max_min_y])
-        return surface_pts
-
-    @property
-    def height(self):
-        # Remember ys increase as you go down and floor is 0
-        return abs(min(self.min_ys))
-
-    @property
-    def min_ys(self):
-        min_ys = [self.bottom_y] * self.width
-        for x in range(self.width):
-            rys = [ry for rx, ry in self.pts if rx == x]
-            min_ys[x] = min(rys) if rys else self.bottom_y
-        return min_ys
-
-    @property
-    def max_min_y(self):
-        return max(self.min_ys)
-
-
-
-    def __repr__(self):
-        return f"<Chamber height={self.height} rocks={self.rocks}>"
-
-
 class Solution:
     def __init__(self, input_file):
         self.input_file = input_file
@@ -348,7 +541,7 @@ class Solution:
 
         chamber = TetrisChamber(width, jet_pattern)
         height = chamber.drop_rocks(count)
-        assert height == 3068, chamber
+        assert height == 3068, (height, chamber)
         return height
 
     @property
@@ -393,9 +586,16 @@ class Solution:
         est_secs = t1 * factor
         est_days = est_secs / (24 * 3600)
         est_years = est_days / 365
-        print('est time:', est_secs, est_days, est_years)
-        assert est_secs < ten_mins, f"Will take more than 10 mins"
 
+        best_result = [
+            # seconds
+            266337442,  # DFS surface pts
+            3967672253  # Aggregate rock pts
+        ][0]
+
+        print('est time (secs, days, years):', est_secs, est_days, est_years)
+        assert est_secs < best_result, f"Worse result (than {best_result})"
+        assert est_secs < ten_mins, f"Will take more than 10 mins"
 
     def test_floors(self):
         jet_pattern = TEST_INPUT
@@ -439,8 +639,7 @@ class Solution:
     # Tests
     #
     def test_rock(self):
-        types = ROCK_TYPES.split('\n\n')
-        rock = Rock(types[1], ROCK_SYMBOLS[1])
+        rock = Rock(1)
         assert rock.pt == (0, 0), rock
         assert rock.symbol == '+', rock
         assert rock.height == 3, rock
@@ -450,23 +649,26 @@ class Solution:
 
     def test_chamber(self):
         chamber = TetrisChamber(7, TEST_INPUT)
-        assert chamber.rock_types[0] == ('####', '—'), chamber.rock_types
+        assert chamber.height == 0, chamber.height
+        assert len(chamber.pts) == 0, chamber.pts
         print('test_chamber passed')
 
     def test_drop(self):
+        dropped_rocks = []
         expected_rocks_pts = [
             (2, 1), (2, 2), (0, 4), (4, 4), (4, 8),
             (1, 10), (1, 11), (3, 13), (4, 14), (0, 13)
         ]
 
         chamber = TetrisChamber(7, TEST_INPUT)
-        height = chamber.drop_rocks(len(expected_rocks_pts))
 
         for n, expected_pt in enumerate(expected_rocks_pts):
-            rock = chamber.rocks[n]
-            assert rock.pt == expected_pt, (n+1, expected_pt, rock)
+            rock = Rock(n)
+            dropped_rock = chamber.drop_rock(rock)
+            dropped_rocks.append(dropped_rock)
+            assert dropped_rock.pt == expected_pt, (n+1, expected_pt, dropped_rock)
 
-        assert height == 17, (chamber, chamber.rocks, chamber.pts)
+        assert chamber.height == 17, (chamber, chamber.rocks, chamber.pts)
         print('test_drop passed')
 
     #
