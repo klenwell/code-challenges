@@ -6,8 +6,6 @@ from os.path import join as path_join
 from functools import cached_property
 from config import INPUT_DIR
 
-import time
-
 
 INPUT_FILE = path_join(INPUT_DIR, 'day-17.txt')
 
@@ -76,7 +74,6 @@ class Rock:
         return pts
 
     def overlaps(self, other):
-        #print('collision', self.pts.intersection(other.pts), self.pts, other.pts)
         return len(self.pts.intersection(other.pts)) > 0
 
     @cached_property
@@ -198,7 +195,6 @@ class Stratum:
         return (lower_rock.number, upper_rock.number)
 
     def __repr__(self):
-        pt = self.dropped_rocks[0].pt
         return f"<Stratum index={self.index} max_y={self.max_y} height={self.height}>"
 
 
@@ -245,9 +241,10 @@ class StrataCycle:
         return (self.start_stratum.index[0], self.repeat_stratum.index[0])
 
     def __repr__(self):
+        idx = self.index
         strata = int(self.strata_count)
         rocks = self.rock_count
-        return f"<StrataCycle index={self.index} strata={strata} rocks={rocks} height={self.height}>"
+        return f"<StrataCycle index={idx} strata={strata} rocks={rocks} height={self.height}>"
 
 
 class TetrisChamber:
@@ -279,22 +276,16 @@ class TetrisChamber:
             self.collect_rock(dropped_rock)
             rocks_left -= 1
 
-            print('dropped rock', rock) #if rocks_left % 1000 == 0 else None
+            print('dropped rock', rock, self) if rocks_left % 1000 == 0 else None
 
             if rocks_left > len(self.jet_queue) and self.cycle_is_detected():
-            #if self.cycle_is_detected():
                 repeat_stratum = self.last_stratum
                 start_stratum = self.strata_index.get(repeat_stratum.key)
-                print('CYCLE IN', (rock.number, rocks_left), repeat_stratum, self)
                 cycled_strata = StrataCycle(start_stratum, repeat_stratum, rocks_left)
                 rocks_left = num - cycled_strata.rock_count - len(self.dropped_rocks)
-                print('CYCLE OUT', (rock.number, rocks_left), cycled_strata, self)
-
-        print('no mo rox', self, cycled_strata)
-        #breakpoint()
+                print('CYCLE DETECTED', (rock.number, rocks_left), cycled_strata, self)
 
         if cycled_strata:
-            print('cycled_strata', self.height, cycled_strata.height, self.height + cycled_strata.height)
             return self.height + cycled_strata.height
         else:
             return self.height
@@ -308,7 +299,6 @@ class TetrisChamber:
         start_stratum = self.strata_index.get(end_stratum.key)
 
         if end_stratum.is_clone_of(start_stratum):
-            #print('cycle_is_detected', identical_stratum, self.last_stratum)
             return True
         else:
             self.strata_index[self.last_stratum.key] = self.last_stratum
@@ -339,7 +329,6 @@ class TetrisChamber:
 
         cycles = rocks_left // cycle_rocks
         chunk_rocks = cycle_rocks * cycles
-        #print(2022 - chunk_rocks - len(self.dropped_rocks), rocks_left % cycle_rocks)
         chunk_height = cycles * cycle_height
 
         return StrataChunk(cycles, chunk_rocks, chunk_height)
@@ -350,7 +339,6 @@ class TetrisChamber:
         rock.y = self.height + self.start_y
         dropping = True
 
-        #print('rock start:', rock)
         while dropping:
             # After a rock appears, it alternates between being
             # pushed by a jet of hot gas one unit
@@ -369,15 +357,12 @@ class TetrisChamber:
             # and then falling one unit down.
             rock.y -= 1
 
-            # If any movement would cause any part of the rock to move into the walls, floor, or a stopped rock,
-            # the movement instead does not occur.
+            # If any movement would cause any part of the rock to move into the walls, floor,
+            # or a stopped rock, the movement instead does not occur.
             collision = rock.overlaps(self) or self.rock_hits_floor(rock)
             if collision:
                 rock.y += 1  # restore to previous point
                 break
-
-        #     print('dropping:', rock)
-        # print('rock stop:', rock)
 
         self.pts = self.pts.union(rock.pts)
         self.scan_surface_pts(self.pts)
@@ -459,7 +444,6 @@ class TetrisChamber:
                     surface_pts.add(npt)
                 elif npt not in visited:
                     queue.append(npt)
-            #print('scan_surface_pts', len(queue), surface_pts)
 
         self.pts = surface_pts
         return True
@@ -472,13 +456,11 @@ class TetrisChamber:
         for (dx, dy) in nsew:
             nx = x + dx
             ny = y + dy
-            #print('npt', pt, (nx, ny))
             if nx < 0 or nx >= self.width:
                 continue
             if ny < self.bottom_y or ny > self.height+1:
                 continue
             pts.append((nx, ny))
-        #print(pts)
         return pts
 
     def rock_hits_wall(self, rock):
@@ -495,44 +477,6 @@ class TetrisChamber:
 
     def __repr__(self):
         return f"<Chamber height={self.height} pts={len(self.pts)}>"
-
-
-class Boulder(TetrisChamber):
-    def __init__(self, width, jet_pattern):
-        super().__init__(width, jet_pattern)
-
-    def build(self):
-        cycles = len(self.jet_queue) * 1000
-        total_puffs = 0
-
-        for n in range(cycles):
-            type, symbol = self.rock_types[n % len(self.rock_types)]
-            rock = Rock(type, symbol)
-
-            puffs = self.drop_rock(rock)
-            total_puffs += puffs
-
-            print(n, cycles, total_puffs, self.chamber_is_sealed()) if n % 100 == 0 else None
-
-            if self.cycle_detected(total_puffs):
-                print('captured!', total_puffs)
-                breakpoint()
-
-        raise Exception(f"No cycle detected after {total_puffs} puffs")
-
-    def cycle_detected(self, puffs):
-        # if not self.chamber_is_sealed():
-        #     return False
-
-        #print(puffs, len(self.jet_queue), puffs % len(self.jet_queue), puffs % len(self.jet_queue) == 0)
-        return puffs % len(self.jet_queue) == 0
-
-    def chamber_is_sealed(self):
-        for col in range(self.width):
-            pts = [(x, y) for x,y in self.pts if x == col]
-            if not pts:
-                return False
-        return True
 
 
 class Solution:
@@ -574,41 +518,10 @@ class Solution:
         width = 7
         count = 1000000000000  # one trillion (or a million million)
 
-        #self.benchmark()
-        #self.test_floors()
-        #self.test_boulder()
-        #self.test_cycles()
-
         chamber = TetrisChamber(width, jet_pattern)
         height = chamber.drop_rocks(count)
         assert height == 1514285714288, chamber
         return height
-
-    def benchmark(self):
-        jet_pattern = TEST_INPUT
-        width = 7
-        count = 10000
-        factor = 1000000000000 / count
-        ten_mins = 10 * 60
-
-        t0 = time.time()
-        chamber = TetrisChamber(width, jet_pattern)
-        height = chamber.drop_rocks(count)
-        t1 = time.time() - t0
-
-        est_secs = t1 * factor
-        est_days = est_secs / (24 * 3600)
-        est_years = est_days / 365
-
-        best_result = [
-            # seconds
-            266337442,  # DFS surface pts
-            3967672253  # Aggregate rock pts
-        ][0]
-
-        print('est time (secs, days, years):', est_secs, est_days, est_years)
-        assert est_secs < best_result, f"Worse result (than {best_result})"
-        assert est_secs < ten_mins, f"Will take more than 10 mins"
 
     @property
     def second(self):
