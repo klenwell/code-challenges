@@ -31,7 +31,7 @@ ROCK_PATTERNS = """\
 ##
 ##"""
 
-ROCK_SYMBOLS = ['—', '+', '⅃', '|', '■']
+ROCK_SYMBOLS = ['—', '+', '⅃', 'l', '☐']
 
 PUFF_OFFSET = {
     '>': 1,
@@ -144,15 +144,10 @@ class DroppedRock:
 
 
 class Stratum:
-    @staticmethod
-    def from_chamber(chamber):
-        return Stratum(chamber.last_rock_cycle, chamber.height)
-
-    def __init__(self, dropped_rocks, max_y):
+    def __init__(self, dropped_rocks):
         # max_y is the total rock pile height, which could be higher than any rocks in
         # stratum group
         self.dropped_rocks = dropped_rocks
-        self.max_y = max_y
 
     def is_clone_of(self, previous_stratum):
         if not previous_stratum:
@@ -195,7 +190,7 @@ class Stratum:
         return (lower_rock.number, upper_rock.number)
 
     def __repr__(self):
-        return f"<Stratum index={self.index} max_y={self.max_y} height={self.height}>"
+        return f"<Stratum index={self.index} height={self.height}>"
 
 
 class StrataCycle:
@@ -216,8 +211,6 @@ class StrataCycle:
 
     @property
     def cycle_strata(self):
-        print(self.start_stratum, self.repeat_stratum)
-        print(self.cycle_rocks / len(self.repeat_stratum.dropped_rocks))
         return self.cycle_rocks / len(self.repeat_stratum.dropped_rocks)
 
     @property
@@ -257,10 +250,6 @@ class TetrisChamber:
         self.strata_index = {}
         self.pts = set()
 
-        # See cycle_is_detected method below.
-        self.cycle_index = {}
-        self.cycle_queue = []
-
         self.bottom_y = 0
 
         self.start_x = 2
@@ -278,21 +267,27 @@ class TetrisChamber:
 
             print('dropped rock', rock, self) if rocks_left % 1000 == 0 else None
 
-            if rocks_left > len(self.jet_queue) and self.cycle_is_detected():
+            if not cycled_strata and self.cycle_is_detected():
+                print('CYCLE DETECTED', self)
                 repeat_stratum = self.last_stratum
                 start_stratum = self.strata_index.get(repeat_stratum.key)
                 cycled_strata = StrataCycle(start_stratum, repeat_stratum, rocks_left)
-                rocks_left = num - cycled_strata.rock_count - len(self.dropped_rocks)
-                print('CYCLE DETECTED', (rock.number, rocks_left), cycled_strata, self)
+                rocks_left = num - cycled_strata.rock_count - self.rocks_dropped
+                print('StrataCycle', cycled_strata, self)
 
         if cycled_strata:
             return self.height + cycled_strata.height
         else:
             return self.height
 
+    @property
+    def rocks_dropped(self):
+        return self.last_dropped_rock.rock.number + 1
+
     def cycle_is_detected(self):
+        # TODO: This is slow. How to speed up detection?
         # Only check for cycle if we've cycled at least one through jet queue.
-        if len(self.strata) < len(self.jet_queue):
+        if self.rocks_dropped < len(self.jet_queue):
             return False
 
         end_stratum = self.last_stratum
@@ -310,7 +305,7 @@ class TetrisChamber:
         if not self.last_rock_cycle:
             return None
 
-        stratum = Stratum.from_chamber(self)
+        stratum = Stratum(self.last_rock_cycle)
         self.strata.append(stratum)
         return stratum
 
@@ -366,6 +361,7 @@ class TetrisChamber:
 
         self.pts = self.pts.union(rock.pts)
         self.scan_surface_pts(self.pts)
+        self.truncate_rock_collection()
 
         return DroppedRock(rock, self.last_dropped_rock, puffs)
 
@@ -373,7 +369,7 @@ class TetrisChamber:
     def last_dropped_rock(self):
         # If no rocks yet, represent floor as a rock
         if not self.dropped_rocks:
-            floor = Rock(0)
+            floor = DroppedRock(Rock(0), Rock(0), [])
             return floor
         else:
             return self.dropped_rocks[-1]
@@ -396,33 +392,15 @@ class TetrisChamber:
         else:
             return rock_cycle
 
-    def old_cycle_is_detected(self, rock, puff_seq):
-        rock_key = self.rock_key(rock, puff_seq)
-        cycle_key = self.cycle_key(rock_key)
+    def truncate_rock_collection(self):
+        rock_count = self.rocks_dropped
+        cycle_len = len(self.jet_queue)
 
-        if cycle_key in self.cycle_index:
-            print('cycle_is_detected', rock, puff_seq)
-            breakpoint()
-            return True
-        else:
-            self.cycle_index[cycle_key] = self.height
-            self.cycle_queue.append(rock_key)
+        if rock_count <= cycle_len or rock_count % cycle_len != 0:
             return False
 
-    @property
-    def last_rock(self):
-        if not self.rocks:
-            return None
-        else:
-            return self.rocks[-1]
-
-    def rock_key(self, rock, puff_seq):
-        dy = rock.y - self.last_rock.y if self.last_rock else rock.y
-        return (rock.symbol, tuple(puff_seq), rock.x, dy)
-
-    def cycle_key(self, rock_key):
-        last_4_rocks = self.cycle_queue[-4:]
-        return tuple(last_4_rocks) + (rock_key,)
+        self.dropped_rocks = self.dropped_rocks[-cycle_len:]
+        return True
 
     def scan_surface_pts(self, pts):
         # This is kinda slow so do it as infrequently as possible.
@@ -476,7 +454,10 @@ class TetrisChamber:
         return max(y for _, y in self.pts)
 
     def __repr__(self):
-        return f"<Chamber height={self.height} pts={len(self.pts)}>"
+        pts = len(self.pts)
+        rocks = self.last_dropped_rock.rock.number + 1
+        cycle_len = len(self.jet_queue)
+        return f"<Chamber height={self.height} cycle_len={cycle_len} pts={pts} dropped_rocks={rocks}>"
 
 
 class Solution:
@@ -531,6 +512,7 @@ class Solution:
 
         chamber = TetrisChamber(width, jet_pattern)
         height = chamber.drop_rocks(count)
+        assert height == 1536994219669, chamber
         return height
 
     #
