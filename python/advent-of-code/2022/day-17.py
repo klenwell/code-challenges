@@ -167,6 +167,10 @@ class Stratum:
         return True
 
     @property
+    def rocks(self):
+        return [dr.rock for dr in self.dropped_rocks]
+
+    @property
     def key(self):
         rock_keys = []
         for rock in self.dropped_rocks:
@@ -199,22 +203,26 @@ class Stratum:
 
 
 class StrataCycle:
-    def __init__(self, start_stratum, end_stratum, rocks_left):
+    def __init__(self, start_stratum, repeat_stratum, rocks_left):
         self.start_stratum = start_stratum
-        self.end_stratum = end_stratum
+        self.repeat_stratum = repeat_stratum
         self.rocks_left = rocks_left
 
     @property
     def cycle_height(self):
-        return self.end_stratum.max_y - self.start_stratum.max_y + self.start_stratum.height
+        first_rock = self.start_stratum.dropped_rocks[0]
+        last_rock = self.repeat_stratum.dropped_rocks[0]
+        return last_rock.y - first_rock.y
 
     @property
     def cycle_rocks(self):
-        return self.end_stratum.index[1] - self.start_stratum.index[0] + 1
+        return self.repeat_stratum.index[0] - self.start_stratum.index[0]
 
     @property
     def cycle_strata(self):
-        return self.cycle_rocks / len(self.end_stratum.dropped_rocks)
+        print(self.start_stratum, self.repeat_stratum)
+        print(self.cycle_rocks / len(self.repeat_stratum.dropped_rocks))
+        return self.cycle_rocks / len(self.repeat_stratum.dropped_rocks)
 
     @property
     def cycles(self):
@@ -233,12 +241,8 @@ class StrataCycle:
         return self.cycles * self.cycle_height
 
     @property
-    def ys(self):
-        return (self.start_stratum.dropped_rocks[0].y, self.end_stratum.dropped_rocks[-1].y)
-
-    @property
     def index(self):
-        return (self.start_stratum.index[0], self.end_stratum.index[1])
+        return (self.start_stratum.index[0], self.repeat_stratum.index[0])
 
     def __repr__(self):
         strata = int(self.strata_count)
@@ -279,14 +283,15 @@ class TetrisChamber:
 
             if rocks_left > len(self.jet_queue) and self.cycle_is_detected():
             #if self.cycle_is_detected():
-                end_stratum = self.last_stratum
-                start_stratum = self.strata_index.get(end_stratum.key)
-                cycled_strata = StrataCycle(start_stratum, end_stratum, rocks_left)
+                repeat_stratum = self.last_stratum
+                start_stratum = self.strata_index.get(repeat_stratum.key)
+                print('CYCLE IN', (rock.number, rocks_left), repeat_stratum, self)
+                cycled_strata = StrataCycle(start_stratum, repeat_stratum, rocks_left)
                 rocks_left = num - cycled_strata.rock_count - len(self.dropped_rocks)
-                print('cycle_is_detected', (rock.number, rocks_left), cycled_strata, self)
+                print('CYCLE OUT', (rock.number, rocks_left), cycled_strata, self)
 
         print('no mo rox', self, cycled_strata)
-        breakpoint()
+        #breakpoint()
 
         if cycled_strata:
             print('cycled_strata', self.height, cycled_strata.height, self.height + cycled_strata.height)
@@ -391,6 +396,10 @@ class TetrisChamber:
     @property
     def last_stratum(self):
         return self.strata[-1]
+
+    @property
+    def penultimate_stratum(self):
+        return self.strata[-2]
 
     @property
     def last_rock_cycle(self):
@@ -565,10 +574,10 @@ class Solution:
         width = 7
         count = 1000000000000  # one trillion (or a million million)
 
-        self.benchmark()
-        self.test_floors()
-        self.test_boulder()
-        self.test_cycles()
+        #self.benchmark()
+        #self.test_floors()
+        #self.test_boulder()
+        #self.test_cycles()
 
         chamber = TetrisChamber(width, jet_pattern)
         height = chamber.drop_rocks(count)
@@ -601,43 +610,15 @@ class Solution:
         assert est_secs < best_result, f"Worse result (than {best_result})"
         assert est_secs < ten_mins, f"Will take more than 10 mins"
 
-    def test_floors(self):
-        jet_pattern = TEST_INPUT
-        width = 7
-        count = 1000000000000  # one trillion (or a million million)
-        chamber = FastTetrisChamber(width, jet_pattern)
-        floors = chamber.find_floors()
-        breakpoint()
-
-    def test_boulder(self):
-        jet_pattern = TEST_INPUT
-        width = 7
-        count = 1000000000000  # one trillion (or a million million)
-
-        mega_rock = Boulder(width, jet_pattern).build()
-
-    def test_cycles(self):
-        jet_pattern = TEST_INPUT
-        width = 7
-        count = 1000000000000  # one trillion (or a million million)
-
-        print(len(jet_pattern), len(self.file_input))
-
-        chamber = FastTetrisChamber(width, jet_pattern)
-        chamber.drop_rocks(len(jet_pattern))
-        top_y = chamber.height * -1
-
-        for y in range(top_y, 0):
-            floor = False
-            for x in range(width):
-                if (x, y) not in chamber.pts:
-                    break
-            if floor:
-                print('floor level', y)
-
     @property
     def second(self):
-        pass
+        jet_pattern = self.file_input
+        width = 7
+        count = 1000000000000  # one trillion (or a million million)
+
+        chamber = TetrisChamber(width, jet_pattern)
+        height = chamber.drop_rocks(count)
+        return height
 
     #
     # Tests
