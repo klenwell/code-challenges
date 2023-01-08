@@ -143,7 +143,7 @@ class DroppedRock:
         return ''.join(self.puff_seq)
 
     def __repr__(self):
-        return f"<DroppedRock {self.rock.symbol} {self.pt} puffs={self.puff_stream}>"
+        return f"<DroppedRock key={self.key} pt={self.pt}>"
 
 
 class Stratum:
@@ -151,13 +151,13 @@ class Stratum:
     def from_chamber(chamber):
         return Stratum(chamber.last_rock_cycle, chamber.height)
 
-    def __init__(self, dropped_rocks, y):
-        # y is the total rock pile height, which could be higher than any rocks in
+    def __init__(self, dropped_rocks, max_y):
+        # max_y is the total rock pile height, which could be higher than any rocks in
         # stratum group
         self.dropped_rocks = dropped_rocks
-        self.y = y
+        self.max_y = max_y
 
-    def cycles(self, previous_stratum):
+    def is_clone_of(self, previous_stratum):
         if not previous_stratum:
             return False
 
@@ -183,15 +183,19 @@ class Stratum:
 
     @property
     def height(self):
-        return sum(dr.rock.height for dr in self.dropped_rocks)
+        upper_rock = self.dropped_rocks[-1].rock
+        lower_rock = self.dropped_rocks[0].rock
+        return upper_rock.y - lower_rock.y + upper_rock.height
 
     @property
     def index(self):
-        return (self.dropped_rocks[0].rock.number, self.dropped_rocks[-1].rock.number)
+        lower_rock = self.dropped_rocks[0].rock
+        upper_rock = self.dropped_rocks[-1].rock
+        return (lower_rock.number, upper_rock.number)
 
     def __repr__(self):
         pt = self.dropped_rocks[0].pt
-        return f"<Stratum index={self.index} y={self.y} height={self.height}>"
+        return f"<Stratum index={self.index} max_y={self.max_y} height={self.height}>"
 
 
 class StrataCycle:
@@ -202,7 +206,7 @@ class StrataCycle:
 
     @property
     def cycle_height(self):
-        return self.end_stratum.y - self.start_stratum.y
+        return self.end_stratum.max_y - self.start_stratum.max_y + self.start_stratum.height
 
     @property
     def cycle_rocks(self):
@@ -298,7 +302,7 @@ class TetrisChamber:
         end_stratum = self.last_stratum
         start_stratum = self.strata_index.get(end_stratum.key)
 
-        if end_stratum.cycles(start_stratum):
+        if end_stratum.is_clone_of(start_stratum):
             #print('cycle_is_detected', identical_stratum, self.last_stratum)
             return True
         else:
@@ -390,7 +394,7 @@ class TetrisChamber:
 
     @property
     def last_rock_cycle(self):
-        cycle_len = len(ROCK_SYMBOLS) + 7
+        cycle_len = len(self.jet_queue)
         rock_cycle = self.dropped_rocks[-cycle_len:]
 
         if len(rock_cycle) < cycle_len:
