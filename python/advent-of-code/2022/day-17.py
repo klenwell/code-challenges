@@ -60,10 +60,6 @@ class Rock:
     def pt(self):
         return (self.x, self.y)
 
-    def set_pt(self, pt):
-        self.x, self.y = pt
-        return self
-
     @property
     def pts(self):
         pts = set()
@@ -72,9 +68,6 @@ class Rock:
                 if char == '#':
                     pts.add((self.x+x, self.y+y))
         return pts
-
-    def overlaps(self, other):
-        return len(self.pts.intersection(other.pts)) > 0
 
     @cached_property
     def rows(self):
@@ -99,6 +92,13 @@ class Rock:
     @property
     def max_y(self):
         return self.y + self.height
+
+    def set_pt(self, pt):
+        self.x, self.y = pt
+        return self
+
+    def overlaps(self, other):
+        return len(self.pts.intersection(other.pts)) > 0
 
     def __repr__(self):
         return f"<Rock #{self.number} {self.symbol} ({self.x}, {self.y})>"
@@ -145,8 +145,6 @@ class DroppedRock:
 
 class Stratum:
     def __init__(self, dropped_rocks):
-        # max_y is the total rock pile height, which could be higher than any rocks in
-        # stratum group
         self.dropped_rocks = dropped_rocks
 
     def is_clone_of(self, previous_stratum):
@@ -299,6 +297,8 @@ class TetrisChamber:
             rocks_left -= 1
 
             print('dropped rock', rock, self) if rocks_left % 1000 == 0 else None
+            if self.rocks_dropped == len(self.jet_queue):
+                print('-=-=- starting cycle detection -=-=-')
 
             if not cycled_strata and self.cycle_is_detected():
                 repeat_stratum = self.last_stratum
