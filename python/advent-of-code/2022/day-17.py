@@ -255,6 +255,39 @@ class TetrisChamber:
         self.start_x = 2
         self.start_y = 4
 
+    @property
+    def height(self):
+        if not self.pts:
+            return self.bottom_y
+        return max(y for _, y in self.pts)
+
+    @property
+    def rocks_dropped(self):
+        return self.last_dropped_rock.rock.number + 1
+
+    @property
+    def last_dropped_rock(self):
+        # If no rocks yet, represent floor as a rock
+        if not self.dropped_rocks:
+            floor = DroppedRock(Rock(0), Rock(0), [])
+            return floor
+        else:
+            return self.dropped_rocks[-1]
+
+    @property
+    def last_stratum(self):
+        return self.strata[-1]
+
+    @property
+    def last_rock_cycle(self):
+        cycle_len = len(self.jet_queue)
+        rock_cycle = self.dropped_rocks[-cycle_len:]
+
+        if len(rock_cycle) < cycle_len:
+            return None
+        else:
+            return rock_cycle
+
     def drop_rocks(self, num):
         rocks_left = num
         cycled_strata = None
@@ -268,65 +301,16 @@ class TetrisChamber:
             print('dropped rock', rock, self) if rocks_left % 1000 == 0 else None
 
             if not cycled_strata and self.cycle_is_detected():
-                print('CYCLE DETECTED', self)
                 repeat_stratum = self.last_stratum
                 start_stratum = self.strata_index.get(repeat_stratum.key)
                 cycled_strata = StrataCycle(start_stratum, repeat_stratum, rocks_left)
                 rocks_left = num - cycled_strata.rock_count - self.rocks_dropped
-                print('StrataCycle', cycled_strata, self)
+                print('CYCLE DETECTED', cycled_strata, self)
 
         if cycled_strata:
             return self.height + cycled_strata.height
         else:
             return self.height
-
-    @property
-    def rocks_dropped(self):
-        return self.last_dropped_rock.rock.number + 1
-
-    def cycle_is_detected(self):
-        # TODO: This is slow. How to speed up detection?
-        # Only check for cycle if we've cycled at least one through jet queue.
-        if self.rocks_dropped < len(self.jet_queue):
-            return False
-
-        end_stratum = self.last_stratum
-        start_stratum = self.strata_index.get(end_stratum.key)
-
-        if end_stratum.is_clone_of(start_stratum):
-            return True
-        else:
-            self.strata_index[self.last_stratum.key] = self.last_stratum
-            return False
-
-    def collect_rock(self, dropped_rock):
-        self.dropped_rocks.append(dropped_rock)
-
-        if not self.last_rock_cycle:
-            return None
-
-        stratum = Stratum(self.last_rock_cycle)
-        self.strata.append(stratum)
-        return stratum
-
-    def compute_cyclical_strata_chunk(self, rocks_left):
-        from collections import namedtuple
-        StrataChunk = namedtuple('StrataChunk', ['cycles', 'rocks', 'height'])
-
-        end_stratum = self.last_stratum
-        start_stratum = self.strata_index.get(end_stratum.key)
-
-        if not end_stratum.cycles(start_stratum):
-            return None
-
-        cycle_height = end_stratum.y - start_stratum.y
-        cycle_rocks = end_stratum.index[1] - start_stratum.index[0]
-
-        cycles = rocks_left // cycle_rocks
-        chunk_rocks = cycle_rocks * cycles
-        chunk_height = cycles * cycle_height
-
-        return StrataChunk(cycles, chunk_rocks, chunk_height)
 
     def drop_rock(self, rock):
         puffs = []
@@ -361,46 +345,33 @@ class TetrisChamber:
 
         self.pts = self.pts.union(rock.pts)
         self.scan_surface_pts(self.pts)
-        self.truncate_rock_collection()
 
         return DroppedRock(rock, self.last_dropped_rock, puffs)
 
-    @property
-    def last_dropped_rock(self):
-        # If no rocks yet, represent floor as a rock
-        if not self.dropped_rocks:
-            floor = DroppedRock(Rock(0), Rock(0), [])
-            return floor
-        else:
-            return self.dropped_rocks[-1]
+    def collect_rock(self, dropped_rock):
+        self.dropped_rocks.append(dropped_rock)
 
-    @property
-    def last_stratum(self):
-        return self.strata[-1]
-
-    @property
-    def penultimate_stratum(self):
-        return self.strata[-2]
-
-    @property
-    def last_rock_cycle(self):
-        cycle_len = len(self.jet_queue)
-        rock_cycle = self.dropped_rocks[-cycle_len:]
-
-        if len(rock_cycle) < cycle_len:
+        if not self.last_rock_cycle:
             return None
-        else:
-            return rock_cycle
 
-    def truncate_rock_collection(self):
-        rock_count = self.rocks_dropped
-        cycle_len = len(self.jet_queue)
+        stratum = Stratum(self.last_rock_cycle)
+        self.strata.append(stratum)
+        return stratum
 
-        if rock_count <= cycle_len or rock_count % cycle_len != 0:
+    def cycle_is_detected(self):
+        # TODO: This is slow. How to speed up detection?
+        # Only check for cycle if we've cycled at least one through jet queue.
+        if self.rocks_dropped < len(self.jet_queue):
             return False
 
-        self.dropped_rocks = self.dropped_rocks[-cycle_len:]
-        return True
+        end_stratum = self.last_stratum
+        start_stratum = self.strata_index.get(end_stratum.key)
+
+        if end_stratum.is_clone_of(start_stratum):
+            return True
+        else:
+            self.strata_index[self.last_stratum.key] = self.last_stratum
+            return False
 
     def scan_surface_pts(self, pts):
         # This is kinda slow so do it as infrequently as possible.
@@ -447,17 +418,12 @@ class TetrisChamber:
     def rock_hits_floor(self, rock):
         return rock.y <= self.bottom_y
 
-    @property
-    def height(self):
-        if not self.pts:
-            return self.bottom_y
-        return max(y for _, y in self.pts)
-
     def __repr__(self):
+        cycle_len = len(self.jet_queue)
+        ht = self.height
         pts = len(self.pts)
         rocks = self.last_dropped_rock.rock.number + 1
-        cycle_len = len(self.jet_queue)
-        return f"<Chamber height={self.height} cycle_len={cycle_len} pts={pts} dropped_rocks={rocks}>"
+        return f"<Chamber height={ht} cycle_len={cycle_len} pts={pts} dropped_rocks={rocks}>"
 
 
 class Solution:
