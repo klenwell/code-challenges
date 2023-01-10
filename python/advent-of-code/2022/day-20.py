@@ -21,9 +21,13 @@ TEST_INPUT = """\
 
 class GroveFile:
     def __init__(self, input):
-        self.input = [int(n) for n in input.split('\n')]
-        self.mixed_sequence = self.input.copy()
+        self.input = [(i, int(n)) for i, n in enumerate(input.split('\n'))]
+        self.indexed_sequence = self.input.copy()
         self.logs = [self.mixed_sequence]
+
+    @property
+    def mixed_sequence(self):
+        return [n for _, n in self.indexed_sequence]
 
     def decrypt(self):
         # Return coordinates
@@ -37,8 +41,7 @@ class GroveFile:
         start_index = self.mixed_sequence.index(start)
         new_index = start_index + offset
         max_index = len(self.mixed_sequence)
-        print(start, offset, start_index, new_index)
-        #print(self.mixed_sequence, new_index)
+        #print(start, offset, start_index, new_index)
 
         if new_index >= max_index:
             new_index = new_index % max_index
@@ -47,15 +50,16 @@ class GroveFile:
         return self.mixed_sequence[new_index]
 
     def mix(self):
-        for n in self.input:
-            self.mixed_sequence = self.move_in_sequence(n, self.mixed_sequence)
+        for i, n in self.input:
+            self.indexed_sequence = self.move_in_sequence((i, n), self.indexed_sequence)
             self.logs.append(self.mixed_sequence)
             #print(n, self.mixed_sequence)
             #breakpoint()
         return self.mixed_sequence
 
-    def move_in_sequence(self, n, sequence):
-        old_index = sequence.index(n)
+    def move_in_sequence(self, val, sequence):
+        _, n = val
+        old_index = sequence.index(val)
         new_index = old_index + n
         max_index = len(sequence)
 
@@ -72,8 +76,8 @@ class GroveFile:
             new_index = 0
 
         old_seq = sequence.copy()
-        old_seq.remove(n)
-        new_seq = old_seq[:new_index] + [n] + old_seq[new_index:]
+        old_seq.remove(val)
+        new_seq = old_seq[:new_index] + [val] + old_seq[new_index:]
         return new_seq
 
 
@@ -129,24 +133,18 @@ class Solution:
         input = self.file_input
         grove_file = GroveFile(input)
         sequence = grove_file.mixed_sequence
+        deduplicated = list(set(sequence))
 
         assert len(sequence) == 5000, len(self.input_lines)
         assert sequence[0] == -9810, sequence[0]
         assert sequence[-1] == 4075, sequence[-1]
+        assert len(deduplicated) != len(sequence), "expecting NOT same length"
 
         print('test_file_input: passed')
 
     @property
     def first(self):
         input = self.file_input
-
-        grove_file = GroveFile(input)
-        sequence = grove_file.mix()
-        at1000 = grove_file.value_at(0, 1000)
-        at2000 = grove_file.value_at(0, 2000)
-        at3000 = grove_file.value_at(0, 3000)
-        print(grove_file.mixed_sequence.index(0), at1000, at2000, at3000)
-
         grove_file = GroveFile(input)
         sum = grove_file.decrypt()
 
@@ -173,8 +171,11 @@ class Solution:
         grove_file = GroveFile('1')
 
         for n, seq, expected in test_cases:
-            seq = grove_file.move_in_sequence(n, seq)
-            assert seq == expected, (seq, expected)
+            idx_seq = [(i, v) for i, v in enumerate(seq)]
+            n_idx = seq.index(n)
+            seq = grove_file.move_in_sequence((n_idx, n), idx_seq)
+            unindexed_seq = [n for _, n in seq]
+            assert unindexed_seq == expected, (unindexed_seq, expected)
         print('test_move_in_sequence: passed')
 
     #
