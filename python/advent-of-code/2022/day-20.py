@@ -139,12 +139,18 @@ class Solution:
 
         grove_file = EncryptedGroveFile(input, key)
         sum = grove_file.decrypt()
+
         assert sum == 1623178306, sum
         return sum
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        key = 811589153
+
+        grove_file = EncryptedGroveFile(input, key)
+        sum = grove_file.decrypt()
+        return sum
 
     #
     # Tests
