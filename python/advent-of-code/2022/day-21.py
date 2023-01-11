@@ -74,18 +74,16 @@ class Solution:
         lines = self.test_input_lines
 
         translator = MonkeyTranslator(lines)
-        print(translator.monkeys)
-
         number = translator.translate('root')
-        print(number)
 
         assert number == 152, number
         return number
 
     @property
     def first(self):
-        input = self.input_lines
-        return input
+        lines = self.input_lines
+        translator = MonkeyTranslator(lines)
+        return translator.translate('root')
 
     @property
     def test2(self):
