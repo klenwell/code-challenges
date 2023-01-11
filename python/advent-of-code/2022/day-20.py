@@ -19,7 +19,7 @@ TEST_INPUT = """\
 4"""
 
 
-class GroveFile:
+class GPSDecoder:
     def __init__(self, input):
         self.input = [(i, int(n)) for i, n in enumerate(input.split('\n'))]
         self.indexed_sequence = self.input.copy()
@@ -41,11 +41,9 @@ class GroveFile:
         start_index = self.mixed_sequence.index(start)
         new_index = start_index + offset
         max_index = len(self.mixed_sequence)
-        #print(start, offset, start_index, new_index)
 
         if new_index >= max_index:
             new_index = new_index % max_index
-        #print(new_index, self.mixed_sequence[new_index])
 
         return self.mixed_sequence[new_index]
 
@@ -53,8 +51,6 @@ class GroveFile:
         for i, n in self.input:
             self.indexed_sequence = self.move_in_sequence((i, n), self.indexed_sequence)
             self.logs.append(self.mixed_sequence)
-            #print(n, self.mixed_sequence)
-            #breakpoint()
         return self.mixed_sequence
 
     def move_in_sequence(self, val, sequence):
@@ -81,7 +77,7 @@ class GroveFile:
         return new_seq
 
 
-class EncryptedGroveFile(GroveFile):
+class GPSKeyDecoder(GPSDecoder):
     def __init__(self, input, key):
         super().__init__(input)
         self.input = [(i, n * key) for i, n in self.input]
@@ -110,15 +106,16 @@ class Solution:
         self.test_move_in_sequence()
         self.test_mix()
         self.test_file_input()
+        self.test_for_duplicates()
 
-        grove_file = GroveFile(input)
+        grove_file = GPSDecoder(input)
         sequence = grove_file.mix()
         assert sequence == [1, 2, -3, 4, 0, 3, -2], sequence
         assert grove_file.value_at(0, 1000) == 4, (grove_file.value_at(0, 1000), sequence)
         assert grove_file.value_at(0, 2000) == -3, (grove_file.value_at(0, 2000), sequence)
         assert grove_file.value_at(0, 3000) == 2, (grove_file.value_at(0, 3000), sequence)
 
-        grove_file = GroveFile(input)
+        grove_file = GPSDecoder(input)
         sum = grove_file.decrypt()
         assert sum == 3, sum
         return sum
@@ -126,7 +123,7 @@ class Solution:
     @property
     def first(self):
         input = self.file_input
-        grove_file = GroveFile(input)
+        grove_file = GPSDecoder(input)
         sum = grove_file.decrypt()
 
         assert sum != -1295, 'wrong first answer'
@@ -137,7 +134,7 @@ class Solution:
         input = TEST_INPUT
         key = 811589153
 
-        grove_file = EncryptedGroveFile(input, key)
+        grove_file = GPSKeyDecoder(input, key)
         sum = grove_file.decrypt()
 
         assert sum == 1623178306, sum
@@ -148,7 +145,7 @@ class Solution:
         input = self.file_input
         key = 811589153
 
-        grove_file = EncryptedGroveFile(input, key)
+        grove_file = GPSKeyDecoder(input, key)
         sum = grove_file.decrypt()
         return sum
 
@@ -161,7 +158,7 @@ class Solution:
             (-2, [4, -2, 5, 6, 7, 8, 9], [4, 5, 6, 7, 8, -2, 9]),
             (2, [4, -2, 5, 6, 2, 8, 9], [2, 4, -2, 5, 6, 8, 9])
         ]
-        grove_file = GroveFile('1')
+        grove_file = GPSDecoder('1')
 
         for n, seq, expected in test_cases:
             idx_seq = [(i, v) for i, v in enumerate(seq)]
@@ -183,27 +180,33 @@ class Solution:
             [1, 2, -3, 4, 0, 3, -2]
         ]
 
-        grove_file = GroveFile(TEST_INPUT)
-        sequence = grove_file.mix()
+        grove_file = GPSDecoder(TEST_INPUT)
+        grove_file.mix()
 
         for n, mix in enumerate(expected_mixes):
             assert grove_file.logs[n] == mix, (mix, expected_mixes)
 
         print('test_mix: passed')
 
-
     def test_file_input(self):
         input = self.file_input
-        grove_file = GroveFile(input)
+        grove_file = GPSDecoder(input)
         sequence = grove_file.mixed_sequence
-        deduplicated = list(set(sequence))
 
         assert len(sequence) == 5000, len(self.input_lines)
         assert sequence[0] == -9810, sequence[0]
         assert sequence[-1] == 4075, sequence[-1]
-        assert len(deduplicated) != len(sequence), "expecting NOT same length"
 
         print('test_file_input: passed')
+
+    def test_for_duplicates(self):
+        input = self.file_input
+        grove_file = GPSDecoder(input)
+        sequence = grove_file.mixed_sequence
+        deduplicated = list(set(sequence))
+
+        assert len(deduplicated) != len(sequence), "expecting NOT same length"
+        print('test_for_duplicates: passed')
 
     #
     # Properties
@@ -212,14 +215,6 @@ class Solution:
     def file_input(self):
         with open(self.input_file) as file:
             return file.read().strip()
-
-    @cached_property
-    def input_lines(self):
-        return [line.strip() for line in self.file_input.split("\n")]
-
-    @cached_property
-    def test_input_lines(self):
-        return [line.strip() for line in TEST_INPUT.split("\n")]
 
 
 #
