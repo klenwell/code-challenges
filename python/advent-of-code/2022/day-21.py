@@ -74,15 +74,17 @@ class PatchedMonkeyTranslator(MonkeyTranslator):
             monkey, output = line.split(':')
             output = output.strip()
 
-            # The correct operation for monkey root should be =
+            # The modified operation for monkey root should be =
             if monkey == 'root':
-                output = 'pppw = sjmn'
+                m1, op, m2 = output.split(' ')
+                output = (m1, '=', m2)
+                output = ' '.join(output)
 
             try:
                 value = int(output)
             except ValueError:
-                a, op, b = output.split(' ')
-                value = (a, b, op)
+                m1, op, m2 = output.split(' ')
+                value = (m1, m2, op)
 
             # The number that appears after humn: in your input is now irrelevant.
             if monkey == 'humn':
@@ -105,7 +107,7 @@ class PatchedMonkeyTranslator(MonkeyTranslator):
         else:
             translation = yelled
 
-        print('translated', monkey, yelled, translation)
+        print('translated', monkey, yelled, int(translation))
         return int(translation)
 
     def equate(self, m1, m2):
@@ -147,10 +149,6 @@ class PatchedMonkeyTranslator(MonkeyTranslator):
                 eq[monkey] = monkey
                 unknown_operand_yelled = self.patched_monkeys[unknown]
 
-        args = (eq[m1], eq[m2], op, value)
-        print('solve_for unknown_operand', unknown_operand, args)
-        #breakpoint()
-
         if not unknown_operand:
             return self.translate(unknown)
         else:
@@ -161,7 +159,7 @@ class PatchedMonkeyTranslator(MonkeyTranslator):
             return self.solve_for(var, var_value)
 
     def isolate_variable(self, m1, m2, op, value):
-        print('isolate_variable', m1, m2, op, value)
+        print('isolate_variable', (m1, op, m2), value)
         var = [v for v in (m1, m2) if not str(v).isdigit()][0]
 
         if m1 == var:
@@ -177,13 +175,14 @@ class PatchedMonkeyTranslator(MonkeyTranslator):
             if op == '+':
                 var_value = value - m1
             elif op == '-':
-                var_value = value + m1
+                var_value = m1 - value
             elif op == '/':
-                var_value = value * m1
+                var_value = m1 // value
             elif op == '*':
                 var_value = value // m1
 
         print('isolated_variable', var, var_value)
+        #breakpoint()
         return var, var_value
 
     def solve_for_humn(self, yelled, translation):
@@ -293,8 +292,9 @@ class Solution:
     def first(self):
         lines = self.input_lines
         translator = MonkeyTranslator(lines)
+        number = translator.translate('root')
         assert number == 63119856257960, number
-        return translator.translate('root')
+        return number
 
     @property
     def test2(self):
@@ -315,7 +315,9 @@ class Solution:
         lines = self.input_lines
         translator = PatchedMonkeyTranslator(lines)
         number = translator.translate('root')
-        assert t.patched_monkeys['humn'] == number, (t.patched_monkeys['humn'], number)
+        assert translator.patched_monkeys['humn'] == number
+        assert number != 7650891667780, "First wrong answer"
+        assert number == 3006709232464, number
         return number
 
     #
@@ -340,6 +342,6 @@ class Solution:
 #
 solution = Solution(INPUT_FILE)
 print("test 1 solution: {}".format(solution.test1))
-#print("pt 1 solution: {}".format(solution.first))
+print("pt 1 solution: {}".format(solution.first))
 print("test 2 solution: {}".format(solution.test2))
 print("pt 2 solution: {}".format(solution.second))
