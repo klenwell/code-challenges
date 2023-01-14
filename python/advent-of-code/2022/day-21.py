@@ -26,13 +26,12 @@ lgvd: ljgn * ptdq
 drzm: hmdt - zczc
 hmdt: 32"""
 
-
 DEBUG = False
 
 
-def verbose(*args):
-    if not DEBUG:
-        return
+def log(*args):
+    if DEBUG:
+        print(*args)
 
 
 class MonkeyTranslator:
@@ -48,7 +47,7 @@ class MonkeyTranslator:
         else:
             translation = yelled
 
-        verbose('translate', monkey, yelled, translation)
+        log('translate', monkey, yelled, translation)
         return int(translation)
 
     @property
@@ -103,7 +102,7 @@ class PatchedMonkeyTranslator(MonkeyTranslator):
 
     def translate(self, monkey):
         yelled = self.patched_monkeys[monkey]
-        verbose('translate', monkey, yelled)
+        log('translate', monkey, yelled)
 
         if type(yelled) is tuple:
             m1, m2, op = yelled
@@ -114,11 +113,11 @@ class PatchedMonkeyTranslator(MonkeyTranslator):
         else:
             translation = yelled
 
-        verbose('translated', monkey, yelled, int(translation))
+        log('translated', monkey, yelled, int(translation))
         return int(translation)
 
     def equate(self, m1, m2):
-        verbose('equate', m1, m2)
+        log('equate', m1, m2)
         for monkey in (m1, m2):
             try:
                 translation = self.translate(monkey)
@@ -127,11 +126,11 @@ class PatchedMonkeyTranslator(MonkeyTranslator):
                 unknown = monkey
 
         self.patched_monkeys[unknown] = self.solve_for(unknown, translation)
-        verbose('equated', unknown, self.patched_monkeys[unknown])
+        log('equated', unknown, self.patched_monkeys[unknown])
         return self.patched_monkeys[unknown]
 
     def solve_for(self, unknown, value):
-        verbose('solve_for', unknown, self.patched_monkeys[unknown], value)
+        log('solve_for', unknown, self.patched_monkeys[unknown], value)
 
         if self.patched_monkeys[unknown] is None:
             self.patched_monkeys[unknown] = value
@@ -254,7 +253,7 @@ class Solution:
 # Main
 #
 solution = Solution(INPUT_FILE)
-print("test 1 solution: {}".format(solution.test1))
-print("pt 1 solution: {}".format(solution.first))
-print("test 2 solution: {}".format(solution.test2))
-print("pt 2 solution: {}".format(solution.second))
+print(f"test 1 solution: {solution.test1}")
+print(f"pt 1 solution: {solution.first}")
+print(f"test 2 solution: {solution.test2}")
+print(f"pt 2 solution: {solution.second}")
