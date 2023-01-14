@@ -13,6 +13,26 @@ TEST_INPUT = """\
 """
 
 
+class PasswordDecoder:
+    def __init__(self, input):
+        pass
+
+    @cached_property
+    def board_map(self):
+        pass
+
+    @cached_property
+    def path_code(self):
+        pass
+
+    @property
+    def password(self):
+        return self.decode_password()
+
+    def decode_password(self):
+        pass
+
+
 class Solution:
     def __init__(self, input_file):
         self.input_file = input_file
@@ -22,8 +42,10 @@ class Solution:
     #
     @property
     def test1(self):
-        input = self.test_input_lines
-        return input
+        input = TEST_INPUT
+        decoder = PasswordDecoder(input)
+        assert decoder.password == 6032, decoder.password
+        return decoder.password
 
     @property
     def first(self):
