@@ -1,13 +1,13 @@
 """
-Advent of Code 2022 - Day 0
-https://adventofcode.com/2022/day/0
+Advent of Code 2022 - Day 22
+https://adventofcode.com/2022/day/22
 """
 from os.path import join as path_join
 from functools import cached_property
 from config import INPUT_DIR
 
 
-INPUT_FILE = path_join(INPUT_DIR, 'day-00.txt')
+INPUT_FILE = path_join(INPUT_DIR, 'day-22.txt')
 
 TEST_INPUT = """\
 """
