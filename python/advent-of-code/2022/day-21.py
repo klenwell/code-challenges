@@ -27,6 +27,14 @@ drzm: hmdt - zczc
 hmdt: 32"""
 
 
+DEBUG = False
+
+
+def verbose(*args):
+    if not DEBUG:
+        return
+
+
 class MonkeyTranslator:
     def __init__(self, lines):
         self.lines = lines
@@ -40,7 +48,7 @@ class MonkeyTranslator:
         else:
             translation = yelled
 
-        print('translate', monkey, yelled, translation)
+        verbose('translate', monkey, yelled, translation)
         return int(translation)
 
     @property
@@ -91,12 +99,11 @@ class PatchedMonkeyTranslator(MonkeyTranslator):
                 value = None
 
             monkeys[monkey] = value
-
         return monkeys
 
     def translate(self, monkey):
         yelled = self.patched_monkeys[monkey]
-        print('translate', monkey, yelled)
+        verbose('translate', monkey, yelled)
 
         if type(yelled) is tuple:
             m1, m2, op = yelled
@@ -107,26 +114,25 @@ class PatchedMonkeyTranslator(MonkeyTranslator):
         else:
             translation = yelled
 
-        print('translated', monkey, yelled, int(translation))
+        verbose('translated', monkey, yelled, int(translation))
         return int(translation)
 
     def equate(self, m1, m2):
-        print('equate', m1, m2)
+        verbose('equate', m1, m2)
         for monkey in (m1, m2):
             try:
                 translation = self.translate(monkey)
                 self.patched_monkeys[monkey] = translation
             except TypeError:
                 unknown = monkey
-                unknown_yelled = self.patched_monkeys[unknown]
 
         self.patched_monkeys[unknown] = self.solve_for(unknown, translation)
-        print('equated', unknown, self.patched_monkeys[unknown])
+        verbose('equated', unknown, self.patched_monkeys[unknown])
         return self.patched_monkeys[unknown]
 
     def solve_for(self, unknown, value):
-        print('solve_for', unknown, self.patched_monkeys[unknown], value)
-        #if unknown == 'humn':
+        verbose('solve_for', unknown, self.patched_monkeys[unknown], value)
+
         if self.patched_monkeys[unknown] is None:
             self.patched_monkeys[unknown] = value
             return value
@@ -141,13 +147,11 @@ class PatchedMonkeyTranslator(MonkeyTranslator):
         for monkey in (m1, m2):
             try:
                 translation = self.translate(monkey)
-                known_operand = monkey
                 eq[monkey] = translation
                 self.patched_monkeys[monkey] = translation
             except TypeError:
                 unknown_operand = monkey
                 eq[monkey] = monkey
-                unknown_operand_yelled = self.patched_monkeys[unknown]
 
         if not unknown_operand:
             return self.translate(unknown)
@@ -182,93 +186,7 @@ class PatchedMonkeyTranslator(MonkeyTranslator):
                 var_value = value // m1
 
         print('isolated_variable', var, var_value)
-        #breakpoint()
         return var, var_value
-
-    def solve_for_humn(self, yelled, translation):
-        print('solve_for_humn', key, yelled)
-        m1, m2, op = yelled
-        swaps = {
-            '-': '+',
-            '/': '*'
-        }
-
-        # Simple replace
-        if 'op' in ('+', '*'):
-            humn_op = [v if v != 'humn' else key for v in yelled]
-        # If humn is first operand, replace and swap operator
-        elif m1 == 'humn':
-            humn_op = [key, m2, swaps[op]]
-            humn_op = [v if v != 'humn' else key for v in yelled]
-            humn_op[2] = swaps[op]
-        # If humn is second operand, replace
-        else:
-            humn_op = [m1, key, op]
-
-        print('solved_for_humn', tuple(humn_op))
-        return tuple(humn_op)
-
-
-    def translate_humn(self):
-        m1, m2, _ = self.patched_monkeys['root']
-        known = None
-        unknown = None
-
-        # Translate each monkey in root equation
-        for monkey in (m1, m2):
-            try:
-                print(monkey)
-                translation = self.translate(monkey)
-                self.monkeys[monkey] = translation
-            except TypeError:
-                unknown = monkey
-                self.monkeys[monkey] = '?'
-
-        print(monkey, translation)
-
-        # Store monkey value without human in chain
-        self.patched_monkeys[unknown] = translation
-        self.patched_monkeys['humn'] = self.assign_humn()
-        print(self.patched_monkeys)
-        breakpoint()
-
-        return self.translate('humn')
-
-    def assign_humn(self):
-        humn_values = []
-
-        for key, value in self.patched_monkeys.items():
-            if 'humn' in str(value):
-                humn_values.append((key, value))
-
-        if len(humn_values) != 1:
-            raise Exception('More than one humn value', humn_values)
-
-        key, yelled = humn_values[0]
-        return self.solve_for_humn(key, yelled)
-
-    def solve_for_humn(self, key, yelled):
-        print('solve_for_humn', key, yelled)
-        m1, m2, op = yelled
-        swaps = {
-            '-': '+',
-            '/': '*'
-        }
-
-        # Simple replace
-        if 'op' in ('+', '*'):
-            humn_op = [v if v != 'humn' else key for v in yelled]
-        # If humn is first operand, replace and swap operator
-        elif m1 == 'humn':
-            humn_op = [key, m2, swaps[op]]
-            humn_op = [v if v != 'humn' else key for v in yelled]
-            humn_op[2] = swaps[op]
-        # If humn is second operand, replace
-        else:
-            humn_op = [m1, key, op]
-
-        print('solved_for_humn', tuple(humn_op))
-        return tuple(humn_op)
 
 
 class Solution:
