@@ -142,7 +142,6 @@ class PatchedMonkeyTranslator(MonkeyTranslator):
             m1: None,
             m2: None
         }
-        unknown_operand = None
 
         for monkey in (m1, m2):
             try:
@@ -150,17 +149,13 @@ class PatchedMonkeyTranslator(MonkeyTranslator):
                 eq[monkey] = translation
                 self.patched_monkeys[monkey] = translation
             except TypeError:
-                unknown_operand = monkey
                 eq[monkey] = monkey
 
-        if not unknown_operand:
-            return self.translate(unknown)
-        else:
-            # This takes two operands (monkeys) from an equation and solves for the unknown
-            # one (variable). That value then gets passed to solve_for so variable monkey's
-            # formula equals value.
-            var, var_value = self.isolate_variable(eq[m1], eq[m2], op, value)
-            return self.solve_for(var, var_value)
+        # This takes two operands (monkeys) from an equation and solves for the unknown
+        # one (variable). That value then gets passed to solve_for so variable monkey's
+        # formula equals value.
+        var, var_value = self.isolate_variable(eq[m1], eq[m2], op, value)
+        return self.solve_for(var, var_value)
 
     def isolate_variable(self, m1, m2, op, value):
         print('isolate_variable', (m1, op, m2), value)
