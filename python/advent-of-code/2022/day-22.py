@@ -69,7 +69,7 @@ class PasswordDecoder:
     def decode_password(self):
         for move in self.movements:
             self.board_map.move(move)
-            print(self.board_map)
+            #print(self.board_map)
 
         # Facing is 0 for right (>), 1 for down (v), 2 for left (<), and 3 for up (^).
         # The final password is the sum of 1000 times the row, 4 times the column, and the facing.
@@ -85,6 +85,7 @@ class MonkeyMap:
         self.input = input
         self.pt = self.starting_pt
         self.facing = '>'
+        self.footprints = []
 
     @property
     def col(self):
@@ -93,6 +94,10 @@ class MonkeyMap:
     @property
     def row(self):
         return self.pt[1] + 1
+
+    @property
+    def footprint(self):
+        return (self.facing, self.pt)
 
     @cached_property
     def tiles(self):
@@ -105,6 +110,10 @@ class MonkeyMap:
     @cached_property
     def pts(self):
         return list(self.tiles.keys())
+
+    @cached_property
+    def tiled_pts(self):
+        return [pt for pt in self.pts if self.tiles[pt] in ('.', '#')]
 
     @cached_property
     def rows(self):
@@ -121,10 +130,11 @@ class MonkeyMap:
         return (x, y)
 
     def move(self, movement):
-        print('move', self, movement)
+        start_pt = str(self)
         rotation, tiles = movement
         self.facing = self.rotate(self.facing, rotation)
         self.pt = self.go(tiles)
+        print('move', start_pt, movement, self)
         return self.pt
 
     def go(self, tiles):
@@ -143,17 +153,19 @@ class MonkeyMap:
             nx, ny = x+dx, y+dy
             next_tile = self.tiles.get((nx, ny))
 
-            if next_tile is None or next_tile == ' ':
+            if next_tile not in ('.', '#'):
                 (nx, ny) = self.wrap_around(self.facing, self.pt)
                 next_tile = self.tiles.get((nx, ny))
 
             if next_tile == '.':
                 self.pt = (nx, ny)
+                self.footprints.append((self.footprint, next_tile))
             elif next_tile == '#':
                 self.pt = (x, y)
-                return self.pt
+                self.footprints.append((self.footprint, next_tile))
+                return self.pt  # Hit a wall: stop and return
             else:
-                raise Exception('Unexpected tile:', tile)
+                raise Exception('Unexpected tile:', self.pt, (nx, ny), next_tile)
 
         return self.pt
 
@@ -163,20 +175,43 @@ class MonkeyMap:
         # instead look in the direction opposite of your current facing as far as you can until
         # you find the opposite edge of the board, then reappear there.
         valid_tiles = ('.', '#')
+        x, y = pt
 
         if facing == '>':
-            row_pts = [pt for pt in self.pts if pt[1] == self.pt[1] and self.tiles[pt] in valid_tiles]
-            next_pt = sorted(row_pts, key=lambda pt: pt[0])[0]
+            # Go left until you hit a break
+            nx = x
+            while True:
+                nx -= 1
+                if (nx, y) not in self.tiled_pts:
+                    next_pt = (nx+1, y)
+                    break
         elif facing == '<':
-            row_pts = [pt for pt in self.pts if pt[1] == self.pt[1] and self.tiles[pt] in valid_tiles]
-            next_pt = sorted(row_pts, key=lambda pt: pt[0])[-1]
+            # Go right until you hit a break
+            nx = x
+            while True:
+                nx += 1
+                if (nx, y) not in self.tiled_pts:
+                    next_pt = (nx-1, y)
+                    break
         elif facing == '^':
-            col_pts = [pt for pt in self.pts if pt[0] == self.pt[0] and self.tiles[pt] in valid_tiles]
-            next_pt = sorted(col_pts, key=lambda pt: pt[0])[-1]
+            # Go down until you hit a break
+            ny = y
+            while True:
+                ny += 1
+                if (x, ny) not in self.tiled_pts:
+                    next_pt = (x, ny-1)
+                    break
         else:  # == 'v'
-            col_pts = [pt for pt in self.pts if pt[0] == self.pt[0] and self.tiles[pt] in valid_tiles]
-            next_pt = sorted(col_pts, key=lambda pt: pt[0])[0]
+            # Go up until you hit a break
+            ny = y
+            while True:
+                ny -= 1
+                if (x, ny) not in self.tiled_pts:
+                    next_pt = (x, ny+1)
+                    break
 
+        print(f"{pt} facing {facing} wraps to {next_pt}")
+        #breakpoint()
         return next_pt
 
     def rotate(self, facing, rotation):
@@ -199,7 +234,6 @@ class MonkeyMap:
 
         # New facing direction will be next in queue
         return q[0]
-
 
     def __repr__(self):
         return f"<MonkeyMap pt={self.pt} facing=({self.facing})>"
@@ -231,6 +265,28 @@ class Solution:
         assert password == 6032, password
         return password
 
+    @property
+    def first(self):
+        input = self.file_input
+        decoder = PasswordDecoder(input)
+        password = decoder.password
+
+        #breakpoint()
+        assert password != 144282, "Too high"
+        assert password != 61054, "Too low"
+        return password
+
+    @property
+    def test2(self):
+        pass
+
+    @property
+    def second(self):
+        pass
+
+    #
+    # Tests
+    #
     def test_decoder(self):
         input = TEST_INPUT
         decoder = PasswordDecoder(input)
@@ -266,19 +322,6 @@ class Solution:
             assert monkey_map.rotate(facing, rotation) == expected, (facing, rotation, expected)
 
         print('+ test_rotation passed')
-
-    @property
-    def first(self):
-        input = self.input_lines
-        return input
-
-    @property
-    def test2(self):
-        pass
-
-    @property
-    def second(self):
-        pass
 
     #
     # Properties
