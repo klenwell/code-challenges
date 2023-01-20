@@ -398,6 +398,172 @@ class TestCubeMap(MonkeyMap):
         return self.pt
 
 
+class CubeMap(TestCubeMap):
+    @cached_property
+    def edges(self):
+        return {
+            # ID: (x(s), y(s))
+            '1^': ((100, 150), 0),
+            '1>': (149, (0, 50)),
+            '1v': ((100, 150), 49),
+            '2^': ((50, 100), 0),
+            '2<': (50, (0, 50)),
+            '3>': (99, (50, 100)),
+            '3<': (50, (50, 100)),
+            '4>': (99, (100, 150)),
+            '4v': ((50, 100), 149),
+            '5^': ((0, 50), 100),
+            '5<': (0, (100, 150)),
+            '6>': (49, (150, 200)),
+            '6v': ((0, 50), 199),
+            '6<': (0, (150, 200))
+        }
+
+    @cached_property
+    def hinges(self):
+        return (
+            # edge1, edge2, twist?
+            ('1^', '6v', False),
+            ('1>', '4>', True),
+            ('1v', '3>', False),
+            ('2^', '6<', False),
+            ('2<', '5<', True),
+            ('3<', '5^', False),
+            ('4v', '6>', False)
+        )
+
+    @cached_property
+    def step_delta(self):
+        return {
+            '>': (1, 0),
+            'v': (0, 1),
+            '<': (-1, 0),
+            '^': (0, -1)
+        }
+
+    @cached_property
+    def hinge_pts(self):
+        # Map (x, y, dir) to (x, y, dir) where two open edges connect
+        pts = {}
+
+        for edge1_id, edge2_id, twist in self.hinges:
+            edge1_pts = self.edges[edge1_id]
+            edge2_pts = self.edges[edge2_id]
+            edge1 = Edge(edge1_id, edge1_pts)
+            edge2 = Edge(edge2_id, edge2_pts)
+
+            hinge = Hinge(edge1, edge2, twist)
+
+            for footprint1, footprint2 in hinge.paired_footprints:
+                pts[footprint1] = footprint2
+
+        return pts
+
+    def cross_hinge(self, facing, pt):
+        #breakpoint()
+        x, y = pt
+        footprint = (x, y, facing)
+        return self.hinge_pts[footprint]
+
+    def go(self, tiles):
+        for n in range(tiles):
+            x, y = self.pt
+            print(self.facing)
+            dx, dy = self.step_delta[self.facing]
+            nx, ny = x+dx, y+dy
+            facing = self.facing
+            next_tile = self.tiles.get((nx, ny))
+
+            if next_tile not in ('.', '#'):
+                print(f"pt {(self.facing, self.pt)} not a tile: {next_tile} {n}")
+                (nx, ny, facing) = self.cross_hinge(self.facing, self.pt)
+                next_tile = self.tiles.get((nx, ny))
+
+            if next_tile == '.':
+                self.pt = (nx, ny)
+                self.facing = facing
+                self.footprints.append((self.footprint, next_tile))
+            elif next_tile == '#':
+                self.pt = (x, y)
+                self.footprints.append((self.footprint, next_tile))
+                return self.pt  # Hit a wall: stop and return
+            else:
+                breakpoint()
+                raise Exception('Unexpected tile:', self.pt, (nx, ny), next_tile)
+
+        return self.pt
+
+
+class Edge:
+    def __init__(self, id, pts):
+        xs, ys = pts
+        self.id = id
+        self.facing = id[1]
+        self.xs = xs
+        self.ys = ys
+
+    @cached_property
+    def long_axis(self):
+        return 'x' if type(self.xs) == tuple else 'y'
+
+    @cached_property
+    def pts(self):
+        pts = []
+        ranger = self.xs if self.long_axis == 'x' else self.ys
+        for n in range(*ranger):
+            x = n if self.long_axis == 'x' else self.xs
+            y = n if self.long_axis == 'y' else self.ys
+            pt = (x, y)
+            pts.append(pt)
+        return pts
+
+    @cached_property
+    def footprints(self):
+        footprints = []
+        for pt in self.pts:
+            x, y = pt
+            footprint = (x, y, self.facing)
+            footprints.append(footprint)
+        return footprints
+
+
+class Hinge:
+    def __init__(self, edge1, edge2, twist):
+        self.edge1 = edge1
+        self.edge2 = edge2
+        self.twisted = twist
+
+    @cached_property
+    def paired_footprints(self):
+        pairs = []
+
+        if self.twisted:
+            next_footprints = list(reversed(self.edge2.footprints))
+        else:
+            next_footprints = list(self.edge2.footprints)
+
+        for n, footprint1 in enumerate(self.edge1.footprints):
+            footprint2 = next_footprints[n]
+            x1, y1, facing1 = footprint1
+            x2, y2, facing2 = footprint2
+            pair1 = (footprint1, (x2, y2, self.about_face(facing2)))
+            pair2 = (footprint2, (x1, y1, self.about_face(facing1)))
+            pairs.append(pair1)
+            pairs.append(pair2)
+
+        return pairs
+
+    def about_face(self, facing):
+        mapped = {
+            '^': 'v',
+            '>': '<',
+            'v': '^',
+            '<': '>'
+        }
+
+        return mapped[facing]
+
+
 class Solution:
     def __init__(self, input_file):
         self.input_file = input_file
@@ -452,7 +618,10 @@ class Solution:
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        decoder = PasswordDecoder(input, map_class=CubeMap)
+        password = decoder.password
+        return password
 
     #
     # Tests
