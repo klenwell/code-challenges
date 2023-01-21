@@ -1,10 +1,13 @@
 """
-Advent of Code 2022 - Day 22
+Advent of Code 2022 - Day 22 - Monkey Map
 https://adventofcode.com/2022/day/22
 """
 from os.path import join as path_join
 from functools import cached_property
 from config import INPUT_DIR
+
+from models.monkey_map.grove_map import GroveMap
+from models.monkey_map.test_cube_map import TestCubeMap
 
 
 INPUT_FILE = path_join(INPUT_DIR, 'day-22.txt')
@@ -29,7 +32,7 @@ TEST_INPUT = """\
 class PasswordDecoder:
     def __init__(self, input, map_class=None):
         self.input = input
-        self.map_class = map_class if map_class else MonkeyMap
+        self.map_class = map_class if map_class else GroveMap
 
     @cached_property
     def board_map(self):
@@ -47,7 +50,6 @@ class PasswordDecoder:
         path_code = f"N{self.path_code}"
         rotate = None
         tiles = []
-        in_move = False
 
         for char in list(path_code):
             if char.isalpha():
@@ -70,7 +72,6 @@ class PasswordDecoder:
     def decode_password(self):
         for move in self.movements:
             self.board_map.move(move)
-            #print(self.board_map)
 
         # Facing is 0 for right (>), 1 for down (v), 2 for left (<), and 3 for up (^).
         # The final password is the sum of 1000 times the row, 4 times the column, and the facing.
@@ -81,324 +82,7 @@ class PasswordDecoder:
         return rowx1000 + colx4 + facing
 
 
-class MonkeyMap:
-    def __init__(self, input):
-        self.input = input
-        self.pt = self.starting_pt
-        self.facing = '>'
-        self.footprints = []
-
-    @property
-    def x(self):
-        return self.pt[0]
-
-    @property
-    def y(self):
-        return self.pt[1]
-
-    @property
-    def col(self):
-        return self.x + 1
-
-    @property
-    def row(self):
-        return self.y + 1
-
-    @property
-    def footprint(self):
-        return (self.facing, self.pt)
-
-    @cached_property
-    def tiles(self):
-        tiles = {}
-        for y, row in enumerate(self.rows):
-            for x, tile in enumerate(row):
-                tiles[(x, y)] = tile
-        return tiles
-
-    @cached_property
-    def pts(self):
-        return list(self.tiles.keys())
-
-    @cached_property
-    def tiled_pts(self):
-        return [pt for pt in self.pts if self.tiles[pt] in ('.', '#')]
-
-    @cached_property
-    def rows(self):
-        rows =[]
-        for line in self.input.split('\n'):
-            row = list(line)
-            rows.append(row)
-        return rows
-
-    @cached_property
-    def starting_pt(self):
-        x = next(n for n, x in enumerate(self.rows[0]) if x == '.')
-        y = 0
-        return (x, y)
-
-    def move(self, movement):
-        start_pt = str(self)
-        rotation, tiles = movement
-        self.facing = self.rotate(self.facing, rotation)
-        self.pt = self.go(tiles)
-        print('move', start_pt, movement, self)
-        return self.pt
-
-    def go(self, tiles):
-        steps = {
-            '>': (1, 0),
-            'v': (0, 1),
-            '<': (-1, 0),
-            '^': (0, -1)
-        }
-
-        step = steps[self.facing]
-
-        for n in range(tiles):
-            x, y = self.pt
-            dx, dy = step
-            nx, ny = x+dx, y+dy
-            next_tile = self.tiles.get((nx, ny))
-
-            if next_tile not in ('.', '#'):
-                (nx, ny) = self.wrap_around(self.facing, self.pt)
-                next_tile = self.tiles.get((nx, ny))
-
-            if next_tile == '.':
-                self.pt = (nx, ny)
-                self.footprints.append((self.footprint, next_tile))
-            elif next_tile == '#':
-                self.pt = (x, y)
-                self.footprints.append((self.footprint, next_tile))
-                return self.pt  # Hit a wall: stop and return
-            else:
-                raise Exception('Unexpected tile:', self.pt, (nx, ny), next_tile)
-
-        return self.pt
-
-    def wrap_around(self, facing, pt):
-        # If a movement instruction would take you off of the map, you wrap around to the other
-        # side of the board. In other words, if your next tile is off of the board, you should
-        # instead look in the direction opposite of your current facing as far as you can until
-        # you find the opposite edge of the board, then reappear there.
-        valid_tiles = ('.', '#')
-        x, y = pt
-
-        if facing == '>':
-            # Go left until you hit a break
-            nx = x
-            while True:
-                nx -= 1
-                if (nx, y) not in self.tiled_pts:
-                    next_pt = (nx+1, y)
-                    break
-        elif facing == '<':
-            # Go right until you hit a break
-            nx = x
-            while True:
-                nx += 1
-                if (nx, y) not in self.tiled_pts:
-                    next_pt = (nx-1, y)
-                    break
-        elif facing == '^':
-            # Go down until you hit a break
-            ny = y
-            while True:
-                ny += 1
-                if (x, ny) not in self.tiled_pts:
-                    next_pt = (x, ny-1)
-                    break
-        else:  # == 'v'
-            # Go up until you hit a break
-            ny = y
-            while True:
-                ny -= 1
-                if (x, ny) not in self.tiled_pts:
-                    next_pt = (x, ny+1)
-                    break
-
-        print(f"{pt} facing {facing} wraps to {next_pt}")
-        #breakpoint()
-        return next_pt
-
-    def rotate(self, facing, rotation):
-        seqs = {
-            'L': '>^<v',
-            'R': '>v<^'
-        }
-
-        seq = seqs.get(rotation)
-
-        if not seq:
-            return facing
-
-        # Rotate to current spot
-        q = list(seq)
-        dir = q.pop(0)
-        while dir != facing:
-            q.append(dir)
-            dir = q.pop(0)
-
-        # New facing direction will be next in queue
-        print(f'rotate {rotation} from {facing} to {q[0]}')
-        return q[0]
-
-    def __repr__(self):
-        return f"<MonkeyMap pt={self.pt} facing=({self.facing})>"
-
-
-class TestCubeMap(MonkeyMap):
-    def map_edges(self, edge1, edge2):
-        return dict(zip(range(*edge1), range(*edge2)))
-
-    def wrap_around(self, facing, pt):
-        x, y = pt
-
-        # Side 1^ to 2^
-        if y == 0 and facing == '^':
-            x_map = self.map_edges((8, 11), (3, -1, -1))
-            nx = x_map[x]
-            ny = 4
-            nf = 'v'
-
-        # Side 1< to 3^
-        elif x == 7 and y in range(0, 4) and facing == '<':
-            yx_map = self.map_edges((0, 4), (4, 8))
-            nx = yx_map[y]
-            ny = 4
-            nf = 'v'
-
-        # Side 1> to 6>
-        elif x == 11 and y in range(0, 4) and facing == '>':
-            y_map = self.map_edges((0, 4), (11, 7, -1))
-            nx = 15
-            ny = y_map[y]
-            nf = '<'
-
-        # Side 2^ to 1^
-        elif y == 4 and x in range(0, 4) and facing == '^':
-            x_map = self.map_edges((0, 4), (3, -1, -1))
-            nx = x_map[x]
-            ny = 0
-            nf = 'v'
-
-        # Side 2< to 6v
-        elif x == 0 and y in range(4, 8) and facing == '<':
-            yx_map = self.map_edges((4, 8), (15, 11, -1))
-            nx = yx_map[x]
-            ny = 11
-            nf = '^'
-
-        # Side 2v to 5v
-        elif y == 7 and x in range(0, 4) and facing == 'v':
-            print('Side 2v to 5v')
-            yx_map = self.map_edges((0, 4), (11, 7, -1))
-            nx = yx_map[x]
-            ny = 11
-            nf = '^'
-
-        # Side 3^ to 1<
-        elif y == 4 and x in range(4, 8) and facing == '^':
-            xy_map = self.map_edges((4, 8), (0, 4))
-            nx = 8
-            ny = xy_map[x]
-            nf = '>'
-
-        # Side 3v to 5<
-        elif y == 7 and x in range(4, 8) and facing == 'v':
-            xy_map = self.map_edges((4, 8), (11, 7, -1))
-            nx = 8
-            ny = xy_map[x]
-            nf = '>'
-
-        # Side 4> to 6^
-        elif x == 11 and y in range(4, 8) and facing == '>':
-            yx_map = self.map_edges((4, 8), (15, 11, -1))
-            nx = yx_map[y]
-            ny = 8
-            nf = 'v'
-
-        # Side 5< to 3v
-        elif x == 8 and y in range(8, 12) and facing == '<':
-            yx_map = self.map_edges((8, 12), (7, 3, -1))
-            nx = yx_map[x]
-            ny = 7
-            nf = '^'
-
-        # Side 5v to 2v
-        elif y == 11 and x in range(8, 12) and facing == 'v':
-            x_map = self.map_edges((8, 12), (3, -1, -1))
-            nx = x_map[x]
-            ny = 7
-            nf = '^'
-
-        # Side 6^ to 4>
-        elif y == 8 and x in range(12, 16) and facing == '^':
-            xy_map = self.map_edges((12, 16), (4, 8))
-            nx = 11
-            ny = xy_map[x]
-            nf = '<'
-
-        # Side 6> to 1>
-        elif x == 15 and y in range(8, 12) and facing == '>':
-            y_map = self.map_edges((8, 12), (3, -1, -1))
-            nx = 11
-            ny = y_map[y]
-            nf = '<'
-
-        # Side 6v to 2<
-        elif y == 11 and x in range(12, 16) and facing == 'v':
-            xy_map = self.map_edges((12, 16), (7, 3, -1))
-            nx = 0
-            ny = xy_map[x]
-            nf = '>'
-
-        else:
-            breakpoint()
-            raise Exception(f"Missed wrap case: {(facing, pt)}")
-
-        print(f"{(x, y, facing)} wraps to {(nx, ny, nf)}")
-        #breakpoint()
-        return (nx, ny, nf)
-
-    def go(self, tiles):
-        steps = {
-            '>': (1, 0),
-            'v': (0, 1),
-            '<': (-1, 0),
-            '^': (0, -1)
-        }
-
-        for n in range(tiles):
-            x, y = self.pt
-            dx, dy = steps[self.facing]
-            nx, ny = x+dx, y+dy
-            facing = self.facing
-            next_tile = self.tiles.get((nx, ny))
-
-            if next_tile not in ('.', '#'):
-                print(f"pt {(self.facing, self.pt)} not a tile: {next_tile} {n}")
-                (nx, ny, facing) = self.wrap_around(self.facing, self.pt)
-                next_tile = self.tiles.get((nx, ny))
-
-            if next_tile == '.':
-                self.pt = (nx, ny)
-                self.facing = facing
-                self.footprints.append((self.footprint, next_tile))
-            elif next_tile == '#':
-                self.pt = (x, y)
-                self.footprints.append((self.footprint, next_tile))
-                return self.pt  # Hit a wall: stop and return
-            else:
-                breakpoint()
-                raise Exception('Unexpected tile:', self.pt, (nx, ny), next_tile)
-
-        return self.pt
-
-
-class CubeMap(TestCubeMap):
+class GroveCubeMap(TestCubeMap):
     @cached_property
     def edges(self):
         return {
@@ -460,7 +144,6 @@ class CubeMap(TestCubeMap):
         return pts
 
     def cross_hinge(self, facing, pt):
-        #breakpoint()
         x, y = pt
         footprint = (x, y, facing)
         return self.hinge_pts[footprint]
@@ -468,14 +151,12 @@ class CubeMap(TestCubeMap):
     def go(self, tiles):
         for n in range(tiles):
             x, y = self.pt
-            print(self.facing)
             dx, dy = self.step_delta[self.facing]
             nx, ny = x+dx, y+dy
             facing = self.facing
             next_tile = self.tiles.get((nx, ny))
 
             if next_tile not in ('.', '#'):
-                print(f"pt {(self.facing, self.pt)} not a tile: {next_tile} {n}")
                 (nx, ny, facing) = self.cross_hinge(self.facing, self.pt)
                 next_tile = self.tiles.get((nx, ny))
 
@@ -596,7 +277,6 @@ class Solution:
         decoder = PasswordDecoder(input)
         password = decoder.password
 
-        #breakpoint()
         assert password != 144282, "Too high"
         assert password != 61054, "Too low"
         return password
@@ -619,8 +299,9 @@ class Solution:
     @property
     def second(self):
         input = self.file_input
-        decoder = PasswordDecoder(input, map_class=CubeMap)
+        decoder = PasswordDecoder(input, map_class=GroveCubeMap)
         password = decoder.password
+        assert password == 162038, password
         return password
 
     #
@@ -670,20 +351,12 @@ class Solution:
         with open(self.input_file) as file:
             return file.read()
 
-    @cached_property
-    def input_lines(self):
-        return [line.strip() for line in self.file_input.split("\n")]
-
-    @cached_property
-    def test_input_lines(self):
-        return [line.strip() for line in TEST_INPUT.split("\n")]
-
 
 #
 # Main
 #
 solution = Solution(INPUT_FILE)
-#print(f"test 1 solution: {solution.test1}")
-#print(f"pt 1 solution: {solution.first}")
+print(f"test 1 solution: {solution.test1}")
+print(f"pt 1 solution: {solution.first}")
 print(f"test 2 solution: {solution.test2}")
 print(f"pt 2 solution: {solution.second}")
