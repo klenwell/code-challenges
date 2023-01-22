@@ -6,6 +6,7 @@ Unstable Diffusion
 """
 from os.path import join as path_join
 from functools import cached_property
+from timeit import timeit
 from config import INPUT_DIR
 
 
@@ -26,6 +27,7 @@ class Grove:
         self.scan_lines = scan_lines
         self.tiles = self.add_tiles(scan_lines)
         self.elves = self.add_elves(self.tiles)
+        self.cached_elf_pts = None
 
     def add_tiles(self, scan_lines):
         tiles = {}
@@ -75,10 +77,19 @@ class Grove:
 
     @property
     def elf_pts(self):
+        if self.cached_elf_pts:
+            return self.cached_elf_pts
+
         pts = set()
         for elf in self.elves:
             pts.add(elf.pt)
         return pts
+
+    def cache_elf_pts(self):
+        self.cached_elf_pts = self.elf_pts
+
+    def uncache_elf_pts(self):
+        self.cached_elf_pts = None
 
     @property
     def empty_pts(self):
@@ -93,9 +104,12 @@ class Grove:
         return len(self.empty_pts)
 
     def run_round(self):
+        self.cache_elf_pts()
         self.elves_propose_moves()
-        self.elves_move()
+        moves = self.elves_move()
         self.elves_rotate_proposed_directions()
+        self.uncache_elf_pts()
+        return moves
 
     def elves_propose_moves(self):
         for elf in self.elves:
@@ -103,6 +117,8 @@ class Grove:
         return self
 
     def elves_move(self):
+        moving_elves = 0
+
         # Count proposed moves
         move_count = {}
         for elf in self.elves:
@@ -117,7 +133,9 @@ class Grove:
         for elf in self.elves:
             if elf.proposed_move and move_count[elf.proposed_move] < 2:
                 elf.moves()
-        return self
+                moving_elves += 1
+
+        return moving_elves
 
     def elves_rotate_proposed_directions(self):
         for elf in self.elves:
@@ -157,7 +175,7 @@ class Elf:
     def pt(self):
         return (self.x, self.y)
 
-    @property
+    @cached_property
     def direction_delta(self):
         return {
             'N': (0, -1),
@@ -197,8 +215,23 @@ class Elf:
         self.proposed_move = None
         return None
 
+    def proposed_direction_is_valid(self, dir, grove):
+        # If no Elf in the N, NE, or NW adjacent positions, the Elf proposes moving north one step.
+        # If no Elf in the S, SE, or SW adjacent positions, the Elf proposes moving south one step.
+        # If no Elf in the W, NW, or SW adjacent positions, the Elf proposes moving west one step.
+        # If no Elf in the E, NE, or SE adjacent positions, the Elf proposes moving east one step.
+        mapped_points = {
+            'N': ['N', 'NE', 'NW'],
+            'S': ['S', 'SE', 'SW'],
+            'W': ['W', 'NW', 'SW'],
+            'E': ['E', 'NE', 'SE']
+        }
+        adjacent_dirs = mapped_points[dir]
+        pts = self.get_adjacent_pts(adjacent_dirs)
+        return grove.pts_are_empty(pts)
+
     def elves_are_adjacent(self, grove):
-        other_elf_pts = set([elf.pt for elf in grove.elves if elf != self])
+        other_elf_pts = grove.elf_pts - set([self.pt])
         adjacent_elf_pts = self.adjacent_pts.intersection(other_elf_pts)
         #print(self.id, len(self.adjacent_pts), len(other_elf_pts), len(adjacent_elf_pts))
         #breakpoint()
@@ -218,21 +251,6 @@ class Elf:
         dir = self.proposed_directions.pop(0)
         self.proposed_directions.append(dir)
         return (dir, self.proposed_directions[0])
-
-    def proposed_direction_is_valid(self, dir, grove):
-        # If no Elf in the N, NE, or NW adjacent positions, the Elf proposes moving north one step.
-        # If no Elf in the S, SE, or SW adjacent positions, the Elf proposes moving south one step.
-        # If no Elf in the W, NW, or SW adjacent positions, the Elf proposes moving west one step.
-        # If no Elf in the E, NE, or SE adjacent positions, the Elf proposes moving east one step.
-        mapped_points = {
-            'N': ['N', 'NE', 'NW'],
-            'S': ['S', 'SE', 'SW'],
-            'W': ['W', 'NW', 'SW'],
-            'E': ['E', 'NE', 'SE']
-        }
-        adjacent_dirs = mapped_points[dir]
-        pts = self.get_adjacent_pts(adjacent_dirs)
-        return grove.pts_are_empty(pts)
 
     def get_adjacent_pts(self, dirs):
         pts = []
@@ -271,7 +289,21 @@ class Solution:
 
         # Assert
         assert empty_pts == 110, empty_pts
+        assert self.test_performance()
         return empty_pts
+
+    def test_performance(self):
+        input = self.input_lines
+        grove = Grove(input)
+        max_time = 1
+
+        for n in range(10):
+            rt = timeit(lambda: grove.run_round(), number=1)
+            print(f"run_round run time: {rt} s")
+            if rt > max_time:
+                return False
+
+        return True
 
     @property
     def first(self):
@@ -286,11 +318,39 @@ class Solution:
 
     @property
     def test2(self):
-        pass
+        # Arrange
+        input = self.test_input_lines
+        rounds = 0
+        moves = 1
+        grove = Grove(input)
+
+        # Act
+        while moves > 0:
+            rounds += 1
+            moves = grove.run_round()
+            print(f"Round {rounds}: {moves} moves")
+
+        # Assert
+        assert rounds == 20, rounds
+        return rounds
 
     @property
     def second(self):
-        pass
+        # Arrange
+        input = self.input_lines
+        rounds = 0
+        moves = 1
+        grove = Grove(input)
+
+        # Act
+        while moves > 0:
+            rounds += 1
+            moves = grove.run_round()
+            print(f"Round {rounds}: {moves} moves") if rounds % 100 == 0 else None
+
+        # Assert
+        assert rounds == 916, rounds
+        return rounds
 
     #
     # Properties
