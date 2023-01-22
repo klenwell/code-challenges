@@ -97,10 +97,9 @@ class Grove:
 
     def plant_seedlings(self, num_rounds):
         for n in range(num_rounds):
-            print(f"Round {n+1}")
-            self.run_round()
-            #self.print_map()
-            #breakpoint()
+            secs = timeit(lambda: self.run_round(), number=1)
+            print(f"Round {n+1}: {secs} s")
+
         return len(self.empty_pts)
 
     def run_round(self):
@@ -211,7 +210,6 @@ class Elf:
                 self.proposed_move = self.get_adjacent_pt(proposed_dir)
                 return proposed_dir
 
-        #breakpoint()
         self.proposed_move = None
         return None
 
@@ -231,11 +229,10 @@ class Elf:
         return grove.pts_are_empty(pts)
 
     def elves_are_adjacent(self, grove):
-        other_elf_pts = grove.elf_pts - set([self.pt])
-        adjacent_elf_pts = self.adjacent_pts.intersection(other_elf_pts)
-        #print(self.id, len(self.adjacent_pts), len(other_elf_pts), len(adjacent_elf_pts))
-        #breakpoint()
-        return len(adjacent_elf_pts) > 0
+        for adjacent_pt in self.adjacent_pts:
+            if adjacent_pt in grove.elf_pts:
+                return True
+        return False
 
     def moves(self):
         if not self.proposed_move:
@@ -284,7 +281,6 @@ class Solution:
         assert len(grove.empty_pts) == 27, len(grove.empty_pts)
 
         # Act
-        #grove.print_map()
         empty_pts = grove.plant_seedlings(rounds)
 
         # Assert
