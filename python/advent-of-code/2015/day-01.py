@@ -13,7 +13,7 @@ class DailyPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-01.txt')
 
     TEST_INPUT = """\
-    """
+"""
 
     def solve(self):
         print(f"test 1 solution: {self.test1}")
@@ -27,11 +27,31 @@ class DailyPuzzle:
     @property
     def first(self):
         input = self.file_input
-        return input
+        floor = 0
+
+        for c in input:
+            if c == '(':
+                floor += 1
+            elif c == ')':
+                floor -= 1
+            else:
+                print(f"unexpected input: {c}")
+
+        return floor
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        floor = 0
+
+        for n, chr in enumerate(input):
+            if chr == '(':
+                floor += 1
+            elif chr == ')':
+                floor -= 1
+
+            if floor == -1:
+                return n + 1
 
     #
     # Tests
@@ -44,7 +64,6 @@ class DailyPuzzle:
     @property
     def test2(self):
         pass
-
 
     #
     # Properties

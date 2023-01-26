@@ -11,7 +11,7 @@ class DailyPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-00.txt')
 
     TEST_INPUT = """\
-    """
+"""
 
     def solve(self):
         print(f"test 1 solution: {self.test1}")
@@ -42,7 +42,6 @@ class DailyPuzzle:
     @property
     def test2(self):
         pass
-
 
     #
     # Properties
