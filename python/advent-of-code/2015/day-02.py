@@ -7,6 +7,21 @@ from functools import cached_property
 from common import INPUT_DIR
 
 
+def estimate_wrapping_paper(dims):
+    l, w, h = [int(dim) for dim in dims.split('x')]
+    sorted_dims = sorted([l, w, h])
+    slack = sorted_dims[0] * sorted_dims[1]
+    return (2*l*w) + (2*w*h) + (2*h*l) + slack
+
+
+def estimate_ribbon(dims):
+    l, w, h = [int(dim) for dim in dims.split('x')]
+    sorted_dims = sorted([l, w, h])
+    wrap = (sorted_dims[0]*2) + (sorted_dims[1]*2)
+    ribbon = l*w*h
+    return ribbon + wrap
+
+
 class DailyPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-02.txt')
 
@@ -25,23 +40,55 @@ class DailyPuzzle:
     @property
     def first(self):
         input = self.file_input
-        return input
+        boxes = self.file_input.split('\n')
+        sq_feet = 0
+
+        for dims in boxes:
+            sq_feet += estimate_wrapping_paper(dims)
+
+        return sq_feet
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        boxes = self.file_input.split('\n')
+        feet = 0
+
+        for dims in boxes:
+            feet += estimate_ribbon(dims)
+
+        return feet
 
     #
     # Tests
     #
     @property
     def test1(self):
-        input = self.TEST_INPUT
-        return input
+        test_cases = [
+            # input, expect
+            ('2x3x4', 34),
+            ('1x1x10', 14),
+        ]
+
+        for dims, expected in test_cases:
+            feet = estimate_ribbon(dims)
+            assert feet == expected, feet
+
+        return 'passed'
 
     @property
     def test2(self):
-        pass
+        test_cases = [
+            # input, expect
+            ('2x3x4', 58),
+            ('1x1x10', 43),
+        ]
+
+        for dims, expected in test_cases:
+            sq_feet = estimate_wrapping_paper(dims)
+            assert sq_feet == expected, sq_feet
+
+        return 'passed'
 
     #
     # Properties
