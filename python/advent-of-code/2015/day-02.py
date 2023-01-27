@@ -40,7 +40,7 @@ class DailyPuzzle:
     @property
     def first(self):
         input = self.file_input
-        boxes = self.file_input.split('\n')
+        boxes = input.split('\n')
         sq_feet = 0
 
         for dims in boxes:
@@ -51,7 +51,7 @@ class DailyPuzzle:
     @property
     def second(self):
         input = self.file_input
-        boxes = self.file_input.split('\n')
+        boxes = input.split('\n')
         feet = 0
 
         for dims in boxes:
