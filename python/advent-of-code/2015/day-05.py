@@ -7,6 +7,42 @@ from functools import cached_property
 from common import INPUT_DIR
 
 
+class SantaString:
+    def __init__(self, value):
+        self.value = value
+
+    def is_nice(self):
+        # It does not contain the strings ab, cd, pq, or xy
+        naughty_strings = ('ab', 'cd', 'pq', 'xy')
+        for ns in naughty_strings:
+            if ns in self.value:
+                return False
+
+        # It contains at least three vowels (aeiou only)
+        vowels = list('aeiou')
+        vowel_count = 0
+        for vowel in vowels:
+            vowel_count += self.value.count(vowel)
+            if vowel_count >= 3:
+                break
+        if vowel_count < 3:
+            return False
+
+        # It contains at least one letter that appears twice in a row
+        chr_twice_in_row = False
+        for n, chr in enumerate(self.value):
+            if n == 0:
+                continue
+            prev_chr = self.value[n-1]
+            if chr == prev_chr:
+                chr_twice_in_row = True
+                break
+        if not chr_twice_in_row:
+            return False
+
+        return True
+
+
 class DailyPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-05.txt')
 
@@ -24,8 +60,15 @@ class DailyPuzzle:
     #
     @property
     def first(self):
-        input = self.file_input
-        return input
+        nice_strings = []
+        values = self.file_input.strip().split('\n')
+
+        for value in values:
+            if SantaString(value).is_nice():
+                nice_strings.append(value)
+
+        return len(nice_strings)
+
 
     @property
     def second(self):
@@ -36,8 +79,19 @@ class DailyPuzzle:
     #
     @property
     def test1(self):
-        input = self.TEST_INPUT
-        print(input)
+        test_cases = [
+            # value, nice?
+            ('ugknbfddgicrmopn', True),
+            ('aaa', True),
+            ('jchzalrnumimnmhp', False),
+            ('haegwjzuvuyypxyu', False),
+            ('dvszwmarrgswjxmb', False)
+        ]
+
+        for value, is_nice in test_cases:
+            santa_string = SantaString(value)
+            assert santa_string.is_nice() == is_nice, (value, santa_string.is_nice(), is_nice)
+
         return 'passed'
 
     @property
