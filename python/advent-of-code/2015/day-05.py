@@ -42,6 +42,50 @@ class SantaString:
 
         return True
 
+    def is_nice_v2(self):
+        # It contains a pair of any two letters that appears at least twice in the string
+        # without overlapping
+        if not self.has_repeating_non_overlapping_pair():
+            return False
+
+        # It contains at least one letter which repeats with exactly one letter between them
+        if not self.has_one_repeating_letter_with_letter_between():
+            return False
+
+        return True
+
+    def has_repeating_non_overlapping_pair(self):
+        pairs = [('_', '_')]
+
+        for n, chr in enumerate(self.value):
+            if n == 0:
+                continue
+
+            prev = self.value[n-1]
+            pair = (prev, chr)
+
+            if pair in pairs and pair != pairs[-1]:
+                return True
+
+            pairs.append(pair)
+
+        return False
+
+    def has_one_repeating_letter_with_letter_between(self):
+        for n, c3 in enumerate(self.value):
+            if n < 2:
+                continue
+
+            c1 = self.value[n-2]
+            c2 = self.value[n-1]
+
+            if c3 == c1 and c3 != c2:
+                return True
+
+        return False
+
+
+
 
 class DailyPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-05.txt')
@@ -69,10 +113,16 @@ class DailyPuzzle:
 
         return len(nice_strings)
 
-
     @property
     def second(self):
-        pass
+        nice_strings = []
+        values = self.file_input.strip().split('\n')
+
+        for value in values:
+            if SantaString(value).is_nice_v2():
+                nice_strings.append(value)
+
+        return len(nice_strings)
 
     #
     # Tests
@@ -96,8 +146,19 @@ class DailyPuzzle:
 
     @property
     def test2(self):
-        input = self.TEST_INPUT
-        print(input)
+        test_cases = [
+            # value, nice?
+            ('qjhvhtzxzqqjkmpb', True),
+            ('xxyxx', True),
+            ('uurcxstgmygtbstg', False),
+            ('ieodomkazucvgmuy', False),
+            ('aaa', False)
+        ]
+
+        for value, is_nice in test_cases:
+            ss = SantaString(value)
+            assert ss.is_nice_v2() == is_nice, (value, ss.is_nice_v2(), is_nice)
+
         return 'passed'
 
     #
