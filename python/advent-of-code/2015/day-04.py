@@ -9,13 +9,13 @@ from common import INPUT_DIR
 import hashlib
 
 
-def santa_hash(key):
+def santa_hash(key, target='00000'):
     n = 0
     while True:
         n += 1
         input = f"{key}{n}"
         hash = hashlib.md5(input.encode('utf-8')).hexdigest()
-        if hash.startswith('00000'):
+        if hash.startswith(target):
             return n
 
         print(n) if n % 100000 == 0 else None
@@ -44,7 +44,9 @@ class DailyPuzzle:
 
     @property
     def second(self):
-        pass
+        key = 'bgvyzdsv'
+        answer = santa_hash(key, '000000')
+        return answer
 
     #
     # Tests
