@@ -13,34 +13,15 @@ class SantaString:
 
     def is_nice(self):
         # It does not contain the strings ab, cd, pq, or xy
-        naughty_strings = ('ab', 'cd', 'pq', 'xy')
-        for ns in naughty_strings:
-            if ns in self.value:
-                return False
+        if self.has_naughty_pair():
+            return False
 
         # It contains at least three vowels (aeiou only)
-        vowels = list('aeiou')
-        vowel_count = 0
-        for vowel in vowels:
-            vowel_count += self.value.count(vowel)
-            if vowel_count >= 3:
-                break
-        if vowel_count < 3:
+        if not self.has_at_least_three_vowels():
             return False
 
         # It contains at least one letter that appears twice in a row
-        chr_twice_in_row = False
-        for n, chr in enumerate(self.value):
-            if n == 0:
-                continue
-            prev_chr = self.value[n-1]
-            if chr == prev_chr:
-                chr_twice_in_row = True
-                break
-        if not chr_twice_in_row:
-            return False
-
-        return True
+        return self.has_repeating_letter()
 
     def is_nice_v2(self):
         # It contains a pair of any two letters that appears at least twice in the string
@@ -53,6 +34,31 @@ class SantaString:
             return False
 
         return True
+
+    def has_naughty_pair(self):
+        naughty_strings = ('ab', 'cd', 'pq', 'xy')
+        for ns in naughty_strings:
+            if ns in self.value:
+                return True
+        return False
+
+    def has_at_least_three_vowels(self):
+        vowels = list('aeiou')
+        vowel_count = 0
+        for vowel in vowels:
+            vowel_count += self.value.count(vowel)
+            if vowel_count >= 3:
+                return True
+        return False
+
+    def has_repeating_letter(self):
+        for n, chr in enumerate(self.value):
+            if n == 0:
+                continue
+            prev = self.value[n-1]
+            if chr == prev:
+                return True
+        return False
 
     def has_repeating_non_overlapping_pair(self):
         pairs = [('_', '_')]
@@ -83,8 +89,6 @@ class SantaString:
                 return True
 
         return False
-
-
 
 
 class DailyPuzzle:
