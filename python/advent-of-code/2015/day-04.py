@@ -6,6 +6,20 @@ from os.path import join as path_join
 from functools import cached_property
 from common import INPUT_DIR
 
+import hashlib
+
+
+def santa_hash(key):
+    n = 0
+    while True:
+        n += 1
+        input = f"{key}{n}"
+        hash = hashlib.md5(input.encode('utf-8')).hexdigest()
+        if hash.startswith('00000'):
+            return n
+
+        print(n) if n % 100000 == 0 else None
+
 
 class DailyPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-04.txt')
@@ -24,8 +38,9 @@ class DailyPuzzle:
     #
     @property
     def first(self):
-        input = self.file_input
-        return input
+        key = 'bgvyzdsv'
+        answer = santa_hash(key)
+        return answer
 
     @property
     def second(self):
@@ -36,7 +51,16 @@ class DailyPuzzle:
     #
     @property
     def test1(self):
-        input = self.TEST_INPUT
+        test_cases = [
+            # key, expected
+            ('abcdef', 609043),
+            ('pqrstuv', 1048970)
+        ]
+
+        for key, expected in test_cases:
+            answer = santa_hash(key)
+            assert answer == expected, (key, answer, expected)
+
         return 'passed'
 
     @property
