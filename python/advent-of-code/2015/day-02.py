@@ -1,6 +1,8 @@
 """
 Advent of Code 2015 - Day 2
 https://adventofcode.com/2022/day/2
+
+Day 2: I Was Told There Would Be No Math
 """
 from os.path import join as path_join
 from functools import cached_property
