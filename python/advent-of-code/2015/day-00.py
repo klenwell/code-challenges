@@ -37,11 +37,13 @@ class DailyPuzzle:
     @property
     def test1(self):
         input = self.TEST_INPUT
+        print(input)
         return 'passed'
 
     @property
     def test2(self):
         input = self.TEST_INPUT
+        print(input)
         return 'passed'
 
     #

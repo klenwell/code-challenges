@@ -67,7 +67,6 @@ class DailyPuzzle:
 
     @property
     def test2(self):
-        input = self.TEST_INPUT
         return 'passed'
 
     #
