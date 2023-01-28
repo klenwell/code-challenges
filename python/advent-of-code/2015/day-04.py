@@ -1,6 +1,8 @@
 """
 Advent of Code 2015 - Day 4
 https://adventofcode.com/2022/day/4
+
+Day 4: The Ideal Stocking Stuffer
 """
 from os.path import join as path_join
 from functools import cached_property
