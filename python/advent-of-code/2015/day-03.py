@@ -1,6 +1,8 @@
 """
 Advent of Code 2015 - Day 3
 https://adventofcode.com/2022/day/3
+
+Day 3: Perfectly Spherical Houses in a Vacuum
 """
 from os.path import join as path_join
 from functools import cached_property

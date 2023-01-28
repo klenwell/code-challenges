@@ -1,6 +1,6 @@
 """
-Advent of Code 2015 - Day 0
-https://adventofcode.com/2022/day/0
+Advent of Code 2015 - Day 4
+https://adventofcode.com/2022/day/4
 """
 from os.path import join as path_join
 from functools import cached_property
@@ -8,7 +8,7 @@ from common import INPUT_DIR
 
 
 class DailyPuzzle:
-    INPUT_FILE = path_join(INPUT_DIR, 'day-00.txt')
+    INPUT_FILE = path_join(INPUT_DIR, 'day-04.txt')
 
     TEST_INPUT = """\
 """
