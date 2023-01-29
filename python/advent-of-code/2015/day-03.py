@@ -1,6 +1,6 @@
 """
 Advent of Code 2015 - Day 3
-https://adventofcode.com/2022/day/3
+https://adventofcode.com/2015/day/3
 
 Day 3: Perfectly Spherical Houses in a Vacuum
 """

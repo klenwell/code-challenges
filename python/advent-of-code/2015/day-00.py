@@ -1,6 +1,6 @@
 """
 Advent of Code 2015 - Day 0
-https://adventofcode.com/2022/day/0
+https://adventofcode.com/2015/day/0
 """
 from os.path import join as path_join
 from functools import cached_property
