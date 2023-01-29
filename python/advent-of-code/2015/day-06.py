@@ -22,26 +22,33 @@ class DisplayGrid:
 
     def configure(self):
         for n, instruction in enumerate(self.instructions):
+            # Slight optimization
+            turn_on = instruction.turn_on
+            turn_off = instruction.turn_off
             for pt in instruction.pts:
-                if instruction.turn_on:
+                if turn_on:
                     self.lights[pt] = 1
-                elif instruction.turn_off:
+                elif turn_off:
                     self.lights[pt] = 0
-                elif instruction.toggle:
+                else:
                     self.toggle(pt)
-            print(n, instruction.line) if n % 30 == 0 else None
-        return self.lights
+            print(f"{n} of {len(self.instructions)}: {instruction.line}") if n % 50 == 0 else None
+
+        lit_count = len([pt for pt, lit in self.lights.items() if lit == 1])
+        return lit_count
 
     def reconfigure(self):
         for n, instruction in enumerate(self.instructions):
+            turn_on = instruction.turn_on
+            turn_off = instruction.turn_off
             for pt in instruction.pts:
-                if instruction.turn_on:
+                if turn_on:
                     self.lights[pt] += 1
-                elif instruction.turn_off and self.lights[pt] >= 1:
+                elif turn_off and self.lights[pt] >= 1:
                     self.lights[pt] -= 1
-                elif instruction.toggle:
+                else:
                     self.lights[pt] += 2
-            print(n, instruction.line) if n % 30 == 0 else None
+            print(f"{n} of {len(self.instructions)}: {instruction.line}") if n % 50 == 0 else None
 
         brightness = sum([v for v in self.lights.values()])
         return brightness
@@ -94,15 +101,15 @@ class Instruction:
         x, y = post.split(',')
         return (int(x), int(y))
 
-    @property
+    @cached_property
     def turn_off(self):
         return self.line.startswith('turn off')
 
-    @property
+    @cached_property
     def turn_on(self):
         return self.line.startswith('turn on')
 
-    @property
+    @cached_property
     def toggle(self):
         return self.line.startswith('toggle')
 
@@ -115,7 +122,7 @@ class DailyPuzzle:
 
     def solve(self):
         print(f"test 1 solution: {self.test1}")
-        #print(f"Part 1 Solution: {self.first}")
+        print(f"Part 1 Solution: {self.first}")
         print(f"test 2 solution: {self.test2}")
         print(f"Part 2 Solution: {self.second}")
 
@@ -126,8 +133,7 @@ class DailyPuzzle:
     def first(self):
         input = self.file_input
         grid = DisplayGrid(input)
-        lights = grid.configure()
-        lit_count = len([pt for pt, lit in grid.lights.items() if lit == 1])
+        lit_count = grid.configure()
         return lit_count
 
     @property
