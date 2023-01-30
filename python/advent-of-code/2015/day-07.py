@@ -8,15 +8,6 @@ from common import INPUT_DIR
 
 
 class Circuit:
-
-    GATES = {
-        'AND': '&',
-        'OR': '|',
-        'LSHIFT': '<<',
-        'RSHIFT': '>>',
-        'NOT': '~'
-    }
-
     def __init__(self, booklet):
         self.booklet = booklet
         self.signals = {}
@@ -50,38 +41,11 @@ class Circuit:
             wire, shift = gate.split(' RSHIFT ')
             return ('>>', wire, shift)
         elif gate.startswith('NOT'):
-            # To get non-negative complement: https://stackoverflow.com/a/16255550/1093087
-            # int(bin(~i % (1<<16)), 2)
             _, wire = gate.split('NOT ')
             return ('NOT', wire, '1')
         else:
-            #raise ValueError(f"Gate not found: {gate}")
             wire = gate
             return ('*', wire, '1')
-
-    def parse_gate_v1(self, gate):
-        if gate.isdigit():
-            return gate
-        elif gate.startswith('NOT'):
-            # To get non-negative complement: https://stackoverflow.com/a/16255550/1093087
-            # int(bin(~i % (1<<16)), 2)
-            _, wire = gate.split('NOT ')
-            return f"int(bin(~ self.wires['{wire}'] % (1<<16)), 2)"
-        elif 'AND' in gate:
-            w1, w2 = gate.split(' AND ')
-            return f"self.wires['{w1}'] & self.wires['{w2}']"
-        elif 'OR' in gate:
-            w1, w2 = gate.split(' OR ')
-            return f"self.wires['{w1}'] | self.wires['{w2}']"
-        elif 'LSHIFT' in gate:
-            wire, shift = gate.split(' LSHIFT ')
-            return f"self.wires['{wire}'] << {shift}"
-        elif 'RSHIFT' in gate:
-            wire, shift = gate.split(' RSHIFT ')
-            return f"self.wires['{wire}'] >> {shift}"
-        else:
-            #raise ValueError(f"Gate not found: {gate}")
-            return f"self.wires['{gate}']"
 
     def get_signal(self, wire):
         if wire in self.signals:
@@ -95,6 +59,8 @@ class Circuit:
             a = v1 if v1.isdigit() else self.get_signal(v1)
             b = v2 if v2.isdigit() else self.get_signal(v2)
 
+            # To get non-negative complement: https://stackoverflow.com/a/16255550/1093087
+            # int(bin(~i % (1<<16)), 2)
             if op == 'NOT':
                 expr = f"int(bin(~ {a} % (1<<16)), 2)"
             else:
@@ -133,14 +99,17 @@ NOT y -> i"""
     #
     @property
     def first(self):
-        breakpoint()
         input = self.file_input
         circuit = Circuit(input)
         return circuit.get_signal('a')
 
     @property
     def second(self):
-        pass
+        a_signal = 16076
+        input = self.file_input
+        circuit = Circuit(input)
+        circuit.signals['b'] = a_signal
+        return circuit.get_signal('a')
 
     #
     # Tests
@@ -170,8 +139,10 @@ NOT y -> i"""
 
     @property
     def test2(self):
-        input = self.TEST_INPUT
-        print(input)
+        input = self.file_input
+        circuit = Circuit(input)
+        b_signal = circuit.get_signal('b')
+        assert b_signal == 19138, (b_signal)
         return 'passed'
 
     #
