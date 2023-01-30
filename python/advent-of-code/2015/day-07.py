@@ -19,6 +19,7 @@ class Circuit:
 
     def __init__(self, booklet):
         self.booklet = booklet
+        self.signals = {}
 
     @cached_property
     def instructions(self):
@@ -33,8 +34,34 @@ class Circuit:
         return wires
 
     def parse_gate(self, gate):
+        # return wire id as str or operation as tuple (op, v1, v2)
         if gate.isdigit():
-            return int(gate)
+            return gate
+        elif 'AND' in gate:
+            w1, w2 = gate.split(' AND ')
+            return ('&', w1, w2)
+        elif 'OR' in gate:
+            w1, w2 = gate.split(' OR ')
+            return ('|', w1, w2)
+        elif 'LSHIFT' in gate:
+            wire, shift = gate.split(' LSHIFT ')
+            return ('<<', wire, shift)
+        elif 'RSHIFT' in gate:
+            wire, shift = gate.split(' RSHIFT ')
+            return ('>>', wire, shift)
+        elif gate.startswith('NOT'):
+            # To get non-negative complement: https://stackoverflow.com/a/16255550/1093087
+            # int(bin(~i % (1<<16)), 2)
+            _, wire = gate.split('NOT ')
+            return ('NOT', wire, '1')
+        else:
+            #raise ValueError(f"Gate not found: {gate}")
+            wire = gate
+            return ('*', wire, '1')
+
+    def parse_gate_v1(self, gate):
+        if gate.isdigit():
+            return gate
         elif gate.startswith('NOT'):
             # To get non-negative complement: https://stackoverflow.com/a/16255550/1093087
             # int(bin(~i % (1<<16)), 2)
@@ -53,15 +80,33 @@ class Circuit:
             wire, shift = gate.split(' RSHIFT ')
             return f"self.wires['{wire}'] >> {shift}"
         else:
-            raise ValueError(f"Gate not found: {gate}")
+            #raise ValueError(f"Gate not found: {gate}")
+            return f"self.wires['{gate}']"
 
     def get_signal(self, wire):
-        signal = self.wires[wire]
-        print(wire, signal)
-        if type(signal) == int:
-            return signal
+        if wire in self.signals:
+            return self.signals[wire]
+
+        print('get_signal', wire)
+        gate = self.wires[wire]
+
+        if type(gate) is tuple:
+            op, v1, v2 = gate
+            a = v1 if v1.isdigit() else self.get_signal(v1)
+            b = v2 if v2.isdigit() else self.get_signal(v2)
+
+            if op == 'NOT':
+                expr = f"int(bin(~ {a} % (1<<16)), 2)"
+            else:
+                expr = f"{a} {op} {b}"
+            signal = eval(expr)
         else:
-            return eval(signal)
+            signal = gate
+
+        print('got_signal', wire, gate, signal)
+        #breakpoint()
+        self.signals[wire] = int(signal)
+        return int(signal)
 
 
 class DailyPuzzle:
@@ -88,8 +133,10 @@ NOT y -> i"""
     #
     @property
     def first(self):
+        breakpoint()
         input = self.file_input
-        return input
+        circuit = Circuit(input)
+        return circuit.get_signal('a')
 
     @property
     def second(self):
