@@ -1,5 +1,5 @@
 """
-Some commonly used values.
+Some commonly used constants and methods.
 
 Usage:
 from config import INPUT_FILE
