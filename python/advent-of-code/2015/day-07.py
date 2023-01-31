@@ -1,6 +1,8 @@
 """
 Advent of Code 2015 - Day 7
 https://adventofcode.com/2015/day/7
+
+Day 7: Some Assembly Required
 """
 from os.path import join as path_join
 from functools import cached_property
@@ -10,7 +12,7 @@ from common import INPUT_DIR
 class Circuit:
     def __init__(self, booklet):
         self.booklet = booklet
-        self.signals = {}
+        self.signals = {}  # Cache for compute wire signals
 
     @cached_property
     def instructions(self):
@@ -42,7 +44,7 @@ class Circuit:
             return ('>>', wire, shift)
         elif gate.startswith('NOT'):
             _, wire = gate.split('NOT ')
-            return ('NOT', wire, '1')
+            return ('NOT', wire, '0')
         else:
             wire = gate
             return ('*', wire, '1')
@@ -70,7 +72,6 @@ class Circuit:
             signal = gate
 
         print('got_signal', wire, gate, signal)
-        #breakpoint()
         self.signals[wire] = int(signal)
         return int(signal)
 
