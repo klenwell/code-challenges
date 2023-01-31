@@ -1,6 +1,8 @@
 """
 Advent of Code 2015 - Day 8
 https://adventofcode.com/2015/day/8
+
+Day 8: Matchsticks
 """
 from os.path import join as path_join
 from functools import cached_property
@@ -12,22 +14,32 @@ class DigitalSantaList:
         self.input = input.strip()
 
     @cached_property
-    def storage_space(self):
-        return self.str_length - self.mem_length
+    def decoded_str_delta(self):
+        return self.raw_str_len - self.decoded_str_len
 
     @cached_property
-    def str_length(self):
+    def encoded_str_delta(self):
+        return self.encoded_str_len - self.raw_str_len
+
+    @cached_property
+    def raw_str_len(self):
         return sum([len(line) for line in self.lines])
 
     @cached_property
-    def mem_length(self):
-        return sum([self.line_mem_length(line) for line in self.lines])
+    def decoded_str_len(self):
+        # For part 1
+        return sum([self.decoded_line_len(line) for line in self.lines])
+
+    @cached_property
+    def encoded_str_len(self):
+        # For part 2
+        return sum([self.encoded_line_len(line) for line in self.lines])
 
     @cached_property
     def lines(self):
         return self.input.split('\n')
 
-    def line_mem_length(self, line):
+    def decoded_line_len(self, line):
         mem_chrs = []
         chrs = list(line[1:-1])
 
@@ -49,17 +61,18 @@ class DigitalSantaList:
 
         return len(mem_chrs)
 
-    def line_mem_length_v1(self, line):
-        if line.count(r'\\x') > 0:
-            print(line)
-            breakpoint()
-        literal_len = len(line)
-        quote_len = 2
-        slash_len = line.count(r'\\')
-        dbl_quote_len = line.count(r'\"')
-        hex_len = line.count(r'\x') * 3
-        add_back = line.count(r'\\x') * 3
-        return literal_len - quote_len - slash_len - dbl_quote_len - hex_len + add_back
+    def encoded_line_len(self, line):
+        bs = '\\'
+        chrs = ['"', bs, bs]
+
+        for n, chr in enumerate(list(line[1:-1])):
+            if chr in (bs, '"'):
+                chrs += [bs, chr]
+            else:
+                chrs.append(chr)
+
+        chrs += [bs, '"', '"']
+        return len(chrs)
 
 
 class DailyPuzzle:
@@ -85,16 +98,14 @@ class DailyPuzzle:
     def first(self):
         input = self.file_input.strip()
         santa_list = DigitalSantaList(input)
-        for line in santa_list.lines[-16:]:
-            raw_len = len(line)
-            mem_len = santa_list.line_mem_length(line)
-            print(line, raw_len, mem_len)
-        assert santa_list.storage_space < 1379, santa_list.storage_space
-        return santa_list.storage_space
+        assert santa_list.decoded_str_delta < 1379, santa_list.decoded_str_delta
+        return santa_list.decoded_str_delta
 
     @property
     def second(self):
-        pass
+        input = self.file_input.strip()
+        santa_list = DigitalSantaList(input)
+        return santa_list.encoded_str_delta
 
     #
     # Tests
@@ -106,15 +117,14 @@ class DailyPuzzle:
         santa_list = DigitalSantaList(input)
 
         for n, line in enumerate(santa_list.lines):
-            print(n, line, len(line))
-            exp_str_len, exp_mem_len = expected_lens[n]
-            mem_len = santa_list.line_mem_length(line)
+            exp_str_len, exp_dec_len = expected_lens[n]
+            dec_len = santa_list.decoded_line_len(line)
             assert len(line) == exp_str_len, (line, len(line), exp_str_len)
-            assert mem_len == exp_mem_len, (line, mem_len, exp_mem_len)
+            assert dec_len == exp_dec_len, (line, dec_len, exp_dec_len)
 
         assert len(santa_list.input)
-        assert santa_list.mem_length == sum([l for _, l in expected_lens]), santa_list.mem_length
-        assert santa_list.storage_space == 12, santa_list.storage_space
+        assert santa_list.decoded_str_len == 11, santa_list.decoded_str_len
+        assert santa_list.decoded_str_delta == 12, santa_list.decoded_str_delta
 
         # Edge Cases
         edge_cases = [
@@ -125,18 +135,30 @@ class DailyPuzzle:
             (r'"\"pa\\x\x18od\\emgje\\"', 24, 15)
         ]
 
-        for line, exp_str_len, exp_mem_len in edge_cases:
+        for line, exp_str_len, exp_dec_len in edge_cases:
             str_len = len(line)
-            mem_len = santa_list.line_mem_length(line)
+            dec_len = santa_list.decoded_line_len(line)
             assert str_len == exp_str_len, (line, str_len, exp_str_len)
-            assert mem_len == exp_mem_len, (line, mem_len, exp_mem_len)
+            assert dec_len == exp_dec_len, (line, dec_len, exp_dec_len)
 
         return 'passed'
 
     @property
     def test2(self):
+        expected_lens = [(2, 6), (5, 9), (10, 16), (6, 11)]
         input = self.TEST_INPUT
-        print(input)
+        santa_list = DigitalSantaList(input)
+
+        for n, line in enumerate(santa_list.lines):
+            exp_str_len, exp_enc_len = expected_lens[n]
+            enc_len = santa_list.encoded_line_len(line)
+            assert len(line) == exp_str_len, (line, len(line), exp_str_len)
+            assert enc_len == exp_enc_len, (line, enc_len, exp_enc_len)
+
+        assert len(santa_list.input)
+        assert santa_list.encoded_str_len == 42, santa_list.encoded_str_len
+        assert santa_list.encoded_str_delta == 19, santa_list.encoded_str_delta
+
         return 'passed'
 
     #
