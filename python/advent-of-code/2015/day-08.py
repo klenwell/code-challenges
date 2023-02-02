@@ -63,15 +63,16 @@ class DigitalSantaList:
 
     def encoded_line_len(self, line):
         bs = '\\'
-        chrs = ['"', bs, bs]
+        dq = '"'
+        chrs = [dq, bs, bs]
 
         for n, chr in enumerate(list(line[1:-1])):
-            if chr in (bs, '"'):
+            if chr in (bs, dq):
                 chrs += [bs, chr]
             else:
                 chrs.append(chr)
 
-        chrs += [bs, '"', '"']
+        chrs += [bs, dq, dq]
         return len(chrs)
 
 
@@ -158,7 +159,6 @@ class DailyPuzzle:
         assert len(santa_list.input)
         assert santa_list.encoded_str_len == 42, santa_list.encoded_str_len
         assert santa_list.encoded_str_delta == 19, santa_list.encoded_str_delta
-
         return 'passed'
 
     #
