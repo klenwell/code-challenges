@@ -12,6 +12,18 @@ class SantaRouter:
         self.input = input.strip()
 
     @cached_property
+    def shortest_route(self):
+        all_routes = self.travel_all_routes()
+        sorted_routes = sorted(all_routes, key=lambda r: r.distance)
+        return sorted_routes[0]
+
+    @cached_property
+    def longest_routes(self):
+        all_routes = self.travel_all_routes()
+        sorted_routes = sorted(all_routes, key=lambda r: r.distance)
+        return sorted_routes[-1]
+
+    @cached_property
     def input_lines(self):
         return [line for line in self.input.split('\n')]
 
@@ -26,7 +38,11 @@ class SantaRouter:
         return pairs
 
     @cached_property
-    def location_destinations(self):
+    def locations(self):
+        return list(self.legs.keys())
+
+    @cached_property
+    def legs(self):
         mapped = {}
         for l1, l2, _ in self.location_pairs:
             if l1 in mapped:
@@ -41,45 +57,47 @@ class SantaRouter:
         return mapped
 
     @cached_property
-    def legs(self):
-        pass
-
-    @cached_property
     def leg_distances(self):
-        pass
+        mapped = {}
+        for l1, l2, distance in self.location_pairs:
+            mapped[(l1, l2)] = distance
+            mapped[(l2, l1)] = distance
+        return mapped
 
     @property
     def starting_location(self):
-        lds = self.location_destinations.items()
-        sorted_locations = sorted(lds, key=lambda kv: len(kv[1]))
+        sorted_locations = sorted(self.legs.items(), key=lambda kv: len(kv[1]))
         return sorted_locations[0][0]
 
-    def find_shortest_route(self):
-        route = Route(self, (self.starting_location,), ())
-        queue = [route]
+    def travel_all_routes(self):
+        queue = []
         completed_routes = []
         stuck_routes = []
         n = 0
+
+        # Create a route for each location
+        for location in self.locations:
+            route = Route(self, (location,), ())
+            queue.append(route)
 
         while queue:
             n += 1
             route = queue.pop(0)
 
-            breakpoint() if n % 1000 == 0 else None
+            print(f"{n} {len(queue)} {len(completed_routes)}") if n % 10000 == 0 else None
 
             for location in route.next_locations:
-                route.visit_next_location(location)
+                clone = route.clone()
+                clone.visit_next_location(location)
 
-                if route.completed:
-                    completed_routes.append(route)
-                elif route.stuck:
-                    stuck_routes.append(route)
+                if clone.completed:
+                    completed_routes.append(clone)
+                elif clone.stuck:
+                    stuck_routes.append(clone)
                 else:
-                    queue.append(route)
+                    queue.append(clone)
 
-        sorted_routes = sorted(completed_routes, key=lambda r: r.distance)
-        shortest_route = sorted_routes[0]
-        return shortest_route
+        return completed_routes
 
 
 class Route:
@@ -92,9 +110,17 @@ class Route:
     def distance(self):
         return sum(self.distances)
 
-    @cached_property
+    @property
     def location(self):
         return self.visited[-1]
+
+    @property
+    def completed(self):
+        return not set(self.router.locations).symmetric_difference(self.visited)
+
+    @property
+    def stuck(self):
+        return not self.completed and not self.next_locations
 
     @property
     def next_locations(self):
@@ -104,14 +130,19 @@ class Route:
                 locations.append(location)
         return locations
 
-    def visit_next_location(self, location):
-        distance = self.router.leg_distances[self.location]
-        self.visited += (location,)
+    def visit_next_location(self, next_location):
+        key = (self.location, next_location)
+        distance = self.router.leg_distances[key]
+        self.visited += (next_location,)
         self.distances += (distance,)
         return self
 
     def clone(self):
         return Route(self.router, self.visited, self.distances)
+
+    def __repr__(self):
+        start = self.visited[0]
+        return f"<Route start={start} location={self.location} distance={self.distance}>"
 
 
 class DailyPuzzle:
@@ -134,11 +165,15 @@ Dublin to Belfast = 141"""
     @property
     def first(self):
         input = self.file_input
-        return input
+        router = SantaRouter(input)
+        assert router.shortest_route.distance < 510, shortest_route
+        return router.shortest_route.distance
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        router = SantaRouter(input)
+        return router.longest_routes.distance
 
     #
     # Tests
@@ -147,14 +182,16 @@ Dublin to Belfast = 141"""
     def test1(self):
         input = self.TEST_INPUT
         router = SantaRouter(input)
-        print(router.location_destinations)
-        print(router.starting_location)
+        shortest_route = router.shortest_route
+        assert shortest_route.distance == 605, shortest_route
         return 'passed'
 
     @property
     def test2(self):
         input = self.TEST_INPUT
-        print(input)
+        router = SantaRouter(input)
+        longest_routes = router.longest_routes
+        assert longest_routes.distance == 982, longest_routes
         return 'passed'
 
     #
