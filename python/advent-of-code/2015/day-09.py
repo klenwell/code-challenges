@@ -4,7 +4,7 @@ https://adventofcode.com/2015/day/9
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR
+from common import INPUT_DIR, info
 
 
 class SantaRouter:
@@ -84,7 +84,7 @@ class SantaRouter:
             n += 1
             route = queue.pop(0)
 
-            print(f"{n} {len(queue)} {len(completed_routes)}") if n % 10000 == 0 else None
+            info(f"queue={len(queue)} completed={len(completed_routes)}", 10000)
 
             for location in route.next_locations:
                 clone = route.clone()
@@ -166,7 +166,7 @@ Dublin to Belfast = 141"""
     def first(self):
         input = self.file_input
         router = SantaRouter(input)
-        assert router.shortest_route.distance < 510, shortest_route
+        assert router.shortest_route.distance < 510, router.shortest_route
         return router.shortest_route.distance
 
     @property
