@@ -16,6 +16,14 @@ class LookSayingElf:
     def chain_say_len(self, number, times):
         return len(self.chain_say(number, times))
 
+    def say_conway_len(self, number, times):
+        # https://en.wikipedia.org/wiki/Look-and-say_sequence#Growth_in_length
+        conways_constant = 1.30357726903429639125709911215255189
+        seq_len = len(number)
+        for n in range(times):
+            seq_len = int(round(conways_constant * seq_len))
+        return seq_len
+
     def chain_say(self, number, times):
         for n in range(times):
             number = self.say(number)
@@ -67,13 +75,11 @@ class DailyPuzzle:
     #
     @property
     def first(self):
-        input = self.file_input
         elf = LookSayingElf()
         return elf.chain_say_len('3113322113', 40)
 
     @property
     def second(self):
-        input = self.file_input
         elf = LookSayingElf()
         return elf.chain_say_len('3113322113', 50)
 
@@ -101,14 +107,18 @@ class DailyPuzzle:
         answer = elf.chain_say_len('1', 5)
         assert said == '312211', said
         assert answer == 6, answer
-
         return 'passed'
 
     @property
     def test2(self):
-        input = self.TEST_INPUT
-        print(input)
-        return 'passed'
+        # Will not work because the constant defines a limit
+        number = '3113322113'
+        rounds = 40
+        expected = 329356
+        elf = LookSayingElf()
+        answer = elf.say_conway_len(number, rounds)
+        assert answer > expected, answer
+        return (answer, expected)
 
     #
     # Properties
