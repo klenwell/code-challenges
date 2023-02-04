@@ -67,7 +67,8 @@ class DailyPuzzle:
     @property
     def first(self):
         input = self.file_input
-        return input
+        elf = LookSayingElf()
+        return elf.chain_say_len('3113322113', 40)
 
     @property
     def second(self):
