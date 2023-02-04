@@ -6,7 +6,7 @@ Day 10: Elves Look, Elves Say
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR
+from common import INPUT_DIR, info
 
 
 class LookSayingElf:
@@ -19,6 +19,7 @@ class LookSayingElf:
     def chain_say(self, number, times):
         for n in range(times):
             number = self.say(number)
+            info(f"{n} {len(number)}", 5)
         return number
 
     def say(self, number):
@@ -72,7 +73,9 @@ class DailyPuzzle:
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        elf = LookSayingElf()
+        return elf.chain_say_len('3113322113', 50)
 
     #
     # Tests
