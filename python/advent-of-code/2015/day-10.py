@@ -9,6 +9,46 @@ from functools import cached_property
 from common import INPUT_DIR
 
 
+class LookSayingElf:
+    def __init__(self):
+        pass
+
+    def chain_say_len(self, number, times):
+        return len(self.chain_say(number, times))
+
+    def chain_say(self, number, times):
+        for n in range(times):
+            number = self.say(number)
+        return number
+
+    def say(self, number):
+        spoken = []
+        sequence = []
+
+        for n, digit in enumerate(number):
+            if n == 0:
+                sequence.append(digit)
+                continue
+
+            last_digit = number[n-1]
+
+            # Same sequence
+            if digit == last_digit:
+                sequence.append(digit)
+
+            # New sequence
+            else:
+                num_digits = len(sequence)
+                spoken += [str(num_digits), last_digit]
+                sequence = [digit]
+
+        # Don't forget the next sequence
+        num_digits = len(sequence)
+        spoken += [str(num_digits), digit]
+
+        return ''.join(spoken)
+
+
 class DailyPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-10.txt')
 
@@ -38,8 +78,26 @@ class DailyPuzzle:
     #
     @property
     def test1(self):
-        input = self.TEST_INPUT
-        print(input)
+        test_cases = [
+            # input, expected, expected_len
+            ('1', '11', 2),
+            ('11', '21', 2),
+            ('21', '1211', 4),
+            ('1211', '111221', 6),
+            ('111221', '312211', 6)
+        ]
+        for look, expected, expected_len in test_cases:
+            elf = LookSayingElf()
+            said = elf.say(look)
+            assert said == expected, (look, said, expected)
+            assert len(said) == expected_len, (look, len(said), expected_len)
+
+        elf = LookSayingElf()
+        said = elf.chain_say('1', 5)
+        answer = elf.chain_say_len('1', 5)
+        assert said == '312211', said
+        assert answer == 6, answer
+
         return 'passed'
 
     @property
