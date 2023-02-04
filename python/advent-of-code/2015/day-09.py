@@ -1,6 +1,8 @@
 """
 Advent of Code 2015 - Day 09
 https://adventofcode.com/2015/day/9
+
+Day 9: All in a Single Night
 """
 from os.path import join as path_join
 from functools import cached_property
