@@ -9,11 +9,16 @@ $ python -m cProfile -s cumtime 2015/day-00.py
 """
 from os.path import dirname, join as path_join
 import time
+import string
 
 
 # Common Paths
 ROOT_DIR = dirname(__file__)
 INPUT_DIR = path_join(ROOT_DIR, 'inputs')
+
+
+# Constants
+ALPHA_LOWER = string.ascii_lowercase
 
 
 # Periodic logger
