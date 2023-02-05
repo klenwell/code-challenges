@@ -106,12 +106,17 @@ class DailyPuzzle:
     #
     @property
     def first(self):
-        input = self.file_input
-        return input
+        input = 'cqjxjnds'
+        santa_pass = SantaPassword()
+        new_password = santa_pass.update(input)
+        return new_password
 
     @property
     def second(self):
-        pass
+        input = 'cqjxxyzz'
+        santa_pass = SantaPassword()
+        new_password = santa_pass.update(input)
+        return new_password
 
     #
     # Tests
