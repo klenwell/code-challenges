@@ -10,6 +10,7 @@ $ python -m cProfile -s cumtime 2015/day-00.py
 from os.path import dirname, join as path_join
 import time
 import string
+import re
 
 
 # Common Paths
@@ -36,3 +37,10 @@ def info(msg, freq):
     if info.counter % freq == 0:
         info.last_ts = ts
         print(f"[info:{info.counter}] ({info.split_time:.3f}) {msg}")
+
+
+# Extract Numbers
+def extract_numbers(str_value, num_type=float):
+    # https://stackoverflow.com/a/63619831/1093087
+    rp = r'-?\d+\.?\d*'
+    return [num_type(s) for s in re.findall(rp, str_value)]

@@ -7,7 +7,7 @@ from functools import cached_property
 from common import INPUT_DIR
 
 
-class DailyPuzzle:
+class AdventPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-00.txt')
 
     TEST_INPUT = """\
@@ -58,5 +58,5 @@ class DailyPuzzle:
 #
 # Main
 #
-problem = DailyPuzzle()
-problem.solve()
+puzzle = AdventPuzzle()
+puzzle.solve()

@@ -6,7 +6,21 @@ Day 12: JSAbacusFramework.io
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR
+from common import INPUT_DIR, extract_numbers
+
+
+class ElfAcctFile:
+    def __init__(self, input):
+        self.input = input.strip()
+
+    @cached_property
+    def sum(self):
+        return sum(self.numbers)
+
+    @cached_property
+    def numbers(self):
+        return extract_numbers(self.input, num_type=int)
+
 
 
 class DailyPuzzle:
@@ -38,8 +52,22 @@ class DailyPuzzle:
     #
     @property
     def test1(self):
-        input = self.TEST_INPUT
-        print(input)
+        test_cases = [
+            # input, sum
+            ('[1,2,3]', 6),
+            ('{"a":2,"b":4}', 6),
+            ('[[[3]]]', 3),
+            ('{"a":{"b":4},"c":-1}', 3),
+            ('{"a":[-1,1]}', 0),
+            ('[-1,{"a":1}]', 0),
+            ('[]', 0),
+            ('{}', 0),
+        ]
+
+        for input, expected in test_cases:
+            acct_file = ElfAcctFile(input)
+            assert acct_file.sum == expected, (input, acct_file.sum, expected)
+
         return 'passed'
 
     @property
