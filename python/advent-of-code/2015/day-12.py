@@ -6,7 +6,8 @@ Day 12: JSAbacusFramework.io
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR, extract_numbers
+from common import INPUT_DIR, extract_numbers, info
+import json
 
 
 class ElfAcctFile:
@@ -46,7 +47,53 @@ class DailyPuzzle:
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        object = json.loads(input)
+
+        numbers = []
+        discards = []
+        reds = []
+        queue = [object]
+
+        while queue:
+            entry = queue.pop(0)
+
+            if type(entry) == dict:
+                obj_children = {
+                    'numbers': [],
+                    'objects': [],
+                    'keep': True
+                }
+
+                for key, child in entry.items():
+                    if type(child) == str and child == 'red':
+                        obj_children['keep'] = False
+                        discards.append(entry.values())
+                        break
+                    elif type(child) in (list, dict):
+                        obj_children['objects'].append(child)
+                    elif type(child) == int:
+                        obj_children['numbers'].append(child)
+                    else:
+                        discards.append(child)
+
+                if obj_children['keep']:
+                    queue += obj_children['objects']
+                    numbers += obj_children['numbers']
+
+
+            elif type(entry) == list:
+                for child in entry:
+                    if type(child) in (list, dict):
+                        queue.append(child)
+                    elif type(child) == int:
+                        numbers.append(child)
+                    else:
+                        discards.append(child)
+
+            info(f"{len(queue)} {len(numbers)} {len(discards)}", 40)
+
+        return sum(numbers)
 
     #
     # Tests
