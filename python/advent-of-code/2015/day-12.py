@@ -41,7 +41,8 @@ class DailyPuzzle:
     @property
     def first(self):
         input = self.file_input
-        return input
+        acct_file = ElfAcctFile(input)
+        return acct_file.sum
 
     @property
     def second(self):
