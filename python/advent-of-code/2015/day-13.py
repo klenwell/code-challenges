@@ -94,7 +94,12 @@ David would gain 41 happiness units by sitting next to Carol."""
 
     @property
     def second(self):
-        pass
+        my_affinity = "I would lose 0 happiness units by sitting next to George."
+        input = f"{self.file_input}\n{my_affinity}"
+        table = HolidayTable(input)
+        assert 'I' in table.guests, table.guests
+        happiness, _ = table.optimal_seating_arrangement
+        return happiness
 
     #
     # Tests
