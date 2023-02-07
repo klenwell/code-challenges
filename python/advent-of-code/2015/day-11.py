@@ -37,7 +37,6 @@ class SantaPassword:
 
         return ''.join(reversed(new_digits))
 
-
     def is_valid(self, password):
         if not self.includes_three_letter_sequence(password):
             return False
@@ -144,7 +143,7 @@ class DailyPuzzle:
             ('abcdefgh', 'abcdffaa'),
 
             # Note: this will take minute to pass with current naive approach
-            #('ghijklmn', 'ghjaabcc')
+            # ('ghijklmn', 'ghjaabcc')
         ]
         for password, expected in test_cases:
             santa_pass = SantaPassword()

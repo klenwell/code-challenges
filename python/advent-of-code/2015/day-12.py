@@ -19,9 +19,95 @@ class ElfAcctFile:
         return sum(self.numbers)
 
     @cached_property
+    def redless_sum(self):
+        return sum(self.numbers_sans_red)
+
+    @cached_property
     def numbers(self):
         return extract_numbers(self.input, num_type=int)
 
+    @cached_property
+    def numbers_sans_red(self):
+        numbers = []
+        discards = []
+        queue = [ElfAcctEntry(json.loads(self.input))]
+
+        while queue:
+            entry = queue.pop(0)
+            queue += entry.children
+            numbers += entry.numbers
+            discards += entry.discards
+            info(f"{len(queue)} {len(numbers)} {len(discards)}", 40)
+
+        return numbers
+
+
+class ElfAcctEntry:
+    def __init__(self, json_obj):
+        self.type = type(json_obj)
+        self.json_obj = json_obj
+
+    @cached_property
+    def sum(self):
+        summed = sum(self.numbers)
+        for child in self.children:
+            summed += child.sum
+        return summed
+
+    @cached_property
+    def values(self):
+        if self.type == list:
+            return self.json_obj
+        elif self.type == dict:
+            return self.json_obj.values()
+        else:
+            raise TypeError(f"Invalid Type: {self.type}")
+
+    @cached_property
+    def is_red(self):
+        if self.type != dict:
+            return False
+        for value in self.values:
+            if type(value) == str and value == 'red':
+                return True
+        return False
+
+    @cached_property
+    def numbers(self):
+        numbers = []
+
+        if self.is_red:
+            return []
+
+        for value in self.values:
+            if type(value) == int:
+                numbers.append(value)
+        return numbers
+
+    @cached_property
+    def children(self):
+        children = []
+
+        if self.is_red:
+            return []
+
+        for value in self.values:
+            if type(value) in (list, dict):
+                entry = ElfAcctEntry(value)
+                children.append(entry)
+        return children
+
+    @cached_property
+    def discards(self):
+        if self.is_red:
+            return self.values
+
+        discards = []
+
+        for value in self.values:
+            if type(value) not in (list, dict, int):
+                discards.append(value)
+        return discards
 
 
 class DailyPuzzle:
@@ -48,52 +134,11 @@ class DailyPuzzle:
     @property
     def second(self):
         input = self.file_input
-        object = json.loads(input)
+        acct_file = ElfAcctFile(input)
+        entry = ElfAcctEntry(json.loads(input))
 
-        numbers = []
-        discards = []
-        reds = []
-        queue = [object]
-
-        while queue:
-            entry = queue.pop(0)
-
-            if type(entry) == dict:
-                obj_children = {
-                    'numbers': [],
-                    'objects': [],
-                    'keep': True
-                }
-
-                for key, child in entry.items():
-                    if type(child) == str and child == 'red':
-                        obj_children['keep'] = False
-                        discards.append(entry.values())
-                        break
-                    elif type(child) in (list, dict):
-                        obj_children['objects'].append(child)
-                    elif type(child) == int:
-                        obj_children['numbers'].append(child)
-                    else:
-                        discards.append(child)
-
-                if obj_children['keep']:
-                    queue += obj_children['objects']
-                    numbers += obj_children['numbers']
-
-
-            elif type(entry) == list:
-                for child in entry:
-                    if type(child) in (list, dict):
-                        queue.append(child)
-                    elif type(child) == int:
-                        numbers.append(child)
-                    else:
-                        discards.append(child)
-
-            info(f"{len(queue)} {len(numbers)} {len(discards)}", 40)
-
-        return sum(numbers)
+        assert acct_file.redless_sum == entry.sum, (acct_file.redless_sum, entry.sum)
+        return entry.sum
 
     #
     # Tests
@@ -120,8 +165,9 @@ class DailyPuzzle:
 
     @property
     def test2(self):
-        input = self.TEST_INPUT
-        print(input)
+        input = json.loads('{"d":"red","e":[1,2,3,4],"f":5}')
+        entry = ElfAcctEntry(input)
+        assert entry.is_red, entry
         return 'passed'
 
     #
