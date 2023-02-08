@@ -106,7 +106,9 @@ Dancer can fly 16 km/s for 11 seconds, but then must rest for 162 seconds."""
     @property
     def first(self):
         input = self.file_input
-        return input
+        olympics = ReindeerOlympics(input)
+        (winner, distance) = olympics.timed_race(2503)
+        return distance
 
     @property
     def second(self):
