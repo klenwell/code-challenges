@@ -38,14 +38,14 @@ class HolidayTable:
             affinities[(guest, neighbor)] = score
         return affinities
 
-    @property
+    @cached_property
     def optimal_seating_arrangement(self):
         scores = []
         possible_arrangements = list(permutations(self.guests))
         for n, arrangement in enumerate(possible_arrangements):
             score = self.score_arrangement(arrangement)
             scores.append((score, arrangement))
-            info(f"arrangement {n+1} of {len(possible_arrangements)}", 4000)
+            info(f"arrangement {n+1} of {len(possible_arrangements)}", 10000)
         return sorted(scores, reverse=True)[0]
 
     def score_arrangement(self, guests):
@@ -94,7 +94,7 @@ David would gain 41 happiness units by sitting next to Carol."""
 
     @property
     def second(self):
-        my_affinity = "I would lose 0 happiness units by sitting next to George."
+        my_affinity = "I would gain 0 happiness units by sitting next to George."
         input = f"{self.file_input}\n{my_affinity}"
         table = HolidayTable(input)
         assert 'I' in table.guests, table.guests
@@ -114,8 +114,6 @@ David would gain 41 happiness units by sitting next to Carol."""
 
     @property
     def test2(self):
-        input = self.TEST_INPUT
-        #print(input)
         return 'passed'
 
     #
