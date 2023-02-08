@@ -13,6 +13,7 @@ class ReindeerOlympics:
     def __init__(self, reports):
         self.reports = reports.strip()
         self.reindeers = self.scout_reindeers(self.reports)
+        self.racers = self.scout_racers(self.reports)
 
     def scout_reindeers(self, reports):
         reindeers = []
@@ -20,6 +21,13 @@ class ReindeerOlympics:
             reindeer = Reindeer(report)
             reindeers.append(reindeer)
         return reindeers
+
+    def scout_racers(self, reports):
+        racers = []
+        for report in reports.split('\n'):
+            racer = RacingReindeer(report)
+            racers.append(racer)
+        return racers
 
     def timed_race(self, seconds):
         racers = []
@@ -30,6 +38,30 @@ class ReindeerOlympics:
         info(ordered)
         winner, kms = ordered[0]
         return (winner.name, kms)
+
+    def scored_race(self, seconds):
+        scores = {}
+        for racer in self.racers:
+            scores[racer] = 0
+
+        for n in range(seconds):
+            for racer in self.racers:
+                racer.fly_for_second()
+
+            ordered = sorted(self.racers, key=lambda r: r.kms, reverse=True)
+            lead_km = ordered[0].kms
+
+            scorers = [r for r in self.racers if r.kms == lead_km]
+
+            for scorer in scorers:
+                scores[scorer] += 1
+
+            info(ordered, 250)
+
+        ordered = sorted(scores.items(), key=lambda t: t[1], reverse=True)
+        info(ordered)
+        winner, score = ordered[0]
+        return (winner, score)
 
 
 class Reindeer:
@@ -87,6 +119,26 @@ class Reindeer:
         return f"<{name} rate={rate} km/s for {dur}s rest={rest}s"
 
 
+class RacingReindeer(Reindeer):
+    def __init__(self, report):
+        super().__init__(report)
+        self.seconds = 0
+        self.kms = 0
+
+    @property
+    def flying(self):
+        cycle = self.duration + self.rest_period
+        cycle_s = self.seconds % cycle
+        fly_range = (1, self.duration+1)
+        return cycle_s in range(*fly_range)
+
+    def fly_for_second(self):
+        self.seconds += 1
+        if self.flying:
+            self.kms += self.rate
+        return self
+
+
 class AdventPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-14.txt')
 
@@ -138,7 +190,12 @@ Dancer can fly 16 km/s for 11 seconds, but then must rest for 162 seconds."""
     @property
     def test2(self):
         input = self.TEST_INPUT
-        print(input)
+        olympics = ReindeerOlympics(input)
+        (winner, score) = olympics.scored_race(1000)
+
+        assert winner.name == 'Dancer', winner
+        assert score == 689, score
+
         return 'passed'
 
     #
