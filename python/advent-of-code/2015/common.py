@@ -23,7 +23,7 @@ ALPHA_LOWER = string.ascii_lowercase
 
 
 # Periodic logger
-def info(msg, freq):
+def info(msg, freq=1):
     # https://stackoverflow.com/q/279561/1093087
     try:
         ts = time.time()
