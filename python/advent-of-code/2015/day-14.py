@@ -50,13 +50,12 @@ class ReindeerOlympics:
 
             ordered = sorted(self.racers, key=lambda r: r.kms, reverse=True)
             lead_km = ordered[0].kms
-
             scorers = [r for r in self.racers if r.kms == lead_km]
 
             for scorer in scorers:
                 scores[scorer] += 1
 
-            info(ordered, 250)
+            info(f"{ordered[:3]} {list(scores.items())[:3]}", 250)
 
         ordered = sorted(scores.items(), key=lambda t: t[1], reverse=True)
         info(ordered)
@@ -187,7 +186,6 @@ Dancer can fly 16 km/s for 11 seconds, but then must rest for 162 seconds."""
         (winner, distance) = olympics.timed_race(1000)
         assert winner == 'Comet', winner
         assert distance == 1120, distance
-
         return 'passed'
 
     @property
@@ -198,7 +196,6 @@ Dancer can fly 16 km/s for 11 seconds, but then must rest for 162 seconds."""
 
         assert winner.name == 'Dancer', winner
         assert score == 689, score
-
         return 'passed'
 
     #
