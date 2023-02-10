@@ -60,7 +60,21 @@ class SantaCookieAI:
             mix_score = self.score_mix(mix_ratio)
             if mix_score > top_score_mix[0]:
                 top_score_mix = (mix_score, mix_ratio)
-            info(top_score_mix, 50000)
+            info(top_score_mix, 20000)
+
+        return top_score_mix
+
+    def optimize_ingredients_for_calories(self, calories):
+        top_score_mix = (0, None)
+
+        for mix_ratio in self.ingredient_mixes:
+            if self.compute_mix_calories(mix_ratio) != calories:
+                continue
+
+            mix_score = self.score_mix(mix_ratio)
+            if mix_score > top_score_mix[0]:
+                top_score_mix = (mix_score, mix_ratio)
+            info(top_score_mix, 100)
 
         return top_score_mix
 
@@ -85,12 +99,21 @@ class SantaCookieAI:
 
         return score
 
+    def compute_mix_calories(self, mix_ratio):
+        calories = 0
+        for n, tsps in enumerate(mix_ratio):
+            ingredient = self.ingredients[n]
+            ingredient_calories = ingredient.calories * tsps
+            calories += ingredient_calories
+        return calories
+
 
 class MagicIngredient:
     def __init__(self, property_csv):
         self.property_csv = property_csv
         self.properties = self.parse_properties(property_csv)
         self.name = self.properties['name']
+        self.calories = self.properties['calories']
 
     def parse_properties(self, property_csv):
         properties = {}
@@ -134,7 +157,11 @@ Cinnamon: capacity 2, durability 3, flavor -2, texture -1, calories 3"""
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        cookie_ai = SantaCookieAI(input)
+        score, mix = cookie_ai.optimize_ingredients_for_calories(500)
+        print(score, mix)
+        return score
 
     #
     # Tests
@@ -142,23 +169,35 @@ Cinnamon: capacity 2, durability 3, flavor -2, texture -1, calories 3"""
     @property
     def test1(self):
         input = self.TEST_INPUT
+        mix_ratio = [44, 56]
+
         cookie_ai = SantaCookieAI(input)
         assert cookie_ai.ingredients[0].name == 'Butterscotch', cookie_ai.ingredients[0]
         assert cookie_ai.ingredients[1].name == 'Cinnamon', cookie_ai.ingredients[1]
         assert len(cookie_ai.ingredient_mixes) == 100, len(cookie_ai.ingredient_mixes)
 
-        score = cookie_ai.score_mix((44, 56))
+        score = cookie_ai.score_mix(mix_ratio)
         assert score == 62842880, score
 
-        score, mix = cookie_ai.optimize_ingredients()
-        assert score == 62842880, (score, mix)
+        top_score, top_mix_ratio = cookie_ai.optimize_ingredients()
+        assert top_mix_ratio == mix_ratio, top_mix_ratio
+        assert top_score == 62842880, top_score
 
         return 'passed'
 
     @property
     def test2(self):
         input = self.TEST_INPUT
-        print(input)
+        mix_ratio = [40, 60]
+
+        cookie_ai = SantaCookieAI(input)
+        mix_calories = cookie_ai.compute_mix_calories(mix_ratio)
+        score = cookie_ai.score_mix(mix_ratio)
+
+        top_score, top_mix_ratio = cookie_ai.optimize_ingredients_for_calories(500)
+        assert top_mix_ratio == mix_ratio, top_mix_ratio
+        assert top_score == 57600000, top_score
+
         return 'passed'
 
     #
