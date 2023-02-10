@@ -90,12 +90,10 @@ class SantaCookieAI:
                 prop_score = tsps * value
                 prop_scores[property].append(prop_score)
 
-        #print(self.ingredients, mix_ratio)
         for prop, scores in prop_scores.items():
             prop_score = sum(scores)
             prop_score = max(prop_score, 0)
             score = score * prop_score
-            #print(prop, scores, prop_score)
 
         return score
 
@@ -192,7 +190,10 @@ Cinnamon: capacity 2, durability 3, flavor -2, texture -1, calories 3"""
 
         cookie_ai = SantaCookieAI(input)
         mix_calories = cookie_ai.compute_mix_calories(mix_ratio)
+        assert mix_calories == 500, mix_calories
+
         score = cookie_ai.score_mix(mix_ratio)
+        assert score == 57600000, score
 
         top_score, top_mix_ratio = cookie_ai.optimize_ingredients_for_calories(500)
         assert top_mix_ratio == mix_ratio, top_mix_ratio
