@@ -10,15 +10,18 @@ from common import INPUT_DIR, info
 # Source: https://stackoverflow.com/a/71754403/1093087
 def subset_sum(array, num):
     result = []
+
     def find(arr, num, path=()):
-        info((arr, num, path), 100000)
+        info((arr, num, path), 20000)
         if not arr:
             return
         if arr[0] == num:
             result.append(path + (arr[0],))
         else:
-            find(arr[1:], num - arr[0], path + (arr[0],))
+            if num - arr[0] > 0:
+                find(arr[1:], num - arr[0], path + (arr[0],))
         find(arr[1:], num, path)
+
     find(array, num)
     return result
 
@@ -98,7 +101,7 @@ class AdventPuzzle:
 
         organizer = FridgeOrganizer(input)
         num_combos = organizer.count_combos(target)
-        assert num_combos == 4, combos
+        assert num_combos == 4, num_combos
 
         return 'passed'
 
