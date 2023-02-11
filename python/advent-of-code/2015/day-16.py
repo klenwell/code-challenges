@@ -5,7 +5,6 @@ https://adventofcode.com/2015/day/16
 from os.path import join as path_join
 from functools import cached_property
 from common import INPUT_DIR
-import json
 
 
 class AuntDetector:
@@ -46,6 +45,46 @@ class AuntDetector:
             breakpoint()
         else:
             return matches[0].number
+
+
+class UpgradedAuntDetector(AuntDetector):
+    def detect_sue(self):
+        matches = []
+
+        for aunt in self.aunts:
+            if self.aunt_matches_compounds(aunt):
+                matches.append(aunt)
+
+        if len(matches) != 1:
+            print(len(matches))
+            breakpoint()
+        else:
+            return matches[0].number
+
+    def aunt_matches_compounds(self, aunt):
+        decaying_attrs = ('cats', 'trees')
+        modial_attrs = ('pomeranians', 'goldfish')
+
+        for key, val in aunt.attrs.items():
+            # I really wanted to combine nested "if/elif" statements with an "and" but that
+            # does not work!
+            if key in decaying_attrs:
+                if not self.matches_decaying_attr(key, val):
+                    return False
+            elif key in modial_attrs:
+                if not self.matches_modial_attr(key, val):
+                    return False
+            elif val != self.compounds[key]:
+                return False
+        return True
+
+    def matches_decaying_attr(self, attr, val):
+        # readings indicates that there are greater than that many
+        return val > self.compounds[attr]
+
+    def matches_modial_attr(self, attr, val):
+        # readings indicate that there are fewer than that many
+        return val < self.compounds[attr]
 
 
 class Aunt:
@@ -106,7 +145,12 @@ perfumes: 1"""
 
     @property
     def second(self):
-        pass
+        ticker_tape = self.TEST_INPUT
+        aunt_list = self.file_input
+        detector = UpgradedAuntDetector(aunt_list, ticker_tape)
+
+        number = detector.detect_sue()
+        return number
 
     #
     # Tests
@@ -128,8 +172,16 @@ perfumes: 1"""
 
     @property
     def test2(self):
-        input = self.TEST_INPUT
-        print(input)
+        ticker_tape = self.TEST_INPUT
+        aunt_list = self.file_input
+        detector = UpgradedAuntDetector(aunt_list, ticker_tape)
+
+        aunt_241 = detector.aunts[240]
+        assert aunt_241.number == 241, aunt_241
+        assert detector.matches_modial_attr('pomeranians', aunt_241.attrs['pomeranians']), \
+            (aunt_241.attrs['pomeranians'], detector.compounds['pomeranians'])
+        assert detector.aunt_matches_compounds(aunt_241), (aunt_241, detector.compounds)
+
         return 'passed'
 
     #
