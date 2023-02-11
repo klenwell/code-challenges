@@ -40,7 +40,7 @@ def info(msg, freq=1):
 
 
 # Extract Numbers
-def extract_numbers(str_value, num_type=float):
+def extract_numbers(str_value, num_type=int):
     # https://stackoverflow.com/a/63619831/1093087
     rp = r'-?\d+\.?\d*'
     return [num_type(s) for s in re.findall(rp, str_value)]
