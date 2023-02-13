@@ -68,7 +68,7 @@ class Grid:
 
         return pts
 
-    def four_neighbors(self, pt):
+    def cardinal_neighbors(self, pt):
         # N, S, E, W
         pts = []
         deltas = [(-1, 0), (1, 0), (1, 0), (-1, 0)]
@@ -93,6 +93,7 @@ class AnimatedLightGrid(Grid):
 
     def animate(self, steps):
         for n in range(steps):
+            info(f"step {n}", 10)
             self.animate_step()
         return len(self.lit_lights)
 
@@ -109,7 +110,6 @@ class AnimatedLightGrid(Grid):
         neighbors_on = 0
 
         for npt in self.neighbors(pt):
-            info((pt, is_on), 10000)
             if self.grid[npt] == '#':
                 neighbors_on += 1
 
@@ -149,7 +149,10 @@ class AdventPuzzle:
     @property
     def first(self):
         input = self.file_input
-        return input
+        steps = 100
+        grid = AnimatedLightGrid(input)
+        lit_lights = grid.animate(steps)
+        return lit_lights
 
     @property
     def second(self):
