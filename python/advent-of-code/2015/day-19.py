@@ -9,11 +9,59 @@ from functools import cached_property
 from common import INPUT_DIR
 
 
+class NorthPoleReactor:
+    def __init__(self, input):
+        self.input = input.strip()
+
+    @cached_property
+    def transforms(self):
+        transforms = []
+        lines, _ = self.input.split('\n\n')
+        for line in lines.split('\n'):
+            find, replace = line.split(' => ')
+            transform = (find, replace)
+            transforms.append(transform)
+        return transforms
+
+    @cached_property
+    def molecule(self):
+        _, molecule = self.input.split('\n\n')
+        return molecule.strip()
+
+    def calibrate(self):
+        distinct_molecules = set()
+        for transform in self.transforms:
+            new_molecules = self.transform_molecule(transform)
+            distinct_molecules = distinct_molecules.union(new_molecules)
+        return distinct_molecules
+
+    def transform_molecule(self, transform):
+        print(transform, self.molecule)
+        new_molecules = set()
+        n = 0
+        find, replace = transform
+        find_len = len(find)
+        for n in range(0, len(self.molecule)):
+            seg_end = n+find_len
+            segment = self.molecule[n:seg_end]
+            print(segment, find)
+            if segment == find:
+                new_molecule = self.molecule[0:n] + replace + self.molecule[seg_end:]
+                new_molecules.add(new_molecule)
+        return new_molecules
+
+
+
+
 class AdventPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-19.txt')
 
     TEST_INPUT = """\
-"""
+H => HO
+H => OH
+O => HH
+
+HOH"""
 
     def solve(self):
         print(f"test 1 solution: {self.test1}")
@@ -27,7 +75,9 @@ class AdventPuzzle:
     @property
     def first(self):
         input = self.file_input
-        return input
+        reactor = NorthPoleReactor(input)
+        distinct_molecules = reactor.calibrate()
+        return len(distinct_molecules)
 
     @property
     def second(self):
@@ -39,7 +89,13 @@ class AdventPuzzle:
     @property
     def test1(self):
         input = self.TEST_INPUT
-        print(input)
+        reactor = NorthPoleReactor(input)
+        assert reactor.transforms[0] == ('H', 'HO'), reactor.transforms
+        assert reactor.molecule == 'HOH', reactor.molecule
+
+        distinct_molecules = reactor.calibrate()
+        assert len(distinct_molecules) == 4, distinct_molecules
+
         return 'passed'
 
     @property
