@@ -8,6 +8,7 @@ To profile:
 $ python -m cProfile -s cumtime 2015/day-00.py
 """
 from os.path import dirname, join as path_join
+from functools import cached_property
 import time
 import string
 import re
@@ -44,3 +45,80 @@ def extract_numbers(str_value, num_type=int):
     # https://stackoverflow.com/a/63619831/1093087
     rp = r'-?\d+\.?\d*'
     return [num_type(s) for s in re.findall(rp, str_value)]
+
+
+# Grid
+class Grid:
+    def __init__(self, input):
+        self.input = input.strip()
+        self.grid = self.init_grid()
+
+    @cached_property
+    def rows(self):
+        rows = []
+        for line in self.input.split('\n'):
+            row = list(line)
+            rows.append(row)
+        return rows
+
+    @cached_property
+    def pts(self):
+        return list(self.grid.keys())
+
+    @cached_property
+    def min_x(self):
+        return 0
+
+    @cached_property
+    def max_x(self):
+        return len(self.rows[0]) - 1
+
+    @cached_property
+    def min_y(self):
+        return 0
+
+    @cached_property
+    def max_y(self):
+        return len(self.rows) - 1
+
+    def init_grid(self):
+        grid = {}
+        for y, row in enumerate(self.rows):
+            for x, val in enumerate(row):
+                pt = (x, y)
+                grid[pt] = val
+        return grid
+
+    def neighbors(self, pt):
+        pts = []
+        deltas = [  # Clockwise from NW to W
+            (-1, -1), (0, -1), (1, -1), (1, 0),
+            (1, 1), (0, 1), (-1, 1), (-1, 0)
+        ]
+        x, y = pt
+
+        for dx, dy in deltas:
+            nx = x + dx
+            ny = y + dy
+
+            if (self.min_x <= nx <= self.max_x) and (self.min_y <= ny <= self.max_y):
+                npt = (nx, ny)
+                pts.append(npt)
+
+        return pts
+
+    def cardinal_neighbors(self, pt):
+        # N, S, E, W
+        pts = []
+        deltas = [(-1, 0), (1, 0), (1, 0), (-1, 0)]
+        x, y = pt
+
+        for dx, dy in deltas:
+            nx = x + dx
+            ny = y + dy
+
+            if (self.min_x <= nx <= self.max_x) and (self.min_y <= ny <= self.max_y):
+                npt = (nx, ny)
+                pts.append(npt)
+
+        return pts

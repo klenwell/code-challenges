@@ -6,84 +6,7 @@ Day 18: Like a GIF For Your Yard
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR, info
-
-
-class Grid:
-    def __init__(self, input):
-        self.input = input.strip()
-        self.grid = self.init_grid()
-
-    @cached_property
-    def rows(self):
-        rows = []
-        for line in self.input.split('\n'):
-            row = list(line)
-            rows.append(row)
-        return rows
-
-    @cached_property
-    def pts(self):
-        return list(self.grid.keys())
-
-    @cached_property
-    def min_x(self):
-        return 0
-
-    @cached_property
-    def max_x(self):
-        return len(self.rows[0]) - 1
-
-    @cached_property
-    def min_y(self):
-        return 0
-
-    @cached_property
-    def max_y(self):
-        return len(self.rows) - 1
-
-    def init_grid(self):
-        grid = {}
-        for y, row in enumerate(self.rows):
-            for x, val in enumerate(row):
-                pt = (x, y)
-                grid[pt] = val
-        return grid
-
-    def neighbors(self, pt):
-        pts = []
-        deltas = [  # Clockwise from NW to W
-            (-1, -1), (0, -1), (1, -1), (1, 0),
-            (1, 1), (0, 1), (-1, 1), (-1, 0)
-        ]
-        x, y = pt
-
-        for dx, dy in deltas:
-            nx = x + dx
-            ny = y + dy
-
-            if (self.min_x <= nx <= self.max_x) and (self.min_y <= ny <= self.max_y):
-                npt = (nx, ny)
-                pts.append(npt)
-
-        return pts
-
-    def cardinal_neighbors(self, pt):
-        # N, S, E, W
-        pts = []
-        deltas = [(-1, 0), (1, 0), (1, 0), (-1, 0)]
-        x, y = pt
-
-        for dx, dy in deltas:
-            nx = x + dx
-            ny = y + dy
-
-            if (self.min_x <= nx <= self.max_x) and (self.min_y <= ny <= self.max_y):
-                npt = (nx, ny)
-                pts.append(npt)
-
-        return pts
-
+from common import INPUT_DIR, Grid, info
 
 
 class AnimatedLightGrid(Grid):
@@ -94,7 +17,18 @@ class AnimatedLightGrid(Grid):
     def animate(self, steps):
         for n in range(steps):
             info(f"step {n}", 10)
-            self.animate_step()
+            grid = self.animate_step()
+            self.grid = grid
+        return len(self.lit_lights)
+
+    def faulty_animate(self, steps):
+        # four lights, one in each corner, are stuck on and can't be turned off
+        for n in range(steps):
+            info(f"step {n}", 10)
+            self.grid = self.light_corners(self.grid)
+            grid = self.animate_step()
+            self.grid = grid
+        self.grid = self.light_corners(self.grid)
         return len(self.lit_lights)
 
     def animate_step(self):
@@ -102,7 +36,18 @@ class AnimatedLightGrid(Grid):
         for pt in self.pts:
             value = self.animate_pt(pt)
             next_grid[pt] = value
-        self.grid = next_grid
+        return next_grid
+
+    def light_corners(self, grid):
+        corner = {
+            'nw': (self.min_x, self.min_y),
+            'ne': (self.max_x, self.min_y),
+            'se': (self.max_x, self.max_y),
+            'sw': (self.min_x, self.max_y)
+        }
+        for pt in corner.values():
+            grid[pt] = '#'
+        return grid
 
     def animate_pt(self, pt):
         before = self.grid[pt]
@@ -115,7 +60,7 @@ class AnimatedLightGrid(Grid):
 
         # A light which is on stays on when 2 or 3 neighbors are on, and turns off otherwise.
         if is_on:
-            stays_on = neighbors_on in (2,3)
+            stays_on = neighbors_on in (2, 3)
             after = '#' if stays_on else '.'
 
         # A light which is off turns on if exactly 3 neighbors are on, and stays off otherwise.
@@ -156,7 +101,11 @@ class AdventPuzzle:
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        steps = 100
+        grid = AnimatedLightGrid(input)
+        lit_lights = grid.faulty_animate(steps)
+        return lit_lights
 
     #
     # Tests
@@ -181,7 +130,12 @@ class AdventPuzzle:
     @property
     def test2(self):
         input = self.TEST_INPUT
-        print(input)
+        steps = 5
+
+        grid = AnimatedLightGrid(input)
+        lit_lights = grid.faulty_animate(steps)
+
+        assert lit_lights == 17, lit_lights
         return 'passed'
 
     #
