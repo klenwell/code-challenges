@@ -38,6 +38,7 @@ def info(msg, freq=1):
     if info.counter % freq == 0:
         info.last_ts = ts
         print(f"[info:{info.counter}] ({info.split_time:.3f}) {msg}")
+    return info
 
 
 # Extract Numbers
