@@ -8,6 +8,7 @@ from os.path import join as path_join
 from functools import cached_property
 from queue import PriorityQueue
 from functools import total_ordering
+import random
 from common import INPUT_DIR, info
 
 
@@ -27,17 +28,6 @@ class NorthPoleReactor:
         return mutations
 
     @cached_property
-    def mutation_map(self):
-        map = {}
-        for mutation in self.mutations:
-            find, replace = mutation
-            if find in map:
-                map[find].append(replace)
-            else:
-                map[find] = [replace]
-        return map
-
-    @cached_property
     def molecule(self):
         _, code = self.input.split('\n\n')
         return Molecule(code)
@@ -54,35 +44,33 @@ class NorthPoleReactor:
             distinct_mutants = distinct_mutants.union(mutant_codes)
         return distinct_mutants
 
-    def mutate_molecule(self, mutation, molecule):
-        mutants = set()
-        n = 0
-        find, replace = transform
-        find_len = len(find)
-        for n in range(len(molecule)-find_len+1):
-            seg_end = n+find_len
-            segment = molecule[n:seg_end]
-            info(f"{find} {segment}", 1000000)
-            if segment == find:
-                mutants = molecule[0:n] + replace + molecule[seg_end:]
-                mutants.add(new_molecule)
-        return new_molecules
+    def molecule_to_e(self):
+        mutations = self.mutations.copy()
+
+        while True:
+            try:
+                random.shuffle(mutations)
+                molecule = Molecule(self.molecule.code)
+                return molecule.to_e(mutations)
+            except ValueError as e:
+                # Rotate until we get the right one
+                print(mutations[0], e)
+                rotated_mutation = mutations.pop(0)
+                mutations.append(rotated_mutation)
 
     def mutate(self, rna, molecule):
         mutants = []
         start_at = rna.deviates_at(molecule)
-        #print(start_at, rna.code, molecule)
         mutations = self.mutate_at(rna.code, start_at)
         for mutation in mutations:
             mutant = rna.clone()
             mutant.mutate(mutation)
             mutants.append(mutant)
-            #print(mutant)
         return mutants
 
     def mutate_at(self, code, index):
         distinct_mutants = set()
-        for transform in self.transforms:
+        for transform in self.mutations:
             mutants = self.transform_rna_at(transform, code, index)
             distinct_mutants = distinct_mutants.union(mutants)
         return distinct_mutants
@@ -110,65 +98,8 @@ class NorthPoleReactor:
             self.rna_registry[rna.head] = [rna.tail]
 
     def rna_is_registered(self, rna):
-        #print(rna)
         tails = self.rna_registry.get(rna.head, [])
         return rna.tail in tails
-
-    def molecule_to_e(self):
-        n = 0
-        import random
-
-        mutations = self.mutations.copy()
-
-        while True:
-            try:
-                random.shuffle(mutations)
-                molecule = Molecule(self.molecule.code)
-                return molecule.to_e(mutations)
-            except ValueError as e:
-                # Rotate until we get the right one
-                print(mutations[0], e)
-                rotated_mutation = mutations.pop(0)
-                mutations.append(rotated_mutation)
-
-    def desynthesize_molecule(self, molecule):
-        completed = []
-        synthesized = set()
-        discards = 0
-        queue = PriorityQueue()
-        quickest = None
-
-        queue.put(molecule)
-        #print('start', molecule)
-
-        while not completed:
-            molecule = queue.get()
-            info((queue.qsize(), discards, len(synthesized), len(completed), molecule, quickest), 10000)
-
-            if quickest and quickest.steps <= molecule.steps:
-                discards += 1
-                antecedents = []
-            else:
-                antecedents = molecule.reduce(self)
-
-            for antecedent in antecedents:
-                if antecedent.code == 'e':
-                    completed.append(antecedent)
-                    if not quickest or antecedent.steps < quickest.steps:
-                        quickest = antecedent
-                        #breakpoint()
-                elif 'e' in antecedent.code:
-                    discards += 1
-                elif antecedent.code in synthesized:
-                    discards += 1
-                elif quickest and quickest.steps <= antecedent.steps:
-                    discards += 1
-                else:
-                    synthesized.add(antecedent.code)
-                    queue.put(antecedent)
-
-        info(f"quickest: {quickest.steps} ({queue.qsize()}, {len(completed)})")
-        return quickest.steps
 
     def synthesize_molecule(self, molecule):
         cloned = []
@@ -193,18 +124,10 @@ class NorthPoleReactor:
                     cloned.append(mutant)
                     if not quickest or mutant.steps < quickest.steps:
                         quickest = mutant
-                # elif quickest and quickest.steps < mutant.steps:
-                #     discards.append(mutant.code)
                 elif mutant.is_too_long():
                     discards += 1
                 elif len(mutant.tail) > len(self.longest_mutation):
                     discards += 1
-                # elif leader:
-                #     if len(mutant.head) >= len(leader.head):
-                #         leader = mutant
-                #         queue.append(mutant)
-                #     else:
-                #         discards.append(mutant)
                 else:
                     if not self.rna_is_registered(mutant):
                         self.register_rna(mutant)
@@ -216,10 +139,6 @@ class NorthPoleReactor:
         info(f"quickest: {quickest.steps} ({queue.qsize()}, {len(cloned)})")
         return quickest.steps
 
-    def mutant_is_dead_end(self, rna, molecule):
-        deviates_at = rna.deviates_at(molecule)
-        tail_deviation = len(rna.code) - deviates_at
-        return tail_deviation > len(self.longest_transform)
 
 @total_ordering
 class Molecule:
@@ -263,45 +182,10 @@ class Molecule:
                     self.evolve(code)
 
             after = self.code
-            #print(f"{before} => {after}")
             if len(before) == len(after):
                 raise ValueError(f"{self} stuck")
 
         return self.steps
-
-    def reduce(self, reactor):
-        reductions = []
-        uniq_codes = set()
-        mutations = sorted(reactor.mutations, key=lambda r: (len(r[1]) * -1, r[1]))
-
-        # Replace right most code
-        for reaction in mutations:
-            variant = Molecule(self.code)
-            reduced_codes = variant.reverse_reaction(reaction)
-            uniq_codes = uniq_codes.union(reduced_codes)
-
-        for code in uniq_codes:
-            molecule = self.clone()
-            molecule.evolve(code)
-            reductions.append(molecule)
-
-        info(f"reduce {self} {reductions}", 1000)
-        #print('reductions', reductions)
-        return reductions
-
-    def reverse_reaction(self, reaction):
-        reduced_codes = set()
-        n = 0
-        reactant, product = reaction
-        product_len = len(product)
-        for n in range(self.length-product_len+1):
-            seg_end = n+product_len
-            segment = self.code[n:seg_end]
-            if segment == product:
-                reduced_code = self.code[0:n] + reactant + self.code[seg_end:]
-                reduced_codes.add(reduced_code)
-                #print(reaction, segment, reactant, reduced_code)
-        return reduced_codes
 
     def mutate_code(self, mutation):
         mutant_codes = set()
@@ -444,95 +328,9 @@ class ReindeerNucleicAcid:
         return len(self.code) > len(self.target.code)
 
     def __repr__(self):
-        return f"<RNA progress={self.progress:.1f} priority={self.priority} steps={self.steps} {self.code}>"
-
-
-class FabricatedMolecule:
-    def __init__(self, code):
-        self.transforms = [code]
-
-    @property
-    def latest(self):
-        return self.transforms[-1]
-
-    @property
-    def length(self):
-        return len(self.transforms[-1])
-
-    @property
-    def steps(self):
-        return len(self.transforms) - 1
-
-    def react(self, reactor):
-        molecules = set()
-        new_codes = reactor.calibrate(self.latest)
-        for new_code in new_codes:
-            clone = self.clone()
-            clone.transform(new_code)
-            molecules.add(clone)
-        return molecules
-
-    def transform(self, new_code):
-        self.transforms.append(new_code)
-        return self
-
-    def clone(self):
-        clone = FabricatedMolecule(self.transforms[0])
-        clone.transforms = self.transforms.copy()
-        return clone
-
-    def matches(self, other):
-        return self.latest == other.latest
-
-    def transcribes(self, other):
-        if not self.heads(other):
-            return False
-
-        if self.tail_deviates(other):
-            return False
-
-        return True
-
-    def heads(self, other):
-        return self.head_size(other) > 0
-
-    def head_size(self, other):
-        """
-        Returns length of head matching "other" molecule head.
-
-        Where self = 'abc' and other = 'adef', size would be 1 for 'a'
-        Where self = 'abc' and other = 'abee', size would be 2 for 'ab'
-        Where self = 'bca' and other = 'abc', size would be 0
-        """
-        for n, chr in enumerate(self.latest):
-            if chr != other.latest[n]:
-                return n
-        return n + 1
-
-    def tail_deviates(self, other):
-        max_deviance = 10
-        start = self.length-1
-        end = -1
-        step = -1
-
-        deviants = 0
-        for n in range(start, end, step):
-            self_chr = self.latest[n]
-            other_chr = other.latest[n]
-            if self_chr != other_chr:
-                deviants += 1
-            if deviants > max_deviance:
-                return True
-        return False
-
-    def starts_for(self, other):
-        if other.latest.startswith(self.latest):
-            return self.length
-        else:
-            return 0
-
-    def __repr__(self):
-        return f"<Molecule steps={self.steps} {self.latest}>"
+        prog = self.progress
+        pri = self.priority
+        return f"<RNA progress={prog:.1f} priority={pri} steps={self.steps} {self.code}>"
 
 
 class AdventPuzzle:
@@ -565,7 +363,6 @@ HOH"""
     def second(self):
         input = self.file_input
         reactor = NorthPoleReactor(input)
-        #min_steps = reactor.desynthesize_molecule(reactor.molecule)
         min_steps = reactor.molecule_to_e()
         assert min_steps == 207, min_steps
         return min_steps
@@ -597,11 +394,9 @@ O => HH
 HOH
 """
         reactor = NorthPoleReactor(input)
-        #min_steps = reactor.desynthesize_molecule(reactor.molecule)
         min_steps = reactor.molecule_to_e()
         assert min_steps == 3, min_steps
         return 'passed'
-
 
     #
     # Properties
