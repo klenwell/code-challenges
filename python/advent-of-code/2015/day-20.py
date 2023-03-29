@@ -19,6 +19,11 @@ class ElfDispatcher:
         return sum(compute_factors(house_num)) * 10
 
 
+class UnionizedElfDispatcher(ElfDispatcher):
+    def count_gifts_for_house(self, house_num):
+        elves = compute_factors(house_num)
+        active_elves = [e for e in elves if house_num <= e * 50 ]
+        return sum(active_elves) * 11
 
 
 class AdventPuzzle:
@@ -38,12 +43,18 @@ class AdventPuzzle:
     #
     @property
     def first(self):
-        input = self.file_input
-        return input
+        input = 29000000
+        dispatcher = ElfDispatcher()
+        house_number = dispatcher.first_house_to_reach_gift_count(input)
+        return house_number
 
     @property
     def second(self):
-        pass
+        input = 29000000
+        dispatcher = UnionizedElfDispatcher()
+        house_number = dispatcher.first_house_to_reach_gift_count(input)
+        assert house_number < 718200, "718200 is too high"
+        return house_number
 
     #
     # Tests
@@ -73,10 +84,7 @@ class AdventPuzzle:
 
     @property
     def test2(self):
-        input = 29000000
-        dispatcher = ElfDispatcher()
-        house_number = dispatcher.first_house_to_reach_gift_count(input)
-        return house_number
+        pass
 
     #
     # Properties
