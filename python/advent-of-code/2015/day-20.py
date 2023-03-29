@@ -4,7 +4,21 @@ https://adventofcode.com/2015/day/20
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR
+from common import INPUT_DIR, compute_factors, info
+
+
+class ElfDispatcher:
+    def first_house_to_reach_gift_count(self, count):
+        for n in range(1, count):
+            gifts = self.count_gifts_for_house(n)
+            info((n, gifts), 100000)
+            if gifts >= count:
+                return n
+
+    def count_gifts_for_house(self, house_num):
+        return sum(compute_factors(house_num)) * 10
+
+
 
 
 class AdventPuzzle:
@@ -36,15 +50,33 @@ class AdventPuzzle:
     #
     @property
     def test1(self):
-        input = self.TEST_INPUT
-        print(input)
+        input = 150
+        dispatcher = ElfDispatcher()
+
+        # Test count_gifts_for_house
+        test_cases = [
+            # house_num, expected
+            (1, 10),
+            (4, 70),
+            (7, 80),
+            (9, 130)
+        ]
+        for house_num, expected in test_cases:
+            count = dispatcher.count_gifts_for_house(house_num)
+            assert count == expected, (house_num, count, expected)
+
+        # Test solution
+        house_number = dispatcher.first_house_to_reach_gift_count(input)
+
+        assert house_number == 8, house_number
         return 'passed'
 
     @property
     def test2(self):
-        input = self.TEST_INPUT
-        print(input)
-        return 'passed'
+        input = 29000000
+        dispatcher = ElfDispatcher()
+        house_number = dispatcher.first_house_to_reach_gift_count(input)
+        return house_number
 
     #
     # Properties

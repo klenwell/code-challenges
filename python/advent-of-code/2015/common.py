@@ -8,7 +8,7 @@ To profile:
 $ python -m cProfile -s cumtime 2015/day-00.py
 """
 from os.path import dirname, join as path_join
-from functools import cached_property
+from functools import cached_property, reduce
 import time
 import string
 import re
@@ -123,3 +123,9 @@ class Grid:
                 pts.append(npt)
 
         return pts
+
+
+# Compute Facts: 12 = 1,2,3,4,6,12
+# Source: https://stackoverflow.com/a/6800214/1093087
+def compute_factors(n):
+    return set(reduce(list.__add__, ([i, n//i] for i in range(1, int(n**0.5) + 1) if n % i == 0)))
