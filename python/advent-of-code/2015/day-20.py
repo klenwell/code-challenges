@@ -53,7 +53,7 @@ class AdventPuzzle:
         input = 29000000
         dispatcher = UnionizedElfDispatcher()
         house_number = dispatcher.first_house_to_reach_gift_count(input)
-        assert house_number < 718200, "718200 is too high"
+        assert house_number < 718200, f"{house_number} is too high"
         return house_number
 
     #
