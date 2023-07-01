@@ -292,7 +292,19 @@ class AdventPuzzle:
 
     @property
     def second(self):
-        pass
+        player_hp = 100
+        boss_hp = 104
+        boss_weapon = ShopGood('Staff 1000 8 1', 'staffs')
+        shop = Shop()
+
+        for kit in reversed(shop.kits):
+            player = Player(player_hp, None, None)
+            boss = Boss(boss_hp, boss_weapon, shop.no_armor)
+            player.outfit(kit)
+            player_wins = player.battles(boss)
+            if not player_wins:
+                print(player, player.kit)
+                return kit.cost
 
     #
     # Tests
