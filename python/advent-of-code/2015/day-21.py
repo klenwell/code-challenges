@@ -1,13 +1,10 @@
 """
 Advent of Code 2015 - Day 21
 https://adventofcode.com/2015/day/21
-
-Next Step: shop packages all possible kits
-kit = 1 weapon, 0 or 1 armor, 0 to 2 rings
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR
+from common import INPUT_DIR, info
 import itertools
 
 
@@ -59,74 +56,30 @@ class Character:
     def defense(self):
         return sum([item.armor for item in self.kit])
 
-    def battles(self, defender):
+    def battles(self, opponent):
         battle_over = False
         rounds = 0
 
-        print(f"{self} vs {defender}")
+        info(f"{self} vs {opponent}", 20)
 
         while not battle_over:
             rounds += 1
-            print(f"Round: {rounds}")
             try:
-                self.attacks(defender)
-                defender.attacks(self)
-                print(f"({rounds}) {self} {defender}")
-            except DeadCharacter as loser:
-                print(f"{loser} loses!")
+                self.attacks(opponent)
+                opponent.attacks(self)
+            except DeadCharacter:
                 battle_over = True
 
         is_winner = not self.is_dead()
         return is_winner
 
-    def attacks(self, defender):
+    def attacks(self, opponent):
         if self.is_dead():
             raise DeadCharacter(self)
-        damage = self.damage - defender.defense
+        damage = self.damage - opponent.defense
         damage = max(damage, 1)
-        defender.hp = defender.hp - damage
-        return defender
-
-    def shop_for_upgrade(self, shop):
-        # find cheapest upgrade
-        weapon_upgrade = self.upgrade_weapon(shop)
-        armor_upgrade = self.upgrade_armor(shop)
-        ring_upgrade = self.upgrade_ring(shop)
-        upgrades = [weapon_upgrade, armor_upgrade, ring_upgrade]
-        return sort(upgrades, key=lambda u: u.cost)[0]
-
-    def upgrade(self, upgrade):
-        if upgrade.dept == 'weapons':
-            self.weapon = upgrade.new
-        elif upgrade.dept == 'armor':
-            self.armor = upgrade.new
-        elif upgrade.dept == 'rings':
-            self.rings = upgrade.new
-
-        self.spent += upgrade.new.cost
-
-
-    def upgrade_weapon(self, shop):
-        weapons = sorted(shop.weapons, key=lambda w: w.cost)
-        for weapon in weapons:
-            if weapon.cost > self.weapon:
-                return Upgrade(weapon, self.weapon)
-
-    def upgrade_armor(self, shop):
-        armors = sorted(shop.armors, key=lambda a: a.cost)
-        for armor in armors:
-            if armor.cost > self.armor:
-                return Upgrade(armor, self.armor)
-
-    def upgrade_left_ring(self, shop):
-        available_rings = list(set(shop.rings) - set(self.rings))
-        rings = sorted(available_rings, key=lambda r: r.cost)
-        for ring in rings:
-            if ring.cost > self.left_ring:
-                return Upgrade(armor, self.left_ring)
-
-    def upgrade_right_ring(self, shop):
-        pass
+        opponent.hp = opponent.hp - damage
+        return opponent
 
     def is_dead(self):
         return self.hp <= 0
@@ -136,16 +89,7 @@ class Character:
         return f"<{name} hp={self.hp} damage={self.damage} defense={self.defense}>"
 
 
-class Boss(Character): pass
-
-
-class Player(Character):
-    def __init__(self, hp, weapon, armor=None):
-        super().__init__(hp, weapon, armor)
-        self.spent = 0
-
-
-class ShopKit:
+class Kit:
     def __init__(self, items):
         self.items = items
         self.weapon = items[0]
@@ -156,8 +100,6 @@ class ShopKit:
             self.rings = rings
         else:
             self.rings = (rings,)
-
-        print(self.rings)
 
     @cached_property
     def cost(self):
@@ -174,11 +116,11 @@ class Shop:
 
     @property
     def no_ring(self):
-        return ShopGood('Ringless 0 0 0', 'rings')
+        return Item('Ringless 0 0 0', 'rings')
 
     @property
     def no_armor(self):
-        return ShopGood('Armorless 0 0 0', 'armor')
+        return Item('Armorless 0 0 0', 'armor')
 
     @cached_property
     def ring_packs(self):
@@ -190,7 +132,7 @@ class Shop:
     def kits(self):
         armors = self.armors + [self.no_armor]
         kits = itertools.product(self.weapons, armors, self.ring_packs)
-        return sorted([ShopKit(kit) for kit in kits], key=lambda k: k.cost)
+        return sorted([Kit(kit) for kit in kits], key=lambda k: k.cost)
 
     @cached_property
     def weapons(self):
@@ -208,40 +150,20 @@ class Shop:
         goods = []
 
         for line in inventory.split('\n'):
-                if ':' in line:
-                    name, _ = line.split(':')
-                    department = name.lower()
-                    continue
-                elif not line.strip():
-                    continue
-                else:
-                    good = ShopGood(line, department)
-                    goods.append(good)
+            if ':' in line:
+                name, _ = line.split(':')
+                department = name.lower()
+                continue
+            elif not line.strip():
+                continue
+            else:
+                good = Item(line, department)
+                goods.append(good)
 
         return goods
 
 
-class Upgrade:
-    def __init__(self, new, old=None):
-        if not old:
-            old = ShopGood('Nothing  0  0  0', new.dept)
-        self.new = new
-        self.old = old
-
-    @property
-    def cost(self):
-        return self.new.cost - self.old.cost
-
-    @property
-    def benefit(self):
-        return (self.new.damage - self.old.damage) + (self.new.armor - self.old.armor)
-
-    @property
-    def dept(self):
-        return self.new.dept
-
-
-class ShopGood:
+class Item:
     def __init__(self, line, department):
         traits = line.split()
         self.name = ' '.join(traits[:-3]).lower()
@@ -251,12 +173,10 @@ class ShopGood:
         self.dept = department
 
     def __repr__(self):
-        return f"<ShopGood {self.dept} {self.name}>"
-
+        return f"<Item {self.dept} {self.name}>"
 
 
 class DeadCharacter(Exception): pass
-
 
 
 class AdventPuzzle:
@@ -278,32 +198,32 @@ class AdventPuzzle:
     def first(self):
         player_hp = 100
         boss_hp = 104
-        boss_weapon = ShopGood('Staff 1000 8 1', 'staffs')
+        boss_weapon = Item('Staff 1000 8 1', 'staffs')
         shop = Shop()
 
         for kit in shop.kits:
-            player = Player(player_hp, None, None)
-            boss = Boss(boss_hp, boss_weapon, shop.no_armor)
+            player = Character(player_hp, None, None)
+            boss = Character(boss_hp, boss_weapon, shop.no_armor)
             player.outfit(kit)
             player_wins = player.battles(boss)
             if player_wins:
-                print(player, player.kit)
+                print(player, kit)
                 return kit.cost
 
     @property
     def second(self):
         player_hp = 100
         boss_hp = 104
-        boss_weapon = ShopGood('Staff 1000 8 1', 'staffs')
+        boss_weapon = Item('Staff 1000 8 1', 'staffs')
         shop = Shop()
 
         for kit in reversed(shop.kits):
-            player = Player(player_hp, None, None)
-            boss = Boss(boss_hp, boss_weapon, shop.no_armor)
+            player = Character(player_hp, None, None)
+            boss = Character(boss_hp, boss_weapon, shop.no_armor)
             player.outfit(kit)
             player_wins = player.battles(boss)
             if not player_wins:
-                print(player, player.kit)
+                print(player, kit)
                 return kit.cost
 
     #
@@ -311,13 +231,11 @@ class AdventPuzzle:
     #
     @property
     def test1(self):
+        player_weapon = Item('Wand 100 5 5', 'wands')
+        boss_weapon = Item('Wand 100 7 2', 'wands')
         shop = Shop()
-        print(shop.kits)
-        print(len(shop.ring_packs), len(shop.kits))
-        player_weapon = ShopGood('Wand 100 5 5', 'wands')
-        boss_weapon = ShopGood('Wand 100 7 2', 'wands')
-        player = Player(8, player_weapon, shop.no_armor)
-        boss = Boss(12, boss_weapon, shop.no_armor)
+        player = Character(8, player_weapon, shop.no_armor)
+        boss = Character(12, boss_weapon, shop.no_armor)
 
         is_winner = player.battles(boss)
 
@@ -328,8 +246,6 @@ class AdventPuzzle:
 
     @property
     def test2(self):
-        input = self.TEST_INPUT
-        print(input)
         return 'passed'
 
     #
