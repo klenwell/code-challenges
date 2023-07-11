@@ -57,66 +57,15 @@ class Wizard:
 
         return spells
 
-    def branch_battle(self):
-        clones = []
-        for spell in self.spell_options:
-            self.battle_round(spell)
-            clone = self.clone()
-            clones.append(clone)
-        return clones
-
-    def battle_round(self, spell):
-        self.cast_spell(spell)
-        self.apply_spell_effects(self.foe)
-        self.foe.apply_spell_effects(self)
-        return self
-
-    def cast_spell(self, spell):
-        # clear expired spells
-        self.effects = [e for e in self.effects if not e.expired]
-
-        # raise error if spell already in effect
-        if spell in self.effects:
-            raise ValueError(f"Spell {spell} should not have been an option.")
-
-        # add spell to effects
-        self.effects.append(spell)
-        self.mana_spent += spell.cost
-        #print(spell.cost, self.mana_spent)
-
-    def apply_spell_effects(self, foe):
-        # Must be alive
-        if self.died:
-            return
-
-        # heal self
-        self.hp += sum([s.heal for s in self.effects])
-
-        # recharge self
-        self.mana += sum([s.recharge for s in self.effects])
-
-        # attack foe
-        self.attack(foe)
-
-        # tick
-        for spell in self.effects:
-            spell.tick()
-
-    def attack(self, foe):
-        damage = self.damage - foe.defense
-        damage = max(damage, 1)
-        foe.hp = foe.hp - damage
-        return foe
-
     def spend_least_mana_to_defeat(self, foe):
         winner = None
         self.foe = foe
         queue = [self]
 
         while queue:
-            info(f"DFS: {len(queue)} {winner}", 100)
+            #info([w.foe.hp for w in queue], 1000)
             wizard = queue.pop()
-            clones = wizard.branch_battle()
+            clones = wizard.branch_clones(winner)
 
             for clone in clones:
                 if clone.died:
@@ -126,41 +75,74 @@ class Wizard:
                         winner = clone
                     elif clone.mana_spent < winner.mana_spent:
                         winner = clone
+                    queue = [c for c in queue if c.mana_spent < winner.mana_spent]
                 elif winner and clone.mana_spent < winner.mana_spent:
                     queue.append(clone)
                 else:
                     queue.append(clone)
 
+            info(f"DFS: {len(queue)} {winner} {clone} {clone.foe}", 1000)
+
+            queue.sort(key=lambda w: w.foe.hp, reverse=True)
+
         return winner
 
-    def battles(self, foe):
-        for n in range(math.inf):
-            try:
-                self.chooses_spell()
-                self.apply_spell_effects(foe)
-                foe.chooses_spell()
-                foe.apply_spell_effects(self)
-            except DeadWizard:
-                is_winner = not self.is_dead()
-        return is_winner
+    def branch_clones(self, winner):
+        clones = []
+        for spell in self.spell_options:
+            if winner and winner.mana_spent <= self.mana_spent + spell.cost:
+                continue
+            clone = self.clone()
+            clone.battle_round(spell)
+            clones.append(clone)
+        return clones
+
+    def battle_round(self, spell):
+        self.cast_spell(spell)
+        self.apply_spell_effects(self.foe)
+        self.foe.attacks(self)
+        return self
+
+    def cast_spell(self, spell):
+        # raise error if spell already in effect
+        if spell in self.effects:
+            raise ValueError(f"Spell {spell} should not have been an option.")
+
+        # add spell to effects
+        self.effects.append(spell)
+        self.mana -= spell.cost
+        self.mana_spent += spell.cost
+        #print(spell.cost, self.mana_spent)
+
+    def apply_spell_effects(self, foe):
+        # heal self
+        self.hp += sum([s.heal for s in self.effects])
+
+        # recharge self
+        self.mana += sum([s.recharge for s in self.effects])
+
+        # attack foe
+        self.attacks(foe)
+
+        # tick
+        for spell in self.effects:
+            spell.tick()
+
+        # clear expired spells
+        self.effects = [e for e in self.effects if not e.expired]
 
     def attacks(self, foe):
-        if self.is_dead():
-            raise DeadWizard(self)
         damage = self.damage - foe.defense
         damage = max(damage, 1)
-        foe.hp = foe.hp - damage
+        foe.hp -= damage
         return foe
 
     def clone(self):
-        foe = Wizard(self.foe.hp, self.foe.mana, self.foe.book)
-        foe.effects = [e.clone() for e in self.foe.effects]
-
+        foe = Boss(self.foe.hp, self.foe.damage)
         clone = Wizard(self.hp, self.mana, self.book)
         clone.effects = [e.clone() for e in self.effects]
         clone.foe = foe
         clone.mana_spent = self.mana_spent
-
         return clone
 
     def __repr__(self):
