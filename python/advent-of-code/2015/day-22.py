@@ -77,7 +77,7 @@ class Wizard:
                 else:
                     queue.append(clone)
 
-            info(f"DFS: {len(queue)} {winner} {clone} {clone.foe}", 1000)
+            info(f"DFS: {len(queue)} {winner} {clone} {clone.foe}", 10000)
 
             queue.sort(key=lambda w: w.foe.hp, reverse=True)
 
@@ -191,6 +191,31 @@ class Boss(Wizard):
         return f"<Boss hp={self.hp} damage={self.damage}>"
 
 
+class HardWizard(Wizard):
+    def battle_round(self, spell):
+        # At the start of each player turn (before any other effects apply), you lose 1 hit point.
+        self.hp -= 1
+
+        # Effects all work the same way. Effects apply at the start of both the
+        # player's turns and the boss' turns.
+        # Player's Turn
+        self.apply_spell_effects(self.foe)
+        self.cast_spell(spell, self.foe)
+
+        # Boss's Turn
+        self.apply_spell_effects(self.foe)
+        self.foe.attacks(self, self.foe.damage)
+        return self
+
+    def clone(self):
+        foe = Boss(self.foe.hp, self.foe.damage)
+        clone = HardWizard(self.hp, self.mana, self.book)
+        clone.effects = [e.clone() for e in self.effects]
+        clone.foe = foe
+        clone.mana_spent = self.mana_spent
+        return clone
+
+
 class Spell:
     def __init__(self, name, effects):
         self.name = name
@@ -294,7 +319,18 @@ class AdventPuzzle:
 
     @property
     def second(self):
-        pass
+        wizard_hp = 50
+        wizard_mana = 500
+        wizard_book = SpellBook(SPELLS)
+        boss_hp = 55
+        boss_damage = 8
+
+        wizard = HardWizard(wizard_hp, wizard_mana, wizard_book)
+        boss = Boss(boss_hp, boss_damage)
+
+        wizard = wizard.spend_least_mana_to_defeat(boss)
+        assert wizard.mana_spent < 1295, f"{wizard.mana_spent} is too high"
+        return wizard.mana_spent
 
     #
     # Tests
