@@ -86,8 +86,8 @@ class Wizard:
     def branch_clones(self, winner):
         clones = []
         for spell in self.spell_options:
-            # if winner and winner.mana_spent <= self.mana_spent + spell.cost:
-            #     continue
+            if winner and winner.mana_spent <= self.mana_spent + spell.cost:
+                continue
             clone = self.clone()
             clone.battle_round(spell)
             clones.append(clone)
@@ -106,13 +106,15 @@ class Wizard:
         return self
 
     def cast_spell(self, spell, foe):
+        damage = 0
+
         # raise error if spell already in effect
         if spell in self.effects:
             raise ValueError(f"Spell {spell} should not have been an option.")
 
         # Instant Effect
         if spell.duration == 0:
-            self.apply_spell_effect(spell, foe)
+            damage = self.apply_spell_effect(spell, foe)
 
         # Delayed Effect
         else:
@@ -120,16 +122,18 @@ class Wizard:
 
         self.mana -= spell.cost
         self.mana_spent += spell.cost
-        return self
+        return damage
 
     def apply_spell_effects(self, foe):
+        damage = 0
+
         for effect in self.effects:
-            self.apply_spell_effect(effect, foe)
+            damage += self.apply_spell_effect(effect, foe)
             effect.tick()
 
         # clear expired spells
         self.effects = [e for e in self.effects if not e.expired]
-        return self
+        return damage
 
     def apply_spell_effect(self, spell, foe):
         # heal self
@@ -139,19 +143,15 @@ class Wizard:
         self.mana += spell.recharge
 
         # attack foe
-        self.attacks(foe, spell.damage)
-
-        return self
-
+        return self.attacks(foe, spell.damage)
 
     def attacks(self, foe, damage):
         if self.died:
-            return foe
+            return 0
 
-        damage = max(damage, 1)
         foe.hp -= damage
         #print(f"{self} attacks {foe} for {damage} damage")
-        return foe
+        return damage
 
     def clone(self):
         foe = Boss(self.foe.hp, self.foe.damage)
@@ -177,6 +177,15 @@ class Boss(Wizard):
     @property
     def defense(self):
         return 0
+
+    def attacks(self, foe, damage):
+        if self.died:
+            return foe
+
+        damage = damage - foe.defense
+        damage = max(damage, 1)
+        foe.hp -= damage
+        return damage
 
     def __repr__(self):
         return f"<Boss hp={self.hp} damage={self.damage}>"
@@ -280,6 +289,7 @@ class AdventPuzzle:
         wizard = wizard.spend_least_mana_to_defeat(boss)
         assert wizard.mana_spent < 1212, f"{wizard.mana_spent} is too high"
         assert wizard.mana_spent > 847, f"{wizard.mana_spent} is too low"
+        assert wizard.mana_spent == 953, wizard.mana_spent
         return wizard.mana_spent
 
     @property
@@ -305,32 +315,104 @@ class AdventPuzzle:
         wizard = Wizard(wizard_hp, wizard_mana, wizard_book)
         boss = Boss(boss_hp, boss_damage)
 
-        # Recreate battle 1
+        # Turn 1
+        wizard.apply_spell_effects(boss)
         wizard.cast_spell(wizard_book.read('Poison'), boss)
+        assert wizard.mana == 77, wizard
+
+        # Turn 2
         wizard.apply_spell_effects(boss)
         boss.attacks(wizard, boss.damage)
-        assert wizard.mana == 77, wizard
         assert wizard.hp == 2, wizard
         assert boss.hp == 10, boss
         assert wizard.effects[0].ticks == 1
 
+        # Turn 3
         wizard.apply_spell_effects(boss)
         wizard.cast_spell(wizard_book.read('Magic Missile'), boss)
+        assert wizard.mana == 24, wizard
+        assert boss.hp == 3, boss
+
+        # Turn 4
         wizard.apply_spell_effects(boss)
         boss.attacks(wizard, boss.damage)
-        assert wizard.mana == 24, wizard
-        assert wizard.hp == 2, wizard
-        assert boss.hp == 0, boss
         assert wizard.effects[0].ticks == 3
         assert boss.died
+        assert wizard.hp == 2, wizard
 
     def recreate_second_battle(self):
-        raise ValueError('TODO')
+        wizard_hp = 10
+        wizard_mana = 250
+        wizard_book = SpellBook(SPELLS)
+        boss_hp = 14
+        boss_damage = 8
+
+        wizard = Wizard(wizard_hp, wizard_mana, wizard_book)
+        boss = Boss(boss_hp, boss_damage)
+
+        # Turn 1
+        wizard.apply_spell_effects(boss)
+        wizard.cast_spell(wizard_book.read('Recharge'), boss)
+        assert boss.hp == 14, boss
+
+        # Turn 2
+        wizard.apply_spell_effects(boss)
+        boss.attacks(wizard, boss.damage)
+        assert boss.hp == 14, boss
+        assert wizard.hp == 2, wizard
+
+        # Turn 3
+        wizard.apply_spell_effects(boss)
+        wizard.cast_spell(wizard_book.read('Shield'), boss)
+        assert boss.hp == 14, boss
+
+        # Turn 4
+        wizard.apply_spell_effects(boss)
+        boss_damage = boss.attacks(wizard, boss.damage)
+        assert wizard.defense == 7, wizard.defense
+        assert boss_damage == 1, boss_damage
+        assert boss.hp == 14, boss
+        assert wizard.hp == 1, wizard
+
+        # Turn 5
+        effects_damage = wizard.apply_spell_effects(boss)
+        spell_damage = wizard.cast_spell(wizard_book.read('Drain'), boss)
+        assert effects_damage == 0, effects_damage
+        assert spell_damage == 2, spell_damage
+        assert boss.hp == 12, boss
+        assert wizard.hp == 3, wizard
+
+        # Turn 6
+        wizard.apply_spell_effects(boss)
+        boss.attacks(wizard, boss.damage)
+        assert boss.hp == 12, boss
+        assert wizard.hp == 2, wizard
+
+        # Turn 7
+        wizard.apply_spell_effects(boss)
+        wizard.cast_spell(wizard_book.read('Poison'), boss)
+        assert boss.hp == 12, boss
+
+        # Turn 8
+        wizard.apply_spell_effects(boss)
+        boss.attacks(wizard, boss.damage)
+        assert wizard.defense == 7, wizard
+        assert boss.hp == 9, boss
+
+        # Turn 9
+        wizard.apply_spell_effects(boss)
+        wizard.cast_spell(wizard_book.read('Magic Missile'), boss)
+        assert wizard.defense == 0, wizard
+        assert boss.hp == 2, boss
+
+        # Turn 10
+        wizard.apply_spell_effects(boss)
+        assert boss.died, boss
+        assert wizard.hp == 1, wizard
+        assert wizard.mana == 114, wizard
 
     @property
     def test2(self):
-        input = self.TEST_INPUT
-        print(input)
         return 'passed'
 
     #
