@@ -47,7 +47,8 @@ class Wizard:
     def spell_options(self):
         spells = []
         names = set(self.book.names)
-        in_effect = set([e.name for e in self.effects])
+        # Effects with 1 tick will be available again by time wizard picks spell.
+        in_effect = set([e.name for e in self.effects if e.ticks > 1])
         options = names - in_effect
 
         for name in options:
@@ -68,7 +69,7 @@ class Wizard:
 
             for clone in clones:
                 if clone.died:
-                    pass
+                    continue
                 elif clone.foe.died:
                     if not winner:
                         winner = clone
@@ -195,6 +196,8 @@ class HardWizard(Wizard):
     def battle_round(self, spell):
         # At the start of each player turn (before any other effects apply), you lose 1 hit point.
         self.hp -= 1
+        if self.died:
+            return self
 
         # Effects all work the same way. Effects apply at the start of both the
         # player's turns and the boss' turns.
@@ -330,6 +333,8 @@ class AdventPuzzle:
 
         wizard = wizard.spend_least_mana_to_defeat(boss)
         assert wizard.mana_spent < 1295, f"{wizard.mana_spent} is too high"
+        assert wizard.mana_spent > 1196, f"{wizard.mana_spent} is too low"
+        assert wizard.mana_spent == 1289, wizard.mana_spent
         return wizard.mana_spent
 
     #
