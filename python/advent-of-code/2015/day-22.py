@@ -12,10 +12,10 @@ from common import INPUT_DIR, info
 SPELLS = [
     # Name, Cost, Duration, Damage, Defense, Heal, Recharge
     ('Magic Missile', 53, 0, 4, 0, 0, 0),
-    ('Drain',         73, 0, 2, 0, 2, 0),
-    ('Shield',       113, 6, 0, 7, 0, 0),
-    ('Poison',       173, 6, 3, 0, 0, 0),
-    ('Recharge',     229, 5, 0, 0, 0, 101)
+    ('Drain', 73, 0, 2, 0, 2, 0),
+    ('Shield', 113, 6, 0, 7, 0, 0),
+    ('Poison', 173, 6, 3, 0, 0, 0),
+    ('Recharge', 229, 5, 0, 0, 0, 101)
 ]
 
 
@@ -109,10 +109,6 @@ class Wizard:
     def cast_spell(self, spell, foe):
         damage = 0
 
-        # raise error if spell already in effect
-        if spell in self.effects:
-            raise ValueError(f"Spell {spell} should not have been an option.")
-
         # Instant Effect
         if spell.duration == 0:
             damage = self.apply_spell_effect(spell, foe)
@@ -151,7 +147,6 @@ class Wizard:
             return 0
 
         foe.hp -= damage
-        #print(f"{self} attacks {foe} for {damage} damage")
         return damage
 
     def clone(self):
@@ -285,7 +280,6 @@ class SpellBook:
     def read(self, name):
         effects = self.index[name]
         return Spell(name, effects)
-
 
 
 class AdventPuzzle:
