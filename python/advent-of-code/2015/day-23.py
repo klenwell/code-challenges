@@ -36,15 +36,38 @@ class Computer:
         self.index += 1
         return self
 
-    def jio(self, register, offset):
+    def jmp(self, offset):
+        self.index += int(offset)
+        return self
+
+    def jie(self, register, offset):
+        # only jumps if register r is even ("jump if even")
         register = register[0]
-        is_odd = self.registers[register] % 2 == 1
-
-        if not is_odd:
-            self.index += 1
-        else:
+        is_even = self.registers[register] % 2 == 0
+        if is_even:
             self.index += int(offset)
+        else:
+            self.index += 1
+        return self
 
+    def jio(self, register, offset):
+        # only jumps if register r is 1 ("jump if one", not odd)
+        register = register[0]
+        is_one = self.registers[register] == 1
+        if is_one:
+            self.index += int(offset)
+        else:
+            self.index += 1
+        return self
+
+    def tpl(self, register):
+        self.registers[register] = self.registers[register] * 3
+        self.index += 1
+        return self
+
+    def hlf(self, register):
+        self.registers[register] = self.registers[register] // 2
+        self.index += 1
         return self
 
     def __repr__(self):
@@ -74,11 +97,16 @@ inc a"""
         input = self.file_input
         pc = Computer()
         pc.run(input)
+        assert pc.registers['b'] == 170, pc
         return pc.registers['b']
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        pc = Computer()
+        pc.registers['a'] = 1
+        pc.run(input)
+        return pc.registers['b']
 
     #
     # Tests
