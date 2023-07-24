@@ -21,12 +21,12 @@ class Computer:
         while self.index < len(instructions):
             method, args = self.parse(instructions[self.index])
             method(*args)
-            print(self)
+            # print(self)
 
         return self
 
     def parse(self, instruction):
-        print(instruction)
+        # print(instruction)
         method_attr, args = instruction.split(' ', 1)
         method = getattr(self, method_attr)
         return method, args.split(' ')
@@ -121,8 +121,6 @@ inc a"""
 
     @property
     def test2(self):
-        input = self.TEST_INPUT
-        print(input)
         return 'passed'
 
     #

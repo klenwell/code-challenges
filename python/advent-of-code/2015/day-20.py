@@ -22,7 +22,7 @@ class ElfDispatcher:
 class UnionizedElfDispatcher(ElfDispatcher):
     def count_gifts_for_house(self, house_num):
         elves = compute_factors(house_num)
-        active_elves = [e for e in elves if house_num <= e * 50 ]
+        active_elves = [e for e in elves if house_num <= e * 50]
         return sum(active_elves) * 11
 
 
