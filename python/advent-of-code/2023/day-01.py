@@ -4,7 +4,42 @@ https://adventofcode.com/2023/day/1
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR, extract_numbers
+from common import INPUT_DIR
+
+
+class Calibrator:
+    def __init__(self, document):
+        self.document = document
+
+    @cached_property
+    def sum(self):
+        return sum(self.calibration_values)
+
+    @property
+    def calibration_values(self):
+        for line in self.lines:
+            yield self.restore_value(line)
+
+    @cached_property
+    def lines(self):
+        return self.document.split("\n")
+
+    def restore_value(self, line):
+        digits = [c for c in line if c.isdigit()]
+        return int(f'{digits[0]}{digits[-1]}')
+
+
+class Recalibrator(Calibrator):
+    def restore_value(self, line):
+        words = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
+
+        for i, word in enumerate(words):
+            if word in line:
+                insert = f'{word}{str(i + 1)}{word}'
+                line = line.replace(word, insert)
+
+        digits = [c for c in line if c.isdigit()]
+        return int(f'{digits[0]}{digits[-1]}')
 
 
 class AdventPuzzle:
@@ -15,40 +50,6 @@ class AdventPuzzle:
 pqr3stu8vwx
 a1b2c3d4e5f
 treb7uchet"""
-
-    def compute(self, input):
-        strs = input.split("\n")
-        sum = 0
-
-        for s in strs:
-            n = [int(s) for s in s if s.isdigit()]
-            num = f'{n[0]}{n[-1]}'
-            sum += int(num)
-            print(n, num, sum)
-
-        return sum
-    
-    def str_to_digits(self, s):
-        word_nums = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
-
-        for n, wn in enumerate(word_nums):
-            if wn in s:
-                insert = f'{wn}{str(n + 1)}{wn}'
-                s = s.replace(wn, insert)
-        
-        n = [int(s) for s in s if s.isdigit()]
-        return int(f'{n[0]}{n[-1]}')
-    
-    def part2(self, input):
-        strs = input.split("\n")
-        sum = 0
-
-        for s in strs:
-            num = self.str_to_digits(s)
-            #print(s, num)
-            sum += num
-
-        return sum
 
     def solve(self):
         print(f"test 1 solution: {self.test1}")
@@ -62,15 +63,17 @@ treb7uchet"""
     @property
     def first(self):
         input = self.file_input
-        sum = self.compute(input)
-        return sum
+        calibrator = Calibrator(input)
+        assert calibrator.sum == 54338
+        return calibrator.sum
 
     @property
     def second(self):
         input = self.file_input
-        sum = self.part2(input)
-        assert sum != 53340, 53340
-        return sum
+        calibrator = Recalibrator(input)
+        assert calibrator.sum != 53340, 53340
+        assert calibrator.sum == 53389, calibrator.sum
+        return calibrator.sum
 
     #
     # Tests
@@ -78,9 +81,8 @@ treb7uchet"""
     @property
     def test1(self):
         input = self.TEST_INPUT
-        print(input)
-        sum = self.compute(input)
-        assert sum == 142
+        calibrator = Calibrator(input)
+        assert calibrator.sum == 142
         return 'passed'
 
     @property
@@ -93,8 +95,9 @@ xtwone3four
 4nineeightseven2
 zoneight234
 7pqrstsixteen"""
-        sum = self.part2(input)
-        assert sum == 281, sum
+
+        calibrator = Recalibrator(input)
+        assert calibrator.sum == 281, calibrator.sum
         return 'passed'
 
     #
