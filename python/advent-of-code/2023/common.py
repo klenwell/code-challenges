@@ -5,7 +5,7 @@ Usage:
 from config import INPUT_FILE
 
 To profile:
-$ python -m cProfile -s cumtime 2015/day-00.py
+$ python -m cProfile -s cumtime 2023/day-00.py
 """
 from os.path import dirname, join as path_join
 from functools import cached_property, reduce
