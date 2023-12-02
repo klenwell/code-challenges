@@ -6,6 +6,7 @@ from os.path import join as path_join
 from functools import cached_property
 from common import INPUT_DIR
 
+
 class CubeBag:
     def __init__(self, red, green, blue):
         self.red = red
@@ -66,8 +67,6 @@ class CubeGrab:
         return f"<Grab red={self.red} green={self.green} blue={self.blue}>"
 
 
-
-
 class AdventPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-02.txt')
 
@@ -105,7 +104,6 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green"""
     @property
     def second(self):
         input = self.file_input
-
         sum = 0
 
         for game_input in input.split("\n"):
