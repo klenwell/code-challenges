@@ -7,11 +7,103 @@ from functools import cached_property
 from common import INPUT_DIR
 
 
+class ScratchCardPile:
+    def __init__(self, input):
+        self.input = input
+
+    @cached_property
+    def lines(self):
+        return self.input.split("\n")
+
+    @property
+    def points(self):
+        total = 0
+        for line in self.lines:
+            card = ScratchCard(line)
+            total += card.points
+        return total
+
+    @property
+    def initial_cards(self):
+        cards = []
+        for line in self.lines:
+            card = ScratchCard(line)
+            cards.append(card)
+        return cards
+
+    @property
+    def scratched_cards(self):
+        queue = list(self.initial_cards)
+        scratched = []
+
+        while len(queue) > 0:
+            print(len(queue))
+            card = queue.pop()
+            print(card)
+            scratched.append(card)
+            for n in range(card.matches):
+                copy_number = card.number + n + 1
+                copy_index = copy_number - 1
+                copied_card = self.initial_cards[copy_index]
+                print(copy_index, copied_card)
+                queue.insert(0, copied_card)
+        return len(scratched)
+
+
+class ScratchCard:
+    def __init__(self, input):
+        self.input = input
+
+    @property
+    def number(self):
+        left, _ = self.input.split('|')
+        left, _ = left.split(':')
+        _, number = left.split()
+        return int(number)
+
+    @property
+    def matches(self):
+        if len(set(self.card_numbers)) != len(self.card_numbers):
+            raise ValueError(f'duplicate card numbers: {self.card_numbers}')
+        matches = set(self.winning_numbers).intersection(set(self.card_numbers))
+        return len(matches)
+
+    @property
+    def winning_numbers(self):
+        left, _ = self.input.split('|')
+        _, numbers = left.split(':')
+        return [int(n) for n in numbers.strip().split(' ') if n != '']
+
+    @property
+    def card_numbers(self):
+        _, numbers = self.input.split('|')
+        return [int(n) for n in numbers.strip().split(' ') if n != '']
+
+    @property
+    def points(self):
+        if len(set(self.card_numbers)) != len(self.card_numbers):
+            raise ValueError(f'duplicate card numbers: {self.card_numbers}')
+        matches = set(self.winning_numbers).intersection(set(self.card_numbers))
+
+        if len(matches) > 0:
+            return 2**(len(matches) - 1)
+        else:
+            return 0
+
+    def __repr__(self):
+        return f'<Card #{self.number} matches={self.matches}>'
+
+
 class AdventPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-04.txt')
 
     TEST_INPUT = """\
-"""
+Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
+Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19
+Card 3:  1 21 53 59 44 | 69 82 63 72 16 21 14  1
+Card 4: 41 92 73 84 69 | 59 84 76 51 58  5 54 83
+Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
+Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"""
 
     def solve(self):
         print(f"test 1 solution: {self.test1}")
@@ -25,11 +117,18 @@ class AdventPuzzle:
     @property
     def first(self):
         input = self.file_input
-        return input
+        pile = ScratchCardPile(input)
+        return pile.points
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        pile = ScratchCardPile(input)
+
+        for card in pile.initial_cards:
+            assert card.number == pile.initial_cards[card.number-1].number
+
+        return pile.scratched_cards
 
     #
     # Tests
@@ -37,13 +136,21 @@ class AdventPuzzle:
     @property
     def test1(self):
         input = self.TEST_INPUT
-        print(input)
+        pile = ScratchCardPile(input)
+        assert pile.points == 13
         return 'passed'
 
     @property
     def test2(self):
-        input = self.TEST_INPUT
-        print(input)
+        input = """\
+Card 1: 41 48 83 86 17 | 83 86  6 31 17  9 48 53
+Card 2: 13 32 20 16 61 | 61 30 68 82 17 32 24 19
+Card 3:  1 21 53 59 44 | 69 82 63 72 16 21 14  1
+Card 4: 41 92 73 84 69 | 59 84 76 51 58  5 54 83
+Card 5: 87 83 26 28 32 | 88 30 70 12 93 22 82 36
+Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"""
+        pile = ScratchCardPile(input)
+        assert pile.scratched_cards == 30
         return 'passed'
 
     #
