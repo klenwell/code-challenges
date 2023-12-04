@@ -27,14 +27,28 @@ class ScratchCardPile:
     def initial_cards(self):
         cards = []
         for line in self.lines:
-            card = ScratchCard(line)
+            card = ScratchCard(line, self)
             cards.append(card)
         return cards
 
     @property
     def scratched_cards(self):
-        # TODO: Replace processor with counter. Memoize?
-        return self.brute_scratch_cards(self.initial_cards)
+        return self.quick_scratch_cards(self.initial_cards)
+
+    def quick_scratch_cards(self, cards):
+        queue = list(cards)
+        scratched = 0
+
+        while len(queue) > 0:
+            card = queue.pop()
+            scratched += 1
+            info(f"{len(queue)} {scratched} {card}", 1000)
+
+            # Winning copies go into queue. Copies that don't, they just get counted.
+            queue += card.winning_prize_cards
+            scratched += len(card.losing_prize_cards)
+
+        return scratched
 
     def brute_scratch_cards(self, cards):
         queue = list(cards)
@@ -42,8 +56,8 @@ class ScratchCardPile:
 
         while len(queue) > 0:
             card = queue.pop()
-            info(f"{len(queue)} {card}", 1000)
             scratched.append(card)
+            info(f"{len(queue)} {len(scratched)} {card}", 1000)
             for n in range(card.matches):
                 copy_number = card.number + n + 1
                 copy_index = copy_number - 1
@@ -59,8 +73,31 @@ class ScratchCardPile:
 
 
 class ScratchCard:
-    def __init__(self, input):
+    def __init__(self, input, pile=None):
         self.input = input
+        self.pile = pile
+
+    @cached_property
+    def is_winner(self):
+        return self.matches > 0
+
+    @cached_property
+    def prize_cards(self):
+        cards = []
+        for n in range(self.matches):
+            copy_number = self.number + n + 1
+            copy_index = copy_number - 1
+            copied_card = self.pile.initial_cards[copy_index]
+            cards.append(copied_card)
+        return cards
+
+    @cached_property
+    def winning_prize_cards(self):
+        return [card for card in self.prize_cards if card.is_winner]
+
+    @cached_property
+    def losing_prize_cards(self):
+        return [card for card in self.prize_cards if not card.is_winner]
 
     @property
     def number(self):
@@ -69,7 +106,7 @@ class ScratchCard:
         _, number = left.split()
         return int(number)
 
-    @property
+    @cached_property
     def matches(self):
         if len(set(self.card_numbers)) != len(self.card_numbers):
             raise ValueError(f'duplicate card numbers: {self.card_numbers}')
