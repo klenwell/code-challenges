@@ -35,9 +35,9 @@ class ScratchCardPile:
 
     @cached_property
     def scratched_cards(self):
-        return self.count_offspring(self.initial_cards)
+        return self.count_copies(self.initial_cards)
 
-    def count_offspring(self, cards):
+    def count_copies(self, cards):
         count = 0
         sorted_cards = sorted(cards, key=lambda c: c.matches)
 
@@ -95,13 +95,10 @@ class ScratchCard:
         else:
             return self.count_offspring()
 
-    @property
-    def offspring_counted(self):
-        return self.id in self.pile.counted_cards
-
     def count_offspring(self):
         count = 1
 
+        # This helped haha!
         self.pile.count_calls.append(self.id)
         if len(self.pile.count_calls) > len(self.pile.initial_cards):
             raise Exception("Too many count calls:", sorted(self.pile.count_calls))
@@ -109,16 +106,18 @@ class ScratchCard:
         for prize_card in self.prize_cards:
             counted_card = self.pile.counted_cards.get(prize_card.id)
             if counted_card:
-                info(f"hit: {self} {counted_card}, {len(self.pile.counted_cards.keys())}", 100000)
                 count += prize_card.total_copies
             else:
-                print(f"MISS: {self} {prize_card}")
                 count += prize_card.count_offspring()
                 self.pile.counted_cards[prize_card.id] = prize_card
 
         self.counted_offspring = count
         self.pile.counted_cards[self.id] = self
         return count
+
+    @property
+    def offspring_counted(self):
+        return self.id in self.pile.counted_cards
 
     @cached_property
     def is_winner(self):
@@ -128,8 +127,8 @@ class ScratchCard:
     def prize_cards(self):
         cards = []
         for n in range(self.matches):
-            copy_number = self.number + n + 1
-            copy_index = copy_number - 1
+            copy_id = self.id + n + 1
+            copy_index = copy_id - 1
             copied_card = self.pile.initial_cards[copy_index]
             cards.append(copied_card)
         return sorted(cards, key=lambda c: c.matches)
@@ -143,15 +142,11 @@ class ScratchCard:
         return [card for card in self.prize_cards if not card.is_winner]
 
     @property
-    def number(self):
+    def id(self):
         left, _ = self.input.split('|')
         left, _ = left.split(':')
         _, number = left.split()
         return int(number)
-
-    @property
-    def id(self):
-        return self.number
 
     @cached_property
     def matches(self):
@@ -183,7 +178,8 @@ class ScratchCard:
             return 0
 
     def __repr__(self):
-        return f'<Card #{self.id} matches={self.matches} counted_offspring={self.counted_offspring}>'
+        count = self.counted_offspring
+        return f'<Card #{self.id} matches={self.matches} counted_offspring={count}>'
 
 
 class AdventPuzzle:
@@ -217,8 +213,9 @@ Card 6: 31 18 13 56 72 | 74 77 10 23 35 67 36 11"""
         input = self.file_input
         pile = ScratchCardPile(input)
 
+        # Make sure there's nothing sneaky going on with card numbers
         for card in pile.initial_cards:
-            assert card.number == pile.initial_cards[card.number-1].number
+            assert card.id == pile.initial_cards[card.id-1].id
 
         scratched_cards = pile.scratched_cards
         assert scratched_cards == 14814534, scratched_cards
