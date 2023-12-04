@@ -40,14 +40,14 @@ class EngineSchematic(Grid):
             for x, value in enumerate(row):
                 pt = (x, y)
                 if value.isdigit():
-                    if in_digit == False:
+                    if not in_digit:
                         in_digit = True
                         number = SchematicNumber(pt, self)
                         numbers.append(number)
                     else:
                         number.append_digit(x)
                 else:
-                    if in_digit == True:
+                    if in_digit:
                         in_digit = False
         return numbers
 
@@ -132,18 +132,17 @@ class SchematicNumber:
         for x in self.xs:
             pt = (x, self.y)
             for npt in self.schematic.neighbors(pt):
-                if self.is_symbol(npt):
+                if self.pt_is_symbol(npt):
                     return True
         return False
 
-    def is_symbol(self, pt):
+    def pt_is_symbol(self, pt):
         value = self.grid[pt]
         if value == '.':
             return False
         if value.isdigit():
             return False
         return True
-
 
 
 class AdventPuzzle:
