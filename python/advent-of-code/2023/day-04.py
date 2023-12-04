@@ -4,7 +4,7 @@ https://adventofcode.com/2023/day/4
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR
+from common import INPUT_DIR, info
 
 
 class ScratchCardPile:
@@ -33,21 +33,29 @@ class ScratchCardPile:
 
     @property
     def scratched_cards(self):
-        queue = list(self.initial_cards)
+        # TODO: Replace processor with counter. Memoize?
+        return self.brute_scratch_cards(self.initial_cards)
+
+    def brute_scratch_cards(self, cards):
+        queue = list(cards)
         scratched = []
 
         while len(queue) > 0:
-            print(len(queue))
             card = queue.pop()
-            print(card)
+            info(f"{len(queue)} {card}", 1000)
             scratched.append(card)
             for n in range(card.matches):
                 copy_number = card.number + n + 1
                 copy_index = copy_number - 1
                 copied_card = self.initial_cards[copy_index]
-                print(copy_index, copied_card)
                 queue.insert(0, copied_card)
+
+            if len(queue) > 20000:
+                raise Exception(f"This isn't working: {len(queue)}")
+
         return len(scratched)
+
+
 
 
 class ScratchCard:
