@@ -35,7 +35,6 @@ class EngineSchematic(Grid):
     @property
     def numbers(self):
         numbers = []
-
         for y, row in enumerate(self.rows):
             in_digit = False
             for x, value in enumerate(row):
@@ -74,10 +73,7 @@ class EngineSchematic(Grid):
 class SchematicGear:
     def __init__(self, pt, schematic):
         self.pt = pt
-        self.x = pt[0]
-        self.y = pt[1]
         self.schematic = schematic
-        self.part_numbers
 
     @property
     def grid(self):
