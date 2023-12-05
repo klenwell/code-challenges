@@ -4,7 +4,7 @@ https://adventofcode.com/2023/day/5
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR
+from common import INPUT_DIR, info
 
 
 class Almanac:
@@ -31,40 +31,51 @@ class Almanac:
 
     def map_humidity_to_location(self, value):
         block_index = 7
-        mapping = self.build_map(block_index)
-        return mapping.get(value, value)
+        return self.map_value_by_block(value, block_index)
 
     def map_temperature_to_humidity(self, value):
         block_index = 6
-        mapping = self.build_map(block_index)
-        return mapping.get(value, value)
+        return self.map_value_by_block(value, block_index)
 
     def map_light_to_temperature(self, value):
         block_index = 5
-        mapping = self.build_map(block_index)
-        return mapping.get(value, value)
+        return self.map_value_by_block(value, block_index)
 
     def map_water_to_light(self, value):
         block_index = 4
-        mapping = self.build_map(block_index)
-        return mapping.get(value, value)
+        return self.map_value_by_block(value, block_index)
 
     def map_fertilizer_to_water(self, value):
         block_index = 3
-        mapping = self.build_map(block_index)
-        return mapping.get(value, value)
+        return self.map_value_by_block(value, block_index)
 
     def map_soil_to_fertilizer(self, value):
         block_index = 2
-        mapping = self.build_map(block_index)
-        return mapping.get(value, value)
+        return self.map_value_by_block(value, block_index)
 
     def map_seed_to_soil(self, value):
         block_index = 1
-        mapping = self.build_map(block_index)
-        return mapping.get(value, value)
+        return self.map_value_by_block(value, block_index)
 
-    def build_map(self, block_index):
+
+    def map_value_by_block(self, value, block_index):
+        block = self.blocks[block_index]
+        lines = block.split("\n")
+
+        for line in lines[1:]:
+            min_dest, min_source, range = line.strip().split()
+            min_source = int(min_source)
+
+            max_source = min_source + int(range)
+            if min_source <= value < max_source:
+                offset = value - min_source
+                mapped_value = int(min_dest) + offset
+                return mapped_value
+
+        return value
+
+    def build_range_map_naively(self, block_index):
+        # LOL: Does not work with huge ranges
         mapping = {}
         block = self.blocks[block_index]
         lines = block.split("\n")
@@ -77,6 +88,76 @@ class Almanac:
                 mapping[key] = val
 
         return mapping
+
+
+class ExtendedAlmanac(Almanac):
+    def find_lowest_location_number_backwards(self):
+        pass
+
+    def find_lowest_entry_dest_on_page(self, page_num, value):
+        block = self.blocks[page_num]
+        lines = block.split("\n")
+        entry = []
+
+    def find_parent_entries(self, entry):
+        """Given an entry, map it to its antecedent on previous page. Its antecedent
+        will be the entry the has a dest value that maps to its source value.
+        """
+        parent_entries = []
+        prev_page = entry.page_num - 1
+        pp_entries = self.find_entries_by_page(prev_page)
+
+        for pp_entry in pp_entries:
+            if entry.is_mapped_child_to(pp_entry):
+                parent_entries.append(pp_entry)
+
+        return parent_entries
+
+
+    def find_entries_by_page(self, page_num):
+        block = self.blocks[page_num]
+        lines = block.split("\n")
+        entries = []
+        for id, line in enumerate(lines[1:]):
+            entry = MapEntry(line, id, page_num)
+            entries.append(entry)
+        return entries
+
+    def find_lowest_location_entry(self):
+        locations = self.find_entries_by_page(7)
+        return sorted(locations, key=lambda l: l.min_dest)[0]
+
+
+class MapEntry:
+    def __init__(self, input, id, page_num):
+        self.input = input
+        self.id = id
+        self.page_num = page_num
+        min_dest, min_source, range = input.strip().split()
+
+        self.min_dest = int(min_dest)
+        self.min_source = int(min_source)
+        self.range = int(range)
+        self.max_dest = self.min_dest + self.range
+        self.max_source = self.min_source + self.range
+
+    def is_mapped_child_to(self, parent):
+        """An entry is a parent if one of its dest values can produce a source in this
+        entry."""
+        return any([
+            parent.min_dest <= self.min_source < parent.max_dest,
+            parent.min_dest <= self.max_source < parent.max_dest
+        ])
+
+    def contains_source_value(self, value):
+        return self.min_source <= value < self.max_source
+
+    def contains_dest_value(self, value):
+        return self.min_dest <= value < self.max_dest
+
+    def __repr__(self):
+        source = (self.min_source, self.max_source)
+        return f"<MapEntry id={self.id} source={self.min_source} range={self.range}>"
 
 
 class Seed:
@@ -111,7 +192,6 @@ class Seed:
     @property
     def soil(self):
         return self.almanac.map_seed_to_soil(self.id)
-
 
 
 class AdventPuzzle:
@@ -170,7 +250,14 @@ humidity-to-location map:
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        almanac = ExtendedAlmanac(input)
+
+        location_entry = almanac.find_lowest_location_entry()
+        print(location_entry)
+
+        entries = almanac.find_parent_entries(location_entry)
+        print(entries)
 
     #
     # Tests
@@ -179,8 +266,6 @@ humidity-to-location map:
     def test1(self):
         input = self.TEST_INPUT
         almanac = Almanac(input)
-        print(almanac.blocks)
-        print(almanac.seeds[0])
         lowest_loc_number = almanac.find_lowest_location_number()
         assert lowest_loc_number == 35, lowest_loc_number
         return 'passed'
@@ -188,7 +273,12 @@ humidity-to-location map:
     @property
     def test2(self):
         input = self.TEST_INPUT
-        print(input)
+        almanac = ExtendedAlmanac(input)
+
+        print(almanac.find_lowest_location_entry())
+
+        #lowest_loc_number = almanac.find_lowest_location_number_backwards()
+        #assert lowest_loc_number == 46, lowest_loc_number
         return 'passed'
 
     #
