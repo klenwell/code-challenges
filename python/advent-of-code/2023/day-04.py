@@ -13,10 +13,6 @@ class ScratchCardPile:
         self.counted_cards = {}
         self.count_calls = []
 
-    @cached_property
-    def lines(self):
-        return self.input.split("\n")
-
     @property
     def points(self):
         total = 0
@@ -24,6 +20,10 @@ class ScratchCardPile:
             card = ScratchCard(line)
             total += card.points
         return total
+
+    @cached_property
+    def scratched_cards(self):
+        return self.count_copies(self.initial_cards)
 
     @property
     def initial_cards(self):
@@ -34,9 +34,12 @@ class ScratchCardPile:
         return cards
 
     @cached_property
-    def scratched_cards(self):
-        return self.count_copies(self.initial_cards)
+    def lines(self):
+        return self.input.split("\n")
 
+    #
+    # Ticket-scratcher methods
+    #
     def count_copies(self, cards):
         count = 0
         sorted_cards = sorted(cards, key=lambda c: c.matches)
