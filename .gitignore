@@ -111,3 +111,6 @@ java/**/*.class
 
 # Coding Assignments
 python/harness
+
+# https://adventofcode.com/2023/leaderboard/private/view/1975054
+python/advent-of-code/**/inputs
