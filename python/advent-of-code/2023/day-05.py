@@ -94,6 +94,7 @@ class ExtendedAlmanac(Almanac):
     def find_lowest_location_number_backwards(self):
         location_page = self.pages[7]
         min_location_mapping = sorted(location_page.mappings, key=lambda p: p.min_dest)[0]
+        print(min_location_mapping)
         seed_packet = SeedPacket(min_location_mapping)
         init_packet = seed_packet.winnow_source()
         return init_packet
@@ -101,11 +102,14 @@ class ExtendedAlmanac(Almanac):
     @cached_property
     def pages(self):
         pages = {}
-        for n in range(1,7):
-            content = self.blocks[number]
-            page = Page(number, content)
+        for n in range(1,8):
+            page = Page(n, self)
             pages[n] = page
         return pages
+
+class SeedPacket:
+    def __init__(self):
+        pass
 
 
 class Page:
@@ -145,7 +149,7 @@ class Mapping:
 
     def __repr__(self):
         source = (self.min_source, self.max_source)
-        return f"<Mapping page={self.page_num} id={self.id} source={self.min_source} range={self.range}>"
+        return f"<Mapping page={self.page.number} id={self.id} min_dest={self.min_dest}>"
 
 
 class Seed:
@@ -267,11 +271,8 @@ humidity-to-location map:
     def test2(self):
         input = self.TEST_INPUT
         almanac = ExtendedAlmanac(input)
-
-        print(almanac.find_lowest_location_entry())
-
-        #lowest_loc_number = almanac.find_lowest_location_number_backwards()
-        #assert lowest_loc_number == 46, lowest_loc_number
+        lowest_loc_number = almanac.find_lowest_location_number_backwards()
+        assert lowest_loc_number == 46, lowest_loc_number
         return 'passed'
 
     #
