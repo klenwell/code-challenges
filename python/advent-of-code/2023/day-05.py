@@ -96,7 +96,7 @@ class ExtendedAlmanac(Almanac):
         min_location_mapping = sorted(location_page.mappings, key=lambda p: p.min_dest)[0]
         print(min_location_mapping)
         seed_packet = SeedPacket(min_location_mapping)
-        init_packet = seed_packet.winnow_source()
+        init_packet = seed_packet.source_seeds()
         return init_packet
 
     @cached_property
@@ -108,8 +108,18 @@ class ExtendedAlmanac(Almanac):
         return pages
 
 class SeedPacket:
-    def __init__(self):
+    def __init__(self, mapping):
+        self.mapping = mapping
+        self.page = mapping.page
+        self.almanac = self.page.almanac
+
+    def count_seeds(self):
         pass
+
+    def source_seeds(self):
+        # Trace packet of seed attributes back to source attribute (seed num)
+        pass
+
 
 
 class Page:
