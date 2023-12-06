@@ -92,72 +92,60 @@ class Almanac:
 
 class ExtendedAlmanac(Almanac):
     def find_lowest_location_number_backwards(self):
-        pass
+        location_page = self.get_page(7)
+        min_location_entry = sorted(location_page.entries, key=lambda p: p.min_dest)[0]
+        seed_packet = SeedPacket(min_location_entry)
+        init_packet = seed_packet.trace_source_seeds()
+        return init_packet
 
-    def find_lowest_entry_dest_on_page(self, page_num, value):
-        block = self.blocks[page_num]
-        lines = block.split("\n")
-        entry = []
-
-    def find_parent_entries(self, entry):
-        """Given an entry, map it to its antecedent on previous page. Its antecedent
-        will be the entry the has a dest value that maps to its source value.
-        """
-        parent_entries = []
-        prev_page = entry.page_num - 1
-        pp_entries = self.find_entries_by_page(prev_page)
-
-        for pp_entry in pp_entries:
-            if entry.is_mapped_child_to(pp_entry):
-                parent_entries.append(pp_entry)
-
-        return parent_entries
+    @cached_property
+    def pages(self):
+        pages = {}
+        for n in range(1,7):
+            content = self.blocks[number]
+            page = Page(number, content)
+            pages[n] = page
+        return pages
 
 
-    def find_entries_by_page(self, page_num):
-        block = self.blocks[page_num]
-        lines = block.split("\n")
-        entries = []
-        for id, line in enumerate(lines[1:]):
-            entry = MapEntry(line, id, page_num)
-            entries.append(entry)
-        return entries
+class Page:
+    def __init__(self, number, almanac):
+        self.almanac = almanac
+        self.number = number
 
-    def find_lowest_location_entry(self):
-        locations = self.find_entries_by_page(7)
-        return sorted(locations, key=lambda l: l.min_dest)[0]
+    @property
+    def content(self):
+        return self.almanac.blocks[self.number].strip()
+
+    @property
+    def lines(self):
+        return self.content.split('\n')
+
+    @property
+    def mappings(self):
+        mappings = []
+        for id, line in enumerate(self.lines[1:]):
+            mapping = Mapping(line, id, self)
+            mappings.append(mapping)
+        return mappings
 
 
-class MapEntry:
-    def __init__(self, input, id, page_num):
+class Mapping:
+    def __init__(self, input, id, page):
         self.input = input
         self.id = id
-        self.page_num = page_num
-        min_dest, min_source, range = input.strip().split()
+        self.page = page
 
+        min_dest, min_source, range = input.strip().split()
         self.min_dest = int(min_dest)
         self.min_source = int(min_source)
         self.range = int(range)
         self.max_dest = self.min_dest + self.range
         self.max_source = self.min_source + self.range
 
-    def is_mapped_child_to(self, parent):
-        """An entry is a parent if one of its dest values can produce a source in this
-        entry."""
-        return any([
-            parent.min_dest <= self.min_source < parent.max_dest,
-            parent.min_dest <= self.max_source < parent.max_dest
-        ])
-
-    def contains_source_value(self, value):
-        return self.min_source <= value < self.max_source
-
-    def contains_dest_value(self, value):
-        return self.min_dest <= value < self.max_dest
-
     def __repr__(self):
         source = (self.min_source, self.max_source)
-        return f"<MapEntry id={self.id} source={self.min_source} range={self.range}>"
+        return f"<Mapping page={self.page_num} id={self.id} source={self.min_source} range={self.range}>"
 
 
 class Seed:
@@ -257,6 +245,11 @@ humidity-to-location map:
         print(location_entry)
 
         entries = almanac.find_parent_entries(location_entry)
+        entries = almanac.find_parent_entries(entries[0])
+        entries = almanac.find_parent_entries(entries[0])
+        entries = almanac.find_parent_entries(entries[0])
+        entries = almanac.find_parent_entries(entries[0])
+        entries = almanac.find_parent_entries(entries[0])
         print(entries)
 
     #
