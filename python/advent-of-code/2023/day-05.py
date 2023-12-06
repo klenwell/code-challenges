@@ -92,10 +92,10 @@ class Almanac:
 
 class ExtendedAlmanac(Almanac):
     def find_lowest_location_number_backwards(self):
-        location_page = self.get_page(7)
-        min_location_entry = sorted(location_page.entries, key=lambda p: p.min_dest)[0]
-        seed_packet = SeedPacket(min_location_entry)
-        init_packet = seed_packet.trace_source_seeds()
+        location_page = self.pages[7]
+        min_location_mapping = sorted(location_page.mappings, key=lambda p: p.min_dest)[0]
+        seed_packet = SeedPacket(min_location_mapping)
+        init_packet = seed_packet.winnow_source()
         return init_packet
 
     @cached_property
