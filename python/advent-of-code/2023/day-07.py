@@ -74,6 +74,38 @@ class CamelHand:
         return f"<Hand cards={self.cards} bid={self.bid} sort_key={self.sort_key}>"
 
 
+class CamelJokerHand(CamelHand):
+    CARD_TYPES = list('AKQT98765432J')
+
+    @cached_property
+    def card_counts(self):
+        if 'J' in self.cards and set(self.cards) != set(['J']):
+            non_joker_cards = [c for c in self.cards if c != 'J']
+            non_joker_counts = self.count_and_sort_cards(non_joker_cards)
+            high_card = non_joker_counts[0][0]
+            cards = [high_card if c == 'J' else c for c in self.cards]
+            counts = self.count_and_sort_cards(cards)
+        else:
+            counts = self.count_and_sort_cards(self.cards)
+        return tuple([c[1] for c in counts])
+
+    def count_and_sort_cards(self, cards):
+        # https://stackoverflow.com/a/23909767/1093087
+        counts = [(c, cards.count(c)) for c in set(cards)]
+        return sorted(counts, key=lambda c: c[1], reverse=True)
+
+
+class CamelJokerDealer(CamelDealer):
+    @cached_property
+    def hands(self):
+        hands = []
+        for line in self.input.strip().split("\n"):
+            cards, bid = line.split(' ')
+            hand = CamelJokerHand(cards, bid)
+            hands.append(hand)
+        return hands
+
+
 class AdventPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-07.txt')
 
@@ -101,7 +133,9 @@ QQQJA 483"""
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        dealer = CamelJokerDealer(input)
+        return dealer.total_winnings
 
     #
     # Tests
@@ -115,14 +149,21 @@ QQQJA 483"""
         assert hand.card_counts == (2, 2, 1), hand
         assert hand.bid == 220, hand
 
-        dealer = CamelDealer(input)
-        assert dealer.total_winnings == 6440, dealer.total_winnings
         return 'passed'
 
     @property
     def test2(self):
         input = self.TEST_INPUT
-        print(input)
+
+        hand = CamelJokerHand('KTJJT', 220)
+        print(hand)
+        assert hand.card_counts == (4, 1), hand
+        assert hand.bid == 220, hand
+
+        dealer = CamelJokerDealer(input)
+        from pprint import pprint
+        pprint(dealer.sorted_hands)
+        assert dealer.total_winnings == 5905, dealer.total_winnings
         return 'passed'
 
     #
