@@ -4,7 +4,7 @@ https://adventofcode.com/2023/day/6
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR,  info
+from common import INPUT_DIR, info
 
 
 class Regatta:
@@ -66,8 +66,6 @@ class Race:
 
     def __repr__(self):
         return f"<Race t={self.duration} d={self.distance}>"
-
-
 
 
 class AdventPuzzle:
