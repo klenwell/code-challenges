@@ -145,7 +145,7 @@ class PodAlmanac(Almanac):
         pods = []
         seed_block = self.blocks[0]
         _, ids = seed_block.split(':')
-        seed_ids = ids.strip()(' ')
+        seed_ids = ids.strip().split()
 
         for n in range(len(seed_ids)):
             if n % 2 == 0:
@@ -155,7 +155,7 @@ class PodAlmanac(Almanac):
             pod = SeedPod(start_id, length, self)
             pods.append(pod)
 
-        return pod
+        return pods
 
     def find_lowest_location_number_backwards(self):
         location_page = self.pages[7]
@@ -166,17 +166,14 @@ class PodAlmanac(Almanac):
         return init_packet
 
 class SeedPod:
-    def __init__(self):
-        self.mapping = mapping
-        self.page = mapping.page
-        self.almanac = self.page.almanac
+    def __init__(self, start_id, length, almanac):
+        self.start_id = start_id
+        self.end_id = start_id + length - 1
+        self.length = length
+        self.almanac = almanac
 
-    def count_seeds(self):
-        pass
-
-    def source_seeds(self):
-        # Trace packet of seed attributes back to source attribute (seed num)
-        pass
+    def __repr__(self):
+        return f"<Pod start_id={self.start_id} length={self.length}>"
 
 
 class Page:
@@ -344,9 +341,15 @@ humidity-to-location map:
     def test2(self):
         input = self.TEST_INPUT
         almanac = PodAlmanac(input)
-        print(almanac.pages[0])
-        print(almanac.pages[1])
-        print(almanac.pages[1].mappings[0])
+
+        page = almanac.pages[1]
+        pod = almanac.pods[0]
+
+        assert page.maps_from == 'seed', page
+        assert page.maps_to == 'soil', page
+        assert pod.start_id == 79, pod
+        assert pod.end_id == 92, pod
+
         lowest_loc_number = almanac.lowest_location
         assert lowest_loc_number == 46, lowest_loc_number
         return 'passed'
