@@ -55,6 +55,26 @@ class GhostMap(DesertMap):
                 node_ids.append(node_id)
         return node_ids
 
+    def walk_to_xxz(self):
+        steps = 0
+        node_ids = self.nodes_ending_in_a
+        all_on_xxz = False
+
+        while not all_on_xxz:
+            index = steps % len(self.instructions)
+            new_node_ids = []
+            for node_id in node_ids:
+                direction = self.instructions[index]
+                left, right = self.nodes[node_id]
+                new_node_id = left if direction == 'L' else right
+                new_node_ids.append(new_node_id)
+            steps += 1
+            node_ids = new_node_ids
+            all_on_xxz = all([n[-1] == 'Z' for n in node_ids])
+            print(steps, all_on_xxz, node_ids)
+
+        return steps
+
 
 class AdventPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-08.txt')
@@ -84,9 +104,14 @@ ZZZ = (ZZZ, ZZZ)"""
 
     @property
     def second(self):
+        # Suspect this requires LCM. See:
+        # https://github.com/klenwell/code-challenges/blob/main/python/advent-of-code/2022/day-11.py
+        # https://docs.python.org/3/library/math.html#math.lcm
         input = self.file_input
         map = GhostMap(input)
         print(map.nodes_ending_in_a)
+        steps = map.walk_to_xxz()
+        return steps
 
     #
     # Tests
@@ -117,6 +142,8 @@ XXX = (XXX, XXX)"""
 
         map = GhostMap(input)
         print(map.nodes_ending_in_a)
+        steps = map.walk_to_xxz()
+        assert steps == 6, steps
         return 'passed'
 
     #
