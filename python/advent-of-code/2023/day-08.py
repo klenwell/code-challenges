@@ -6,6 +6,8 @@ from os.path import join as path_join
 from functools import cached_property
 from common import INPUT_DIR
 
+import math
+
 
 class DesertMap:
     def __init__(self, input):
@@ -56,6 +58,37 @@ class GhostMap(DesertMap):
         return node_ids
 
     def walk_to_xxz(self):
+        node_ids = self.nodes_ending_in_a
+        ghost_steps = []
+
+        for node_id in node_ids:
+            steps = self.walk_node_to_xxz(node_id)
+            print(node_id, steps)
+            ghost_steps.append(steps)
+
+        return math.lcm(*ghost_steps)
+        #return math.prod(ghost_steps)
+
+    def walk_node_to_xxz(self, node_id):
+        steps = 0
+        end_found = False
+
+        while not end_found:
+            index = steps % len(self.instructions)
+            direction = self.instructions[index]
+            left, right = self.nodes[node_id]
+            node_id = left if direction == 'L' else right
+            steps += 1
+            end_found = node_id[-1] == 'Z'
+
+        return steps
+
+
+    def walk_to_xxz_naively(self):
+        """Suspect this requires LCM. See:
+        https://github.com/klenwell/code-challenges/blob/main/python/advent-of-code/2022/day-11.py
+        https://docs.python.org/3/library/math.html#math.lcm
+        """
         steps = 0
         node_ids = self.nodes_ending_in_a
         all_on_xxz = False
@@ -104,13 +137,12 @@ ZZZ = (ZZZ, ZZZ)"""
 
     @property
     def second(self):
-        # Suspect this requires LCM. See:
-        # https://github.com/klenwell/code-challenges/blob/main/python/advent-of-code/2022/day-11.py
-        # https://docs.python.org/3/library/math.html#math.lcm
         input = self.file_input
         map = GhostMap(input)
         print(map.nodes_ending_in_a)
         steps = map.walk_to_xxz()
+
+        assert steps != 16449085039026865463698093, steps
         return steps
 
     #
