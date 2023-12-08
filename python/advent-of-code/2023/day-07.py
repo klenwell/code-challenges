@@ -14,8 +14,8 @@ class CamelDealer:
     @cached_property
     def total_winnings(self):
         values = []
-        for n, hand in enumerate(self.sorted_hands):
-            rank = len(self.sorted_hands) - n
+        for n, hand in enumerate(self.ranked_hands):
+            rank = len(self.ranked_hands) - n
             value = hand.compute_value(rank)
             values.append(value)
         return sum(values)
@@ -30,12 +30,23 @@ class CamelDealer:
         return hands
 
     @cached_property
-    def sorted_hands(self):
+    def ranked_hands(self):
         return sorted(self.hands, key=lambda h: h.sort_key)
 
 
+class CamelJokerDealer(CamelDealer):
+    @cached_property
+    def hands(self):
+        hands = []
+        for line in self.input.strip().split("\n"):
+            cards, bid = line.split(' ')
+            hand = CamelJokerHand(cards, bid)
+            hands.append(hand)
+        return hands
+
+
 class CamelHand:
-    RANKS = [(5,), (4,1), (3,2), (3,1,1), (2,2,1), (2,1,1,1), (1,1,1,1,1) ]
+    RANKS = [(5,), (4, 1), (3, 2), (3, 1, 1), (2, 2, 1), (2, 1, 1, 1), (1, 1, 1, 1, 1)]
     CARD_TYPES = list('AKQJT98765432')
 
     def __init__(self, input, bid):
@@ -45,6 +56,10 @@ class CamelHand:
     @cached_property
     def cards(self):
         return list(self.input)
+
+    @cached_property
+    def sort_key(self):
+        return (self.type_key, self.ordering_key)
 
     @cached_property
     def card_counts(self):
@@ -62,10 +77,6 @@ class CamelHand:
         for card in self.cards:
             key.append(self.CARD_TYPES.index(card))
         return tuple(key)
-
-    @cached_property
-    def sort_key(self):
-        return (self.type_key, self.ordering_key)
 
     def compute_value(self, rank):
         return self.bid * rank
@@ -93,17 +104,6 @@ class CamelJokerHand(CamelHand):
         # https://stackoverflow.com/a/23909767/1093087
         counts = [(c, cards.count(c)) for c in set(cards)]
         return sorted(counts, key=lambda c: c[1], reverse=True)
-
-
-class CamelJokerDealer(CamelDealer):
-    @cached_property
-    def hands(self):
-        hands = []
-        for line in self.input.strip().split("\n"):
-            cards, bid = line.split(' ')
-            hand = CamelJokerHand(cards, bid)
-            hands.append(hand)
-        return hands
 
 
 class AdventPuzzle:
@@ -149,6 +149,8 @@ QQQJA 483"""
         assert hand.card_counts == (2, 2, 1), hand
         assert hand.bid == 220, hand
 
+        dealer = CamelDealer(input)
+        assert dealer.total_winnings == 6440, dealer.total_winnings
         return 'passed'
 
     @property
@@ -156,13 +158,10 @@ QQQJA 483"""
         input = self.TEST_INPUT
 
         hand = CamelJokerHand('KTJJT', 220)
-        print(hand)
         assert hand.card_counts == (4, 1), hand
         assert hand.bid == 220, hand
 
         dealer = CamelJokerDealer(input)
-        from pprint import pprint
-        pprint(dealer.sorted_hands)
         assert dealer.total_winnings == 5905, dealer.total_winnings
         return 'passed'
 
