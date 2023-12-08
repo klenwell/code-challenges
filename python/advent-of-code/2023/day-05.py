@@ -90,78 +90,6 @@ class Almanac:
         return mapping
 
 
-class ExtendedAlmanac(Almanac):
-    def find_lowest_location_number_backwards(self):
-        location_page = self.pages[7]
-        min_location_mapping = sorted(location_page.mappings, key=lambda p: p.min_dest)[0]
-        print(min_location_mapping)
-        seed_packet = SeedPacket(min_location_mapping)
-        init_packet = seed_packet.source_seeds()
-        return init_packet
-
-    @cached_property
-    def pages(self):
-        pages = {}
-        for n in range(1,8):
-            page = Page(n, self)
-            pages[n] = page
-        return pages
-
-class SeedPacket:
-    def __init__(self, mapping):
-        self.mapping = mapping
-        self.page = mapping.page
-        self.almanac = self.page.almanac
-
-    def count_seeds(self):
-        pass
-
-    def source_seeds(self):
-        # Trace packet of seed attributes back to source attribute (seed num)
-        pass
-
-
-
-class Page:
-    def __init__(self, number, almanac):
-        self.almanac = almanac
-        self.number = number
-
-    @property
-    def content(self):
-        return self.almanac.blocks[self.number].strip()
-
-    @property
-    def lines(self):
-        return self.content.split('\n')
-
-    @property
-    def mappings(self):
-        mappings = []
-        for id, line in enumerate(self.lines[1:]):
-            mapping = Mapping(line, id, self)
-            mappings.append(mapping)
-        return mappings
-
-
-class Mapping:
-    def __init__(self, input, id, page):
-        self.input = input
-        self.id = id
-        self.page = page
-
-        min_dest, min_source, range = input.strip().split()
-        self.min_dest = int(min_dest)
-        self.min_source = int(min_source)
-        self.range = int(range)
-        self.max_dest = self.min_dest + self.range
-        self.max_source = self.min_source + self.range
-
-    def __repr__(self):
-        source = (self.min_source, self.max_source)
-        return f"<Mapping page={self.page.number} id={self.id} min_dest={self.min_dest}>"
-
-
 class Seed:
     def __init__(self, id, almanac):
         self.id = id
@@ -194,6 +122,141 @@ class Seed:
     @property
     def soil(self):
         return self.almanac.map_seed_to_soil(self.id)
+
+
+class PodAlmanac(Almanac):
+    def __init__(self, input):
+        self.input = input.strip()
+
+    @cached_property
+    def blocks(self):
+        return [block.strip() for block in self.input.split("\n\n")]
+
+    @cached_property
+    def pages(self):
+        pages = []
+        for n in range(len(self.blocks)):
+            page = Page(n, self)
+            pages.append(page)
+        return pages
+
+    @cached_property
+    def pods(self):
+        pods = []
+        seed_block = self.blocks[0]
+        _, ids = seed_block.split(':')
+        seed_ids = ids.strip()(' ')
+
+        for n in range(len(seed_ids)):
+            if n % 2 == 0:
+                continue
+            start_id = int(seed_ids[n-1])
+            length = int(seed_ids[n])
+            pod = SeedPod(start_id, length, self)
+            pods.append(pod)
+
+        return pod
+
+    def find_lowest_location_number_backwards(self):
+        location_page = self.pages[7]
+        min_location_mapping = sorted(location_page.mappings, key=lambda p: p.min_dest)[0]
+        print(min_location_mapping)
+        seed_packet = SeedPacket(min_location_mapping)
+        init_packet = seed_packet.source_seeds()
+        return init_packet
+
+class SeedPod:
+    def __init__(self):
+        self.mapping = mapping
+        self.page = mapping.page
+        self.almanac = self.page.almanac
+
+    def count_seeds(self):
+        pass
+
+    def source_seeds(self):
+        # Trace packet of seed attributes back to source attribute (seed num)
+        pass
+
+
+class Page:
+    def __init__(self, number, almanac):
+        self.almanac = almanac
+        self.number = number
+
+    @property
+    def content(self):
+        return self.almanac.blocks[self.number].strip()
+
+    @property
+    def lines(self):
+        return self.content.split('\n')
+
+    @property
+    def header(self):
+        return self.lines[0]
+
+    @property
+    def maps_to(self):
+        if not 'map' in self.header:
+            return None
+        _, right = self.header.split('-to-')
+        maps_to, _ = right.split(' ')
+        return maps_to.strip()
+
+    @property
+    def maps_from(self):
+        if not 'map' in self.header:
+            return None
+        maps_from, _ = self.header.split('-to-')
+        return maps_from.strip()
+
+    @property
+    def mappings(self):
+        mappings = []
+        for line in self.lines[1:]:
+            mapping = Mapping(line, self)
+            mappings.append(mapping)
+        return mappings
+
+    def __repr__(self):
+        maps = f"{self.maps_from}->{self.maps_to}"
+        return f"<Page number={self.number} {maps}>"
+
+
+class Mapping:
+    def __init__(self, line, page):
+        self.line = line.strip()
+        self.page = page
+
+    @property
+    def min_in(self):
+        _, min_in, _ = self.line.split()
+        return int(min_in)
+
+    @property
+    def max_in(self):
+        return self.min_in + self.length
+
+    @property
+    def min_out(self):
+        min_out, _, _ = self.line.split()
+        return int(min_out)
+
+    @property
+    def length(self):
+        _, _, length = self.line.split()
+        return int(length)
+
+    def map(self, value):
+        if value < self.min_in or value > self.max_in:
+            raise Exception(f"{self} does not map {value}")
+        offset = value - self.min_in
+        return self.min_out + offset
+
+    def __repr__(self):
+        maps = f"{self.min_in}->{self.min_out}"
+        return f"<Mapping page={self.page.number} {maps} length={self.length}>"
 
 
 class AdventPuzzle:
@@ -280,8 +343,11 @@ humidity-to-location map:
     @property
     def test2(self):
         input = self.TEST_INPUT
-        almanac = ExtendedAlmanac(input)
-        lowest_loc_number = almanac.find_lowest_location_number_backwards()
+        almanac = PodAlmanac(input)
+        print(almanac.pages[0])
+        print(almanac.pages[1])
+        print(almanac.pages[1].mappings[0])
+        lowest_loc_number = almanac.lowest_location
         assert lowest_loc_number == 46, lowest_loc_number
         return 'passed'
 
