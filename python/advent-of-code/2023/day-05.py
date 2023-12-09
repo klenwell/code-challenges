@@ -24,6 +24,10 @@ class SeedAlmanac:
         return pages
 
     @cached_property
+    def mapping_pages(self):
+        return self.pages[1:]
+
+    @cached_property
     def seeds(self):
         seeds = []
         seed_block = self.blocks[0]
@@ -117,6 +121,11 @@ class Seed:
         self.almanac = almanac
 
     @cached_property
+    def seed(self):
+        # Almanac refers uses "seed" to refer to seed id
+        return self.id
+
+    @cached_property
     def location(self):
         return self.almanac.map_humidity_to_location(self.humidity)
 
@@ -157,30 +166,36 @@ class PodAlmanac(SeedAlmanac):
     @cached_property
     def lowest_location(self):
         pods = list(self.pods)
-        for page in self.pages:
+        for page in self.mapping_pages:
             pods_out = []
             for pod in pods:
                 pods = self.map_pod_by_page(pod, page)
                 pods_out += pods
             pods = list(pods_out)
-            print(pods)
-        fail()
+            print(len(pods), pods[-1])
+        sorted_pods = sorted(pods, key=lambda p: p.lead_seed.location)
+        print(pods[0])
+        return pods[0].lead_seed.location
 
     def map_pod_by_page(self, pod, page):
         # Send lead seed in pod to next gate
         seed = pod.lead_seed
 
         # Find mapping
-        mapping = page.find_mapping_for_seed(pod.first_seed)
+        mapping = page.find_mapping_for_seed(pod.lead_seed)
 
-        if mapping.maps_seed(pod.last_seed):
+        # If no mapping, create a NullMapping mapping
+        if not mapping:
+            mapping = NullMapping(pod, page)
+
+        if mapping.encompasses_pod(pod):
             return [pod]
 
-        offset = seed.get_value_by_category(page.maps_from)
-        mapping_size = pod.length - offset
-        old_pod, new_pod = pod.split_at_offset(offset)
+        # Split pod
+        new_pod_lead_id = seed.id + mapping.length + 1
+        new_pod = pod.split_at_id(new_pod_lead_id)
 
-        return old_pod + self.convert_pod_by_page(new_pod, page)
+        return [pod] + self.map_pod_by_page(new_pod, page)
 
     def map_value(self, value, block_index):
         block = self.blocks[block_index]
@@ -242,6 +257,17 @@ class SeedPod:
     def min_location(self):
         return self.lead_seed.location
 
+    def max_value_for_category(self, category):
+        lead_seed_category_value = getattr(self.lead_seed, category)
+        return lead_seed_category_value + self.length - 1
+
+    def split_at_id(self, seed_id):
+        old_pod_length = self.lead_seed.id - seed_id
+        new_pod_length = self.length - old_pod_length
+        new_pod = SeedPod(seed_id, new_pod_length, self.almanac)
+        self.length = old_pod_length
+        return new_pod
+
     def __repr__(self):
         return f"<Pod lead_id={self.lead_id} length={self.length}>"
 
@@ -287,10 +313,12 @@ class Page:
         return mappings
 
     def find_mapping_for_seed(self, seed):
+        print(seed, self, self.maps_from)
         value = getattr(seed, self.maps_from)
         for mapping in self.mappings:
-            if mapping.maps_seed(seed):
+            if mapping.includes_seed(seed):
                 return mapping
+        return None
 
     def __repr__(self):
         maps = f"{self.maps_from}->{self.maps_to}"
@@ -301,13 +329,6 @@ class Mapping:
     def __init__(self, line, page):
         self.line = line.strip()
         self.page = page
-
-    def maps_seed(self, seed):
-        value = getattr(seed, self.maps_from)
-        return self.maps_value(value)
-
-    def maps_value(self, value):
-        return self.min_in <= value <= self.max_in
 
     @property
     def min_in(self):
@@ -328,10 +349,9 @@ class Mapping:
         _, _, length = self.line.split()
         return int(length)
 
-    def map(self, value):
-        if not self.maps_value(value):
-            raise Exception(f"{self} does not map {value}")
-
+    @cached_property
+    def category(self):
+        return self.page.maps_from
 
     def map_from_value(self, value):
         if not self.includes_value(value):
@@ -339,12 +359,37 @@ class Mapping:
         offset = value - self.min_in
         return self.min_out + offset
 
+    def includes_seed(self, seed):
+        value = getattr(seed, self.category)
+        return self.includes_value(value)
+
     def includes_value(self, value):
         return self.min_in <= value <= self.max_in
+
+    def encompasses_pod(self, pod):
+        return self.max_in <= pod.max_value_for_category(self.category)
 
     def __repr__(self):
         maps = f"{self.min_in}->{self.min_out}"
         return f"<Mapping page={self.page.number} {maps} length={self.length}>"
+
+
+class NullMapping(Mapping):
+    def __init__(self, pod, page):
+        pod_category_value = getattr(pod.lead_seed, page.maps_from)
+        next_page_mapping = self.find_next_mapping_for_page(page, pod_category_value)
+        length = next_page_mapping.min_in - pod_category_value if next_page_mapping else 1000000000
+        line = f"{pod_category_value} {pod_category_value} {length}"
+        super().__init__(line, page)
+
+    def find_next_mapping_for_page(self, page, value):
+        sorted_mappings = sorted(page.mappings, key=lambda m: m.min_in)
+        for n, mapping in enumerate(sorted_mappings):
+            last_max_in = sorted_mappings[n-1].max_in if n > 1 else 0
+            next_min_in = mapping.min_in
+            if last_max_in < value < next_min_in:
+                return mapping
+        return None
 
 
 class AdventPuzzle:
