@@ -29,7 +29,7 @@ class Sensor:
         values = []
         for line in self.lines:
             extrapolator = Extrapolator(line)
-            print(line, extrapolator.first_value)
+            print(extrapolator.history, extrapolator.first_value)
             values.append(extrapolator.first_value)
         return sum(values)
 
@@ -44,8 +44,17 @@ class Extrapolator:
         for sequence in self.sequences[1:]:
             last_value = sequence[-1]
             next_value += last_value
-            #print(sequence, last_value, next_value)
+            #print(sequence, next_value)
         return next_value
+
+    @cached_property
+    def first_value(self):
+        prev_value = 0
+        for sequence in self.sequences[1:]:
+            first_value = sequence[0]
+            prev_value = first_value - prev_value
+            #print(prev_value, sequence)
+        return prev_value
 
     @cached_property
     def history(self):
@@ -95,7 +104,9 @@ class AdventPuzzle:
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        sensor = Sensor(input)
+        return sensor.backwards_sum
 
     #
     # Tests
