@@ -152,22 +152,23 @@ class PodAlmanac(SeedAlmanac):
     @cached_property
     def pods(self):
         seed_block = self.blocks[0]
-        return SeedPod.extract_from_ranges(seed_block)
+        return SeedPod.extract_from_ranges(seed_block, self)
 
+    @cached_property
     def lowest_location(self):
         pods = list(self.pods)
         for page in self.pages:
             pods_out = []
             for pod in pods:
-                pods = self.convert_pod_by_page(pod, page)
+                pods = self.map_pod_by_page(pod, page)
                 pods_out += pods
             pods = list(pods_out)
             print(pods)
         fail()
 
-    def convert_pod_by_page(self, pod, page):
+    def map_pod_by_page(self, pod, page):
         # Send lead seed in pod to next gate
-        seed = pod.first_seed
+        seed = pod.lead_seed
 
         # Find mapping
         mapping = page.find_mapping_for_seed(pod.first_seed)
@@ -212,7 +213,7 @@ class PodAlmanac(SeedAlmanac):
 
 class SeedPod:
     @staticmethod
-    def extract_from_ranges(input):
+    def extract_from_ranges(input, almanac):
         pods = []
         _, ids = input.split(':')
         seed_ids = ids.strip().split()
@@ -222,21 +223,11 @@ class SeedPod:
                 continue
             start_id = int(seed_ids[n-1])
             length = int(seed_ids[n])
-            pod = SeedPod(start_id, length, self)
+            pod = SeedPod(start_id, length, almanac)
             pods.append(pod)
 
         return pods
 
-    def find_lowest_location_number_backwards(self):
-        location_page = self.pages[7]
-        min_location_mapping = sorted(location_page.mappings, key=lambda p: p.min_dest)[0]
-        print(min_location_mapping)
-        seed_packet = SeedPacket(min_location_mapping)
-        init_packet = seed_packet.source_seeds()
-        return init_packet
-
-
-class SeedPod:
     def __init__(self, lead_id, length, almanac):
         self.lead_id = lead_id
         self.end_id = lead_id + length - 1
@@ -246,6 +237,10 @@ class SeedPod:
     @cached_property
     def lead_seed(self):
         return Seed(self.lead_id, self.almanac)
+
+    @cached_property
+    def min_location(self):
+        return self.lead_seed.location
 
     def __repr__(self):
         return f"<Pod lead_id={self.lead_id} length={self.length}>"
@@ -443,7 +438,7 @@ humidity-to-location map:
 
         assert page.maps_from == 'seed', page
         assert page.maps_to == 'soil', page
-        assert pod.start_id == 79, pod
+        assert pod.lead_id == 79, pod
         assert pod.end_id == 92, pod
 
         lowest_loc_number = almanac.lowest_location
