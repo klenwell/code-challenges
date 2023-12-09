@@ -172,10 +172,10 @@ class PodAlmanac(SeedAlmanac):
                 pods = self.map_pod_by_page(pod, page)
                 pods_out += pods
             pods = list(pods_out)
-            print(len(pods), pods[-1])
         sorted_pods = sorted(pods, key=lambda p: p.lead_seed.location)
-        print(pods[0])
-        return pods[0].lead_seed.location
+        print(len(sorted_pods), sorted_pods[0], sorted_pods[-1])
+        print(sorted_pods[0].lead_seed, sorted_pods[0].lead_seed.location)
+        return sorted_pods[0].lead_seed.location
 
     def map_pod_by_page(self, pod, page):
         # Send lead seed in pod to next gate
@@ -188,12 +188,17 @@ class PodAlmanac(SeedAlmanac):
         if not mapping:
             mapping = NullMapping(pod, page)
 
+        # If pod fits in mapping, done!
         if mapping.encompasses_pod(pod):
             return [pod]
 
-        # Split pod
-        new_pod_lead_id = seed.id + mapping.length + 1
+        # Pod too big for mapping? Split pod to fit
+        seeds_mapped = mapping.how_many_seeds_from_pod(pod)
+        print(pod, seeds_mapped, mapping)
+        new_pod_lead_id = seed.id + seeds_mapped
         new_pod = pod.split_at_id(new_pod_lead_id)
+        print('split', pod, new_pod)
+        breakpoint()
 
         return [pod] + self.map_pod_by_page(new_pod, page)
 
@@ -241,6 +246,7 @@ class SeedPod:
             pod = SeedPod(start_id, length, almanac)
             pods.append(pod)
 
+        print(pods)
         return pods
 
     def __init__(self, lead_id, length, almanac):
@@ -262,7 +268,7 @@ class SeedPod:
         return lead_seed_category_value + self.length - 1
 
     def split_at_id(self, seed_id):
-        old_pod_length = self.lead_seed.id - seed_id
+        old_pod_length = seed_id - self.lead_seed.id
         new_pod_length = self.length - old_pod_length
         new_pod = SeedPod(seed_id, new_pod_length, self.almanac)
         self.length = old_pod_length
@@ -313,7 +319,7 @@ class Page:
         return mappings
 
     def find_mapping_for_seed(self, seed):
-        print(seed, self, self.maps_from)
+        #print(seed, self, self.maps_from)
         value = getattr(seed, self.maps_from)
         for mapping in self.mappings:
             if mapping.includes_seed(seed):
@@ -367,7 +373,12 @@ class Mapping:
         return self.min_in <= value <= self.max_in
 
     def encompasses_pod(self, pod):
-        return self.max_in <= pod.max_value_for_category(self.category)
+        return self.max_in >= pod.max_value_for_category(self.category)
+
+    def how_many_seeds_from_pod(self, pod):
+        lead_seed_in = getattr(pod.lead_seed, self.category)
+        offset = lead_seed_in - self.min_in
+        return self.length - offset + 1
 
     def __repr__(self):
         maps = f"{self.min_in}->{self.min_out}"
