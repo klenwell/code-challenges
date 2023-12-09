@@ -167,6 +167,7 @@ class PodAlmanac(SeedAlmanac):
     def lowest_location(self):
         pods = list(self.pods)
         for page in self.mapping_pages:
+            print(page)
             pods_out = []
             for pod in pods:
                 pods = self.map_pod_by_page(pod, page)
@@ -194,11 +195,11 @@ class PodAlmanac(SeedAlmanac):
 
         # Pod too big for mapping? Split pod to fit
         seeds_mapped = mapping.how_many_seeds_from_pod(pod)
-        print(pod, seeds_mapped, mapping)
+        print(pod, getattr(pod.lead_seed, mapping.category), mapping, seeds_mapped)
         new_pod_lead_id = seed.id + seeds_mapped
         new_pod = pod.split_at_id(new_pod_lead_id)
         print('split', pod, new_pod)
-        breakpoint()
+        #breakpoint()
 
         return [pod] + self.map_pod_by_page(new_pod, page)
 
@@ -251,7 +252,6 @@ class SeedPod:
 
     def __init__(self, lead_id, length, almanac):
         self.lead_id = lead_id
-        self.end_id = lead_id + length - 1
         self.length = length
         self.almanac = almanac
 
@@ -265,7 +265,7 @@ class SeedPod:
 
     def max_value_for_category(self, category):
         lead_seed_category_value = getattr(self.lead_seed, category)
-        return lead_seed_category_value + self.length - 1
+        return lead_seed_category_value + self.length
 
     def split_at_id(self, seed_id):
         old_pod_length = seed_id - self.lead_seed.id
@@ -376,9 +376,9 @@ class Mapping:
         return self.max_in >= pod.max_value_for_category(self.category)
 
     def how_many_seeds_from_pod(self, pod):
-        lead_seed_in = getattr(pod.lead_seed, self.category)
-        offset = lead_seed_in - self.min_in
-        return self.length - offset + 1
+        lead_seed_value_in = getattr(pod.lead_seed, self.category)
+        offset = lead_seed_value_in - self.min_in
+        return self.length - offset
 
     def __repr__(self):
         maps = f"{self.min_in}->{self.min_out}"
@@ -461,17 +461,7 @@ humidity-to-location map:
     def second(self):
         input = self.file_input
         almanac = PodAlmanac(input)
-
-        location_entry = almanac.find_lowest_location_entry()
-        print(location_entry)
-
-        entries = almanac.find_parent_entries(location_entry)
-        entries = almanac.find_parent_entries(entries[0])
-        entries = almanac.find_parent_entries(entries[0])
-        entries = almanac.find_parent_entries(entries[0])
-        entries = almanac.find_parent_entries(entries[0])
-        entries = almanac.find_parent_entries(entries[0])
-        print(entries)
+        return almanac.lowest_location
 
     #
     # Tests
@@ -495,7 +485,6 @@ humidity-to-location map:
         assert page.maps_from == 'seed', page
         assert page.maps_to == 'soil', page
         assert pod.lead_id == 79, pod
-        assert pod.end_id == 92, pod
 
         lowest_loc_number = almanac.lowest_location
         assert lowest_loc_number == 46, lowest_loc_number
