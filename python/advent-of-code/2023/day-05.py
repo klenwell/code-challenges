@@ -7,7 +7,7 @@ from functools import cached_property
 from common import INPUT_DIR, info
 
 
-class Almanac:
+class SeedAlmanac:
     def __init__(self, input):
         self.input = input.strip()
 
@@ -145,7 +145,7 @@ class Seed:
         return self.almanac.map_seed_to_soil(self.id)
 
 
-class PodAlmanac(Almanac):
+class PodAlmanac(SeedAlmanac):
     def __init__(self, input):
         self.input = input.strip()
 
@@ -154,13 +154,60 @@ class PodAlmanac(Almanac):
         seed_block = self.blocks[0]
         return SeedPod.extract_from_ranges(seed_block)
 
-    def find_lowest_location_number_backwards(self):
-        location_page = self.pages[7]
-        min_location_mapping = sorted(location_page.mappings, key=lambda p: p.min_dest)[0]
-        print(min_location_mapping)
-        seed_packet = SeedPacket(min_location_mapping)
-        init_packet = seed_packet.source_seeds()
-        return init_packet
+    def lowest_location(self):
+        pods = list(self.pods)
+        for page in self.pages:
+            pods_out = []
+            for pod in pods:
+                pods = self.convert_pod_by_page(pod, page)
+                pods_out += pods
+            pods = list(pods_out)
+            print(pods)
+        fail()
+
+    def convert_pod_by_page(self, pod, page):
+        # Send lead seed in pod to next gate
+        seed = pod.first_seed
+
+        # Find mapping
+        mapping = page.find_mapping_for_seed(pod.first_seed)
+
+        if mapping.maps_seed(pod.last_seed):
+            return [pod]
+
+        offset = seed.get_value_by_category(page.maps_from)
+        mapping_size = pod.length - offset
+        old_pod, new_pod = pod.split_at_offset(offset)
+
+        return old_pod + self.convert_pod_by_page(new_pod, page)
+
+    def map_value(self, value, block_index):
+        block = self.blocks[block_index]
+        lines = block.split("\n")
+
+        for line in lines[1:]:
+            min_dest, min_source, range = line.strip().split()
+            min_source = int(min_source)
+
+            max_source = min_source + int(range)
+            if min_source <= value < max_source:
+                offset = value - min_source
+                mapped_value = int(min_dest) + offset
+                return mapped_value
+
+        return value
+
+    @cached_property
+    def categories(self):
+        categories = []
+        for page in self.pages:
+            category = page.maps_from
+            categories.append(category)
+        return categories
+
+    @cached_property
+    def blocks(self):
+        return [block.strip() for block in self.input.split("\n\n")]
 
 
 class SeedPod:
@@ -180,14 +227,28 @@ class SeedPod:
 
         return pods
 
-    def __init__(self, start_id, length, almanac):
-        self.start_id = start_id
-        self.end_id = start_id + length - 1
+    def find_lowest_location_number_backwards(self):
+        location_page = self.pages[7]
+        min_location_mapping = sorted(location_page.mappings, key=lambda p: p.min_dest)[0]
+        print(min_location_mapping)
+        seed_packet = SeedPacket(min_location_mapping)
+        init_packet = seed_packet.source_seeds()
+        return init_packet
+
+
+class SeedPod:
+    def __init__(self, lead_id, length, almanac):
+        self.lead_id = lead_id
+        self.end_id = lead_id + length - 1
         self.length = length
         self.almanac = almanac
 
+    @cached_property
+    def lead_seed(self):
+        return Seed(self.lead_id, self.almanac)
+
     def __repr__(self):
-        return f"<Pod start_id={self.start_id} length={self.length}>"
+        return f"<Pod lead_id={self.lead_id} length={self.length}>"
 
 
 class Page:
@@ -230,6 +291,12 @@ class Page:
             mappings.append(mapping)
         return mappings
 
+    def find_mapping_for_seed(self, seed):
+        value = getattr(seed, self.maps_from)
+        for mapping in self.mappings:
+            if mapping.maps_seed(seed):
+                return mapping
+
     def __repr__(self):
         maps = f"{self.maps_from}->{self.maps_to}"
         return f"<Page number={self.number} {maps}>"
@@ -240,6 +307,13 @@ class Mapping:
         self.line = line.strip()
         self.page = page
 
+    def maps_seed(self, seed):
+        value = getattr(seed, self.maps_from)
+        return self.maps_value(value)
+
+    def maps_value(self, value):
+        return self.min_in <= value <= self.max_in
+
     @property
     def min_in(self):
         _, min_in, _ = self.line.split()
@@ -247,7 +321,7 @@ class Mapping:
 
     @property
     def max_in(self):
-        return self.min_in + self.length
+        return self.min_in + self.length - 1
 
     @property
     def min_out(self):
@@ -260,7 +334,7 @@ class Mapping:
         return int(length)
 
     def map(self, value):
-        if value < self.min_in or value > self.max_in:
+        if not self.maps_value(value):
             raise Exception(f"{self} does not map {value}")
 
 
@@ -328,14 +402,14 @@ humidity-to-location map:
     @property
     def first(self):
         input = self.file_input
-        almanac = Almanac(input)
+        almanac = SeedAlmanac(input)
         lowest_loc_number = almanac.find_lowest_location_number()
         return lowest_loc_number
 
     @property
     def second(self):
         input = self.file_input
-        almanac = ExtendedAlmanac(input)
+        almanac = PodAlmanac(input)
 
         location_entry = almanac.find_lowest_location_entry()
         print(location_entry)
@@ -354,7 +428,7 @@ humidity-to-location map:
     @property
     def test1(self):
         input = self.TEST_INPUT
-        almanac = Almanac(input)
+        almanac = SeedAlmanac(input)
         lowest_loc_number = almanac.find_lowest_location_number()
         assert lowest_loc_number == 35, lowest_loc_number
         return 'passed'
