@@ -67,7 +67,6 @@ class GhostMap(DesertMap):
             ghost_steps.append(steps)
 
         return math.lcm(*ghost_steps)
-        #return math.prod(ghost_steps)
 
     def walk_node_to_xxz(self, node_id):
         steps = 0
@@ -83,8 +82,7 @@ class GhostMap(DesertMap):
 
         return steps
 
-
-    def walk_to_xxz_naively(self):
+    def brute_walk_to_xxz(self):
         """Suspect this requires LCM. See:
         https://github.com/klenwell/code-challenges/blob/main/python/advent-of-code/2022/day-11.py
         https://docs.python.org/3/library/math.html#math.lcm
