@@ -16,6 +16,14 @@ class Almanac:
         return [block.strip() for block in self.input.split("\n\n")]
 
     @cached_property
+    def pages(self):
+        pages = []
+        for n in range(len(self.blocks)):
+            page = Page(n, self)
+            pages.append(page)
+        return pages
+
+    @cached_property
     def seeds(self):
         seeds = []
         seed_block = self.blocks[0]
@@ -24,6 +32,20 @@ class Almanac:
             seed = Seed(int(id), self)
             seeds.append(seed)
         return seeds
+
+    def map_value_from_category(self, category, value):
+        page = self.find_page_by_category(category)
+        for mapping in page.mappings:
+            if mapping.includes_value(value):
+                return mapping.map_from_value(value)
+        # If mapping not found, return original value
+        return value
+
+    def find_page_by_category(self, category):
+        for page in self.pages:
+            if page.maps_from == category:
+                return page
+        raise Exception(f"page for {category} not found")
 
     def find_lowest_location_number(self):
         sorted_seeds = sorted(self.seeds, key=lambda s: s.location)
@@ -56,7 +78,6 @@ class Almanac:
     def map_seed_to_soil(self, value):
         block_index = 1
         return self.map_value_by_block(value, block_index)
-
 
     def map_value_by_block(self, value, block_index):
         block = self.blocks[block_index]
@@ -95,31 +116,31 @@ class Seed:
         self.id = id
         self.almanac = almanac
 
-    @property
+    @cached_property
     def location(self):
         return self.almanac.map_humidity_to_location(self.humidity)
 
-    @property
+    @cached_property
     def humidity(self):
         return self.almanac.map_temperature_to_humidity(self.temperature)
 
-    @property
+    @cached_property
     def temperature(self):
         return self.almanac.map_light_to_temperature(self.light)
 
-    @property
+    @cached_property
     def light(self):
         return self.almanac.map_water_to_light(self.water)
 
-    @property
+    @cached_property
     def water(self):
         return self.almanac.map_fertilizer_to_water(self.fertilizer)
 
-    @property
+    @cached_property
     def fertilizer(self):
         return self.almanac.map_soil_to_fertilizer(self.soil)
 
-    @property
+    @cached_property
     def soil(self):
         return self.almanac.map_seed_to_soil(self.id)
 
@@ -129,22 +150,24 @@ class PodAlmanac(Almanac):
         self.input = input.strip()
 
     @cached_property
-    def blocks(self):
-        return [block.strip() for block in self.input.split("\n\n")]
-
-    @cached_property
-    def pages(self):
-        pages = []
-        for n in range(len(self.blocks)):
-            page = Page(n, self)
-            pages.append(page)
-        return pages
-
-    @cached_property
     def pods(self):
-        pods = []
         seed_block = self.blocks[0]
-        _, ids = seed_block.split(':')
+        return SeedPod.extract_from_ranges(seed_block)
+
+    def find_lowest_location_number_backwards(self):
+        location_page = self.pages[7]
+        min_location_mapping = sorted(location_page.mappings, key=lambda p: p.min_dest)[0]
+        print(min_location_mapping)
+        seed_packet = SeedPacket(min_location_mapping)
+        init_packet = seed_packet.source_seeds()
+        return init_packet
+
+
+class SeedPod:
+    @staticmethod
+    def extract_from_ranges(input):
+        pods = []
+        _, ids = input.split(':')
         seed_ids = ids.strip().split()
 
         for n in range(len(seed_ids)):
@@ -157,15 +180,6 @@ class PodAlmanac(Almanac):
 
         return pods
 
-    def find_lowest_location_number_backwards(self):
-        location_page = self.pages[7]
-        min_location_mapping = sorted(location_page.mappings, key=lambda p: p.min_dest)[0]
-        print(min_location_mapping)
-        seed_packet = SeedPacket(min_location_mapping)
-        init_packet = seed_packet.source_seeds()
-        return init_packet
-
-class SeedPod:
     def __init__(self, start_id, length, almanac):
         self.start_id = start_id
         self.end_id = start_id + length - 1
@@ -248,8 +262,16 @@ class Mapping:
     def map(self, value):
         if value < self.min_in or value > self.max_in:
             raise Exception(f"{self} does not map {value}")
+
+
+    def map_from_value(self, value):
+        if not self.includes_value(value):
+            raise Exception(f"{self} does not map {value}")
         offset = value - self.min_in
         return self.min_out + offset
+
+    def includes_value(self, value):
+        return self.min_in <= value <= self.max_in
 
     def __repr__(self):
         maps = f"{self.min_in}->{self.min_out}"
