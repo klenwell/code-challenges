@@ -16,21 +16,19 @@ class Sensor:
         return self.report.split("\n")
 
     @cached_property
-    def extrapolated_sum(self):
+    def next_values_sum(self):
         values = []
         for line in self.lines:
             extrapolator = Extrapolator(line)
-            print(line, extrapolator.next_value)
             values.append(extrapolator.next_value)
         return sum(values)
 
     @cached_property
-    def backwards_sum(self):
+    def prev_values_sum(self):
         values = []
         for line in self.lines:
             extrapolator = Extrapolator(line)
-            print(extrapolator.history, extrapolator.first_value)
-            values.append(extrapolator.first_value)
+            values.append(extrapolator.previous_value)
         return sum(values)
 
 
@@ -44,16 +42,16 @@ class Extrapolator:
         for sequence in self.sequences[1:]:
             last_value = sequence[-1]
             next_value += last_value
-            #print(sequence, next_value)
+            # print(sequence, next_value)
         return next_value
 
     @cached_property
-    def first_value(self):
+    def previous_value(self):
         prev_value = 0
         for sequence in self.sequences[1:]:
             first_value = sequence[0]
             prev_value = first_value - prev_value
-            #print(prev_value, sequence)
+            # print(prev_value, sequence)
         return prev_value
 
     @cached_property
@@ -100,13 +98,13 @@ class AdventPuzzle:
     def first(self):
         input = self.file_input
         sensor = Sensor(input)
-        return sensor.extrapolated_sum
+        return sensor.next_values_sum
 
     @property
     def second(self):
         input = self.file_input
         sensor = Sensor(input)
-        return sensor.backwards_sum
+        return sensor.prev_values_sum
 
     #
     # Tests
@@ -115,14 +113,14 @@ class AdventPuzzle:
     def test1(self):
         input = self.TEST_INPUT
         sensor = Sensor(input)
-        assert sensor.extrapolated_sum == 114, sensor.extrapolated_sum
+        assert sensor.next_values_sum == 114, sensor.next_values_sum
         return 'passed'
 
     @property
     def test2(self):
         input = self.TEST_INPUT
         sensor = Sensor(input)
-        assert sensor.backwards_sum == 2, sensor.backwards_sum
+        assert sensor.prev_values_sum == 2, sensor.prev_values_sum
         return 'passed'
 
     #
