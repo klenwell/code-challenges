@@ -111,7 +111,7 @@ class Grid:
     def cardinal_neighbors(self, pt):
         # N, S, E, W
         pts = []
-        deltas = [(-1, 0), (1, 0), (1, 0), (-1, 0)]
+        deltas = [(0, -1), (0, 1), (1, 0), (-1, 0)]
         x, y = pt
 
         for dx, dy in deltas:
