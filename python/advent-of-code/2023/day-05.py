@@ -1,6 +1,21 @@
 """
 Advent of Code 2023 - Day 5
 https://adventofcode.com/2023/day/5
+
+It took me a while to solve this. To finally do so, I imagined each range of seeds grouped
+together as a long pod (hence the SeedPod class) with all the pods lined up at the edge of
+a field. I imagined the category mappings as a series of gates across the field which every
+seed needed to navigate. To do so, the pod would send out its lead (seed with lowest id in pod)
+which would run to the next gate and figure out how many seeds in its pod could go through
+that gate.
+
+The first seed not handled by that mapping gate would be told to take the rest of the seeds in
+the pod and create a new pod where it would be lead seed. The lead seed of the new pod would
+then look for the mapping gate it was supposed to pass through. This would go on recursively
+until all pods had passed through a gate. They would continue from gate to gate until they all
+passed through the last mapping gate.
+
+Then it was just a matter of sorting the pods by the location value of their lead seeds.
 """
 from os.path import join as path_join
 from functools import cached_property
@@ -224,18 +239,6 @@ class PodAlmanac(SeedAlmanac):
         sorted_pods = sorted(pods, key=lambda p: p.lead_seed.location)
         print(len(sorted_pods), sorted_pods[0])
         return sorted_pods[0].lead_seed.location
-
-    @cached_property
-    def categories(self):
-        categories = []
-        for page in self.pages:
-            category = page.maps_from
-            categories.append(category)
-        return categories
-
-    @cached_property
-    def blocks(self):
-        return [block.strip() for block in self.input.split("\n\n")]
 
     def map_pod_by_page(self, pod, page):
         # Send lead seed in pod to next gate
