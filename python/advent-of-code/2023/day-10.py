@@ -126,7 +126,8 @@ LJ..."""
     @property
     def first(self):
         input = self.file_input
-        return input
+        maze = PipeMaze(input)
+        return maze.steps_to_farthest_point
 
     @property
     def second(self):
