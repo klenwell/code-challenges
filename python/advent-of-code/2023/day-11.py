@@ -31,17 +31,14 @@ class CosmicMap(Grid):
 
     @cached_property
     def galaxy_pairs(self):
-        pairs = []
-        paired = []
+        pairs = set()
         for i, g1 in enumerate(self.galaxies):
             for j, g2 in enumerate(self.galaxies):
                 info(f"pairing galaxy {i} of {len(self.galaxies)}", 10000)
                 if g1 == g2:
                     continue
-                pair = tuple(sorted([i, j]))
-                if pair not in paired:
-                    paired.append(pair)
-                    pairs.append((g1, g2))
+                n1, n2 = sorted([i, j])
+                pairs.add((self.galaxies[n1], self.galaxies[n2]))
         return pairs
 
     def expand_space(self, input):
