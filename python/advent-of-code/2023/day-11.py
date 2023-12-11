@@ -8,17 +8,50 @@ from common import INPUT_DIR, Grid, info
 
 
 class CosmicMap(Grid):
-    def __init__(self, input):
-        input = self.expand_space(input.strip())
+    def __init__(self, input, expand_factor=2):
+        self.expand_factor = expand_factor
         super().__init__(input)
 
     @cached_property
     def shortest_path_sum(self):
         sum = 0
         for g1, g2 in self.galaxy_pairs:
-            distance = g1.shortest_distance_to(g2)
+            distance = self.measure_distance(g1, g2)
             sum += distance
         return sum
+
+    def measure_distance(self, g1, g2):
+        # Compute Manhattan distance
+        dx = abs(g2.x - g1.x)
+        dy = abs(g2.y - g1.y)
+
+        min_x, max_x = sorted([g1.x, g2.x])
+        min_y, max_y = sorted([g1.y, g2.y])
+
+        # Add additional expansion factor
+        expanded_rows = [y for y in self.expanded_rows if min_y < y < max_y]
+        expanded_cols = [x for x in self.expanded_cols if min_x < x < max_x]
+        #print(g1, g2, self.expanded_rows, expanded_rows)
+        row_expansion = len(expanded_rows) * self.expand_factor - len(expanded_rows)
+        col_expansion = len(expanded_cols) * self.expand_factor - len(expanded_cols)
+
+        return dx + dy + row_expansion + col_expansion
+
+    @cached_property
+    def expanded_rows(self):
+        rows = []
+        for n, row in enumerate(self.rows):
+            if '#' not in row:
+                rows.append(n)
+        return set(rows)
+
+    @cached_property
+    def expanded_cols(self):
+        cols = []
+        for n, col in enumerate(self.cols):
+            if '#' not in col:
+                cols.append(n)
+        return set(cols)
 
     @cached_property
     def galaxies(self):
@@ -65,9 +98,6 @@ class CosmicMap(Grid):
 
         return '\n'.join(new_rows)
 
-    def is_empty_space(self, array):
-        return set(array) == set(['.'])
-
     def rows_to_cols(self, rows):
         cols = []
         for n in range(len(rows[0])):
@@ -89,6 +119,9 @@ class Galaxy:
         dx = abs(other.x - self.x)
         dy = abs(other.y - self.y)
         return dx + dy
+
+    def __repr__(self):
+        return f"<Galaxy x={self.x} y={self.y}>"
 
 
 class AdventPuzzle:
@@ -119,11 +152,15 @@ class AdventPuzzle:
     def first(self):
         input = self.file_input
         grid = CosmicMap(input)
+        assert grid.shortest_path_sum == 9965032, grid.shortest_path_sum
         return grid.shortest_path_sum
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        expand_factor = 1000000
+        grid = CosmicMap(input, expand_factor)
+        return grid.shortest_path_sum
 
     #
     # Tests
@@ -133,10 +170,9 @@ class AdventPuzzle:
         input = self.TEST_INPUT
         grid = CosmicMap(input)
 
-        assert grid.max_x == 12, grid.max_x
-        assert grid.max_y == 11, grid.max_y
+        assert grid.expanded_rows == set([3, 7]), grid.expanded_rows
+        assert grid.expanded_cols == set([2, 5, 8]), grid.expanded_cols
         assert len(grid.galaxy_pairs) == 36, len(grid.galaxy_pairs)
-
         assert grid.shortest_path_sum == 374, grid.shortest_path_sum
 
         return 'passed'
@@ -144,7 +180,15 @@ class AdventPuzzle:
     @property
     def test2(self):
         input = self.TEST_INPUT
-        print(input)
+
+        expand_factor = 10
+        grid = CosmicMap(input, expand_factor)
+        assert grid.shortest_path_sum == 1030, grid.shortest_path_sum
+
+        expand_factor = 100
+        grid = CosmicMap(input, expand_factor)
+        assert grid.shortest_path_sum == 8410, grid.shortest_path_sum
+
         return 'passed'
 
     #
