@@ -4,7 +4,7 @@ https://adventofcode.com/2023/day/11
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR, Grid
+from common import INPUT_DIR, Grid, info
 
 
 class CosmicMap(Grid):
@@ -35,6 +35,7 @@ class CosmicMap(Grid):
         paired = []
         for i, g1 in enumerate(self.galaxies):
             for j, g2 in enumerate(self.galaxies):
+                info(f"pairing galaxy {i} of {len(self.galaxies)}", 10000)
                 if g1 == g2:
                     continue
                 pair = tuple(sorted([i, j]))
@@ -121,7 +122,7 @@ class AdventPuzzle:
     def first(self):
         input = self.file_input
         grid = CosmicMap(input)
-        return input
+        return grid.shortest_path_sum
 
     @property
     def second(self):
