@@ -1,5 +1,5 @@
 """
-Advent of Code 2023 - Day 111
+Advent of Code 2023 - Day 11
 https://adventofcode.com/2023/day/11
 """
 from os.path import join as path_join
