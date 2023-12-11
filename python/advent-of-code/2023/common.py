@@ -63,6 +63,17 @@ class Grid:
         return rows
 
     @cached_property
+    def cols(self):
+        cols = []
+        for n in range(len(self.rows[0])):
+            col = []
+            for row in self.rows:
+                val = row[n]
+                col.append(val)
+            cols.append(col)
+        return cols
+
+    @cached_property
     def pts(self):
         return list(self.grid.keys())
 
