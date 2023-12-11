@@ -4,7 +4,7 @@ https://adventofcode.com/2023/day/11
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR, Grid, info
+from common import INPUT_DIR, Grid
 
 
 class CosmicMap(Grid):
@@ -19,23 +19,6 @@ class CosmicMap(Grid):
             distance = self.measure_distance(g1, g2)
             sum += distance
         return sum
-
-    def measure_distance(self, g1, g2):
-        # Compute Manhattan distance
-        dx = abs(g2.x - g1.x)
-        dy = abs(g2.y - g1.y)
-
-        min_x, max_x = sorted([g1.x, g2.x])
-        min_y, max_y = sorted([g1.y, g2.y])
-
-        # Add additional expansion factor
-        expanded_rows = [y for y in self.expanded_rows if min_y < y < max_y]
-        expanded_cols = [x for x in self.expanded_cols if min_x < x < max_x]
-        #print(g1, g2, self.expanded_rows, expanded_rows)
-        row_expansion = len(expanded_rows) * self.expand_factor - len(expanded_rows)
-        col_expansion = len(expanded_cols) * self.expand_factor - len(expanded_cols)
-
-        return dx + dy + row_expansion + col_expansion
 
     @cached_property
     def expanded_rows(self):
@@ -67,46 +50,28 @@ class CosmicMap(Grid):
         pairs = set()
         for i, g1 in enumerate(self.galaxies):
             for j, g2 in enumerate(self.galaxies):
-                info(f"pairing galaxy {i} of {len(self.galaxies)}", 10000)
                 if g1 == g2:
                     continue
                 n1, n2 = sorted([i, j])
                 pairs.add((self.galaxies[n1], self.galaxies[n2]))
         return pairs
 
-    def expand_space(self, input):
-        # Any rows or columns that contain no galaxies should all actually be twice as big.
-        lines = input.split('\n')
-        rows = [list(line) for line in lines]
-        cols = self.rows_to_cols(rows)
+    def measure_distance(self, g1, g2):
+        # Compute Manhattan distance
+        dx = abs(g2.x - g1.x)
+        dy = abs(g2.y - g1.y)
 
-        # Expand empty cols
-        expanded = 0
-        for n, col in enumerate(cols):
-            if not self.is_empty_space(col):
-                continue
-            expanded += 1
-            for row in rows:
-                row.insert(n + expanded, '.')
+        min_x, max_x = sorted([g1.x, g2.x])
+        min_y, max_y = sorted([g1.y, g2.y])
 
-        # Expand empty rows
-        new_rows = []
-        for row in rows:
-            new_rows.append(''.join(row))
-            if self.is_empty_space(row):
-                new_rows.append(''.join(row))
+        # Add additional expansion factor
+        # NB: y values maps to *rows* and x values to *columns*
+        expanded_rows = [y for y in self.expanded_rows if min_y < y < max_y]
+        expanded_cols = [x for x in self.expanded_cols if min_x < x < max_x]
+        row_expansion = len(expanded_rows) * self.expand_factor - len(expanded_rows)
+        col_expansion = len(expanded_cols) * self.expand_factor - len(expanded_cols)
 
-        return '\n'.join(new_rows)
-
-    def rows_to_cols(self, rows):
-        cols = []
-        for n in range(len(rows[0])):
-            col = []
-            for row in rows:
-                val = row[n]
-                col.append(val)
-            cols.append(col)
-        return cols
+        return dx + dy + row_expansion + col_expansion
 
 
 class Galaxy:
