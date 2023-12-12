@@ -76,6 +76,9 @@ class SpringRecord:
     def find_arrangements(self):
         arrangements = []
         missing_damaged = sum(self.groupings) - len(self.damaged)
+
+        # TODO: reduce the search space
+        # Consider ???????##?????##???? 1,1,11,3
         for permutation in self.unique_permutations(self.unknowns, missing_damaged):
 
             #print(self.unknowns, missing_damaged, permutation)
@@ -89,11 +92,16 @@ class SpringRecord:
     def unique_permutations(self, iterable, r):
         # https://stackoverflow.com/q/6284396
         from itertools import permutations
+        max = 10000000
+        n = 0
         perms = set()
         for p in permutations(iterable, r):
-            info(f"{self.row} {iterable} {p}", 10000)
+            info(f"{n} {self.row} {iterable} {p}", 10000)
             t = tuple(sorted(p))
             perms.add(t)
+            n += 1
+            if n > max:
+                raise Exception("Think harder, Homer")
         return list(perms)
 
 
