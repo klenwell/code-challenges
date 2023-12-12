@@ -4,7 +4,7 @@ https://adventofcode.com/2023/day/12
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR
+from common import INPUT_DIR, info
 
 
 class SpringDamageReport:
@@ -15,7 +15,8 @@ class SpringDamageReport:
     def arrangements_sum(self):
         sum = 0
         for record in self.records:
-            sum += len(record.arrangement_count)
+            print(f"{record.row} {sum}")
+            sum += record.arrangement_count
         return sum
 
     @cached_property
@@ -74,15 +75,26 @@ class SpringRecord:
 
     def find_arrangements(self):
         arrangements = []
-        from itertools import permutations
         missing_damaged = sum(self.groupings) - len(self.damaged)
-        for permutation in permutations(self.unknowns, missing_damaged):
-            print(self.unknowns, missing_damaged, permutation)
+        for permutation in self.unique_permutations(self.unknowns, missing_damaged):
+
+            #print(self.unknowns, missing_damaged, permutation)
             arrangement = RowArrangement(self, permutation)
-            print(arrangement)
-            if arrangement.is_possible():
+            if arrangement.is_valid():
+                #print(arrangement)
+                #breakpoint()
                 arrangements.append(arrangement)
         return arrangements
+
+    def unique_permutations(self, iterable, r):
+        # https://stackoverflow.com/q/6284396
+        from itertools import permutations
+        perms = set()
+        for p in permutations(iterable, r):
+            info(f"{self.row} {iterable} {p}", 10000)
+            t = tuple(sorted(p))
+            perms.add(t)
+        return list(perms)
 
 
 class RowArrangement:
@@ -96,6 +108,7 @@ class RowArrangement:
         for n, condition in enumerate(self.record.conditions):
             if condition != '?':
                 row.append(condition)
+                continue
 
             if n in self.damaged:
                 row.append('#')
@@ -103,8 +116,22 @@ class RowArrangement:
                 row.append('.')
         return row
 
-    def is_possible(self):
-        return False
+    @cached_property
+    def row(self):
+        return ''.join(self.conditions)
+
+    @cached_property
+    def groupings(self):
+        counts = []
+        groupings = self.row.split('.')
+        for group in groupings:
+            if '#' in group:
+                counts.append(len(group))
+        return counts
+
+    def is_valid(self):
+        #print(self.damaged, self.groupings == self.record.groupings, self.row, self.groupings, self.record.groupings)
+        return self.groupings == self.record.groupings
 
     def __repr__(self):
         return f"<Arrangement {self.conditions}>"
@@ -129,7 +156,8 @@ class AdventPuzzle:
     @property
     def first(self):
         input = self.file_input
-        return input
+        report = SpringDamageReport(input)
+        return report.arrangements_sum
 
     @property
     def second(self):
@@ -140,6 +168,16 @@ class AdventPuzzle:
     #
     @property
     def test1(self):
+        row = '???.### 1,1,3'
+        record = SpringRecord(row)
+        print(record.conditions, record.groupings)
+        assert record.arrangement_count == 1, record.arrangement_count
+
+        row = '?###???????? 3,2,1'
+        record = SpringRecord(row)
+        print(record.conditions, record.groupings)
+        assert record.arrangement_count == 10, record.arrangement_count
+
         input = self.TEST_INPUT
         report = SpringDamageReport(input)
         assert report.arrangements_sum == 21, report.arrangements_sum
