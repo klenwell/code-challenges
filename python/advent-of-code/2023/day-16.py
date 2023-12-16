@@ -10,8 +10,6 @@ from os.path import join as path_join
 from functools import cached_property
 from common import INPUT_DIR, Grid
 
-import time
-
 
 NORTH = (0, -1)
 SOUTH = (0, 1)
@@ -35,11 +33,9 @@ class BeamGrid(Grid):
 
     def fire_beam_into_grid(self):
         beams_queue = [self.beam]
-        beams_complete = []
 
         while len(beams_queue) > 0:
             beam = beams_queue.pop()
-            #print('move', beam)
             new_beam = self.move_beam(beam)
 
             if new_beam:
@@ -48,15 +44,10 @@ class BeamGrid(Grid):
             if beam.log_key in self.beam_log:
                 previous_beam = self.beam_log[beam.log_key]
                 beam.join(previous_beam)
-            elif not self.beam_in_grid(beam):
-                #print(f"beam {beam} done!")
-                beams_complete.append(beam)
-            else:
+            elif self.beam_in_grid(beam):
                 self.log_beam(beam)
                 self.energize_tile(beam.pt)
                 beams_queue.insert(0, beam)
-
-        return beams_complete
 
     def move_beam(self, beam):
         beam.move()
@@ -90,7 +81,6 @@ class BeamGrid(Grid):
             return beam.dir in (WEST, EAST)
         else:
             return beam.dir in (NORTH, SOUTH)
-
 
     def bounce_beam_off_mirror(self, beam, mirror):
         reflections = {
@@ -148,12 +138,10 @@ class Beam:
     def split(self):
         new_beam = Beam(self.x, self.y, self.dir)
         new_beam.reverse_direction()
-        #print(f"beam {new_beam} splits from beam {self}")
         return new_beam
 
     def join(self, other_beam):
-        #print(f"beam {self} joins beam {other_beam}")
-        # TODO: match paths
+        # Nothing really needs to be done here.
         pass
 
     def rotate_clockwise(self):
@@ -163,7 +151,6 @@ class Beam:
             SOUTH: WEST,
             WEST: NORTH
         }
-        #print(f"rotate {self} to {mappings[self.dir]}")
         self.dir = mappings[self.dir]
 
     def reverse_direction(self):
@@ -172,13 +159,9 @@ class Beam:
         self.dir = (x, y)
 
     def __repr__(self):
-        dir = {
-            EAST: 'E',
-            WEST: 'W',
-            NORTH: 'N',
-            SOUTH: 'S'
-        }
-        return f"<Beam id={self.id} step={len(self.path)} {self.pt} dir={dir[self.dir]}>"
+        dir_mapping = [(NORTH, 'N'), (SOUTH, 'S'), (EAST, 'E'), (WEST, 'W')]
+        dir = dict(dir_mapping)[self.dir]
+        return f"<Beam id={self.id} step={len(self.path)} {self.pt} dir={dir}>"
 
 
 class ControlPanel:
@@ -195,7 +178,6 @@ class ControlPanel:
             top = (x, -1, SOUTH)
             bottom = (x, grid.max_y+1, NORTH)
             pts += [top, bottom]
-
 
         # West / East
         for y in range(grid.max_y+1):
@@ -216,7 +198,6 @@ class ControlPanel:
             print(len(energy_outputs), (x, y), energy_outputs[-1])
 
         return max(energy_outputs)
-
 
 
 class AdventPuzzle:
@@ -259,10 +240,10 @@ class AdventPuzzle:
         grid = BeamGrid(input)
 
         assert len(grid.pts) == 100, grid
-        assert grid.grid[(6,6)] == 'V', grid.grid[(6,6)]
+        assert grid.grid[(6,6)] == 'V', grid.grid[(6, 6)]
 
         assert grid.energized_tiles == 46, grid.energized_tiles
-        return input
+        return 'passed'
 
     @property
     def test2(self):
