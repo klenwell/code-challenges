@@ -92,9 +92,17 @@ class SpringRecord:
     @cached_property
     def damaged_index_combos(self):
         import itertools as it
-        print(self.damaged_segments)
+        combos = []
         indexes = [seg.indexes for seg in self.damaged_segments]
-        return list(set([tuple(sorted(combo)) for combo in it.product(*indexes)]))
+        print('combo', len(self.damaged_segments))
+
+        for combo in it.product(*indexes):
+            info(f"{indexes}, {combo}", 1000)
+            combos.append(tuple(sorted(combo)))
+
+        return list(set(combos))
+
+        #return list(set([tuple(sorted(combo)) for combo in it.product(*indexes)]))
 
     def find_arrangements(self):
         arrangements = []
@@ -269,6 +277,36 @@ class RowArrangement:
         return f"<Arrangement {self.row} {self.damaged_group_sizes}>"
 
 
+class FoldedRecord(SpringRecord):
+    def __init__(self, row):
+        self.folded_record = SpringRecord(row)
+        conditions = self.unfold_conditions(self.folded_record.conditions)
+        groups = self.unfold_groups(self.folded_record.damaged_group_sizes)
+        row = f"{conditions} {groups}"
+        super().__init__(row)
+
+    @cached_property
+    def arrangement_count(self):
+        folded_count = len(self.folded_record.find_arrangements())
+        return folded_count**5
+
+    def unfold_conditions(self, conditions):
+        condition_list = []
+        condition_str = ''.join(conditions)
+        for n in range(5):
+            condition_list.append(condition_str)
+        return '?'.join(condition_list)
+
+    def unfold_groups(self, group_sizes):
+        group_list = []
+        group_str = ','.join([str(n) for n in group_sizes])
+        for n in range(5):
+            group_list.append(group_str)
+        return ','.join(group_list)
+
+    def __repr__(self):
+        return f"<SpringRecord length={self.length} {self.row} count={self.arrangement_count}>"
+
 
 
 class AdventPuzzle:
@@ -346,7 +384,15 @@ class AdventPuzzle:
     @property
     def test2(self):
         input = self.TEST_INPUT
-        print(input)
+
+        input = '???.### 1,1,3'
+        record = FoldedRecord(input)
+        assert record.arrangement_count == 1, record
+
+        input = '.??..??...?##. 1,1,3'
+        record = FoldedRecord(input)
+        assert record.arrangement_count == 506250, record
+
         return 'passed'
 
     #
