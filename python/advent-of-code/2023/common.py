@@ -135,6 +135,9 @@ class Grid:
 
         return pts
 
+    def __repr__(self):
+        return f"<Grid pts={len(self.pts)}>"
+
 
 # Compute Facts: 12 = 1,2,3,4,6,12
 # Source: https://stackoverflow.com/a/6800214/1093087

@@ -1,6 +1,10 @@
 """
 Advent of Code 2023 - Day 16
 https://adventofcode.com/2023/day/16
+
+NOTE: Due to some chicanery with they way Python handles backslashes
+(https://stackoverflow.com/q/647769), I find-replaced all the backslashes '\' in the input data
+ with 'V'.
 """
 from os.path import join as path_join
 from functools import cached_property
@@ -27,7 +31,6 @@ class BeamGrid(Grid):
     @cached_property
     def energized_tiles(self):
         self.fire_beam_into_grid()
-        print(self.energy_map.keys())
         return len(self.energy_map.keys())
 
     def fire_beam_into_grid(self):
@@ -36,7 +39,7 @@ class BeamGrid(Grid):
 
         while len(beams_queue) > 0:
             beam = beams_queue.pop()
-            print('move', beam)
+            #print('move', beam)
             new_beam = self.move_beam(beam)
 
             if new_beam:
@@ -46,7 +49,7 @@ class BeamGrid(Grid):
                 previous_beam = self.beam_log[beam.log_key]
                 beam.join(previous_beam)
             elif not self.beam_in_grid(beam):
-                print(f"beam {beam} done!")
+                #print(f"beam {beam} done!")
                 beams_complete.append(beam)
             else:
                 self.log_beam(beam)
@@ -145,12 +148,13 @@ class Beam:
     def split(self):
         new_beam = Beam(self.x, self.y, self.dir)
         new_beam.reverse_direction()
-        print(f"beam {new_beam} splits from beam {self}")
+        #print(f"beam {new_beam} splits from beam {self}")
         return new_beam
 
     def join(self, other_beam):
-        print(f"beam {self} joins beam {other_beam}")
+        #print(f"beam {self} joins beam {other_beam}")
         # TODO: match paths
+        pass
 
     def rotate_clockwise(self):
         mappings = {
@@ -159,7 +163,7 @@ class Beam:
             SOUTH: WEST,
             WEST: NORTH
         }
-        print(f"rotate {self} to {mappings[self.dir]}")
+        #print(f"rotate {self} to {mappings[self.dir]}")
         self.dir = mappings[self.dir]
 
     def reverse_direction(self):
@@ -175,6 +179,43 @@ class Beam:
             SOUTH: 'S'
         }
         return f"<Beam id={self.id} step={len(self.path)} {self.pt} dir={dir[self.dir]}>"
+
+
+class ControlPanel:
+    def __init__(self, input):
+        self.input = input
+
+    @cached_property
+    def starting_pts(self):
+        pts = []
+        grid = BeamGrid(self.input)
+
+        # North / South
+        for x in range(grid.max_x+1):
+            top = (x, -1, SOUTH)
+            bottom = (x, grid.max_y+1, NORTH)
+            pts += [top, bottom]
+
+
+        # West / East
+        for y in range(grid.max_y+1):
+            left = (-1, y, EAST)
+            right = (grid.max_x+1, y, WEST)
+            pts += [left, right]
+
+        return pts
+
+    def maximize_energy(self):
+        energy_outputs = []
+        print(len(self.starting_pts))
+
+        for x, y, dir in self.starting_pts:
+            grid = BeamGrid(self.input)
+            grid.beam = Beam(x, y, dir)
+            energy_outputs.append(grid.energized_tiles)
+            print(len(energy_outputs), (x, y), energy_outputs[-1])
+
+        return max(energy_outputs)
 
 
 
@@ -204,7 +245,10 @@ class AdventPuzzle:
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        panel = ControlPanel(input)
+        max_tiles = panel.maximize_energy()
+        return max_tiles
 
     #
     # Tests
@@ -212,7 +256,6 @@ class AdventPuzzle:
     @property
     def test1(self):
         input = self.TEST_INPUT
-        print(input)
         grid = BeamGrid(input)
 
         assert len(grid.pts) == 100, grid
@@ -224,7 +267,9 @@ class AdventPuzzle:
     @property
     def test2(self):
         input = self.TEST_INPUT
-        print(input)
+        panel = ControlPanel(input)
+        max_tiles = panel.maximize_energy()
+        assert max_tiles == 51, max_tiles
         return 'passed'
 
     #
