@@ -1,6 +1,10 @@
 """
 Advent of Code 2023 - Day 17
 https://adventofcode.com/2023/day/17
+
+Two approaches. Two failures. I think the problem is in my "at most three blocks" logic.
+Look at the example and you'll see that this mean you can sometime occupy 4 consecutive
+points in a row or column.
 """
 from os.path import join as path_join
 from functools import cached_property
@@ -22,6 +26,60 @@ class RouteFinder(Grid):
     @cached_property
     def end_pt(self):
         return (self.max_x, self.max_y)
+
+    @cached_property
+    def minimum_heat_loss(self):
+        route = Route(self.start_pt, self)
+        steps = self.fast_dijkstra(route)
+
+        if not steps.get(self.end_pt):
+            raise Exception(f"Path not found: {steps}")
+
+        route.path = []
+        step = self.end_pt
+        while step:
+            route.path.insert(0, step)
+            step = steps[step]
+        return route.heat_loss
+
+    def fast_dijkstra(self, route):
+        open_routes = [(0, route)]
+        steps = {route.pt: None}
+        costs = {route.pt: 0}
+
+        while open_routes:
+            cost, route = heappop(open_routes)
+
+            if route.pt == self.end_pt:
+                break
+
+            for next_pt in route.options:
+                if next_pt in costs:
+                    continue
+
+                step_cost = self.grid[next_pt]
+                cost = costs[route.pt] + int(step_cost)
+                costs[next_pt] = cost
+                clone = route.clone()
+                clone.move(next_pt)
+                heappush(open_routes, (cost, clone))
+                steps[next_pt] = route.pt
+
+        return steps
+
+    def path_options(self, pt):
+        options = []
+        for npt in self.grid.cardinal_neighbors(self.pt):
+            if npt in self.path:
+                continue
+
+            if self.is_fourth_block_in_row(npt):
+                continue
+
+            options.append(npt)
+
+        return options
+
 
     def minimize_heat_loss(self):
         best_route = None
@@ -57,7 +115,7 @@ class RouteFinder(Grid):
                 return False
 
         heat_index = self.heat_index.get(clone.pt)
-        if not heat_index or heat_index > clone.heat_loss:
+        if not heat_index or heat_index >= clone.heat_loss:
             self.heat_index[clone.pt] = clone.heat_loss
         else:
             return False
@@ -197,7 +255,9 @@ class AdventPuzzle:
         assert len(router.rows) == 13, len(router.rows)
         assert len(router.pts) == 13 * 13, len(router.pts)
 
-        heat_loss = router.minimize_heat_loss()
+        heat_loss1 = router.minimum_heat_loss
+        heat_loss2 = router.minimize_heat_loss()
+        print(heat_loss1, heat_loss2)
         assert heat_loss == 102, heat_loss
         return 'passed'
 
