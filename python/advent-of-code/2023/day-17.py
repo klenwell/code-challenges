@@ -139,7 +139,7 @@ class Route:
     @property
     def heat_loss(self):
         loss = 0
-        for pt in self.path:
+        for pt in self.path[1:]:
             value = self.grid.grid[pt]
             loss += int(value)
         return loss
@@ -183,10 +183,10 @@ class Route:
         return self.pt == self.grid.end_pt
 
     def is_fourth_block_in_row(self, npt):
-        if len(self.path) < 3:
+        if len(self.path) < 4:
             return False
 
-        start_index = len(self.path) - 3
+        start_index = len(self.path) - 4
         last_pts = self.path[start_index:]
         last_xs = [pt[0] for pt in last_pts]
         last_ys = [pt[1] for pt in last_pts]
@@ -255,9 +255,7 @@ class AdventPuzzle:
         assert len(router.rows) == 13, len(router.rows)
         assert len(router.pts) == 13 * 13, len(router.pts)
 
-        heat_loss1 = router.minimum_heat_loss
-        heat_loss2 = router.minimize_heat_loss()
-        print(heat_loss1, heat_loss2)
+        heat_loss = router.minimize_heat_loss()
         assert heat_loss == 102, heat_loss
         return 'passed'
 
