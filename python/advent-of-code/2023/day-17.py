@@ -8,7 +8,7 @@ points in a row or column.
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR, Grid
+from common import INPUT_DIR, Grid, info
 
 from heapq import heappush, heappop
 from functools import total_ordering
@@ -30,28 +30,76 @@ class RouteFinder(Grid):
     @cached_property
     def minimum_heat_loss(self):
         route = Route(self.start_pt, self)
-        steps = self.fast_dijkstra(route)
+        return self.fast_dijkstra(self.start_pt)
 
-        if not steps.get(self.end_pt):
-            raise Exception(f"Path not found: {steps}")
+    def fast_dijkstra(self, start_at):
+        open_paths = [(0, start_at)]
+        steps = {start_at: None}
+        costs = {start_at: 0}
 
-        route.path = []
-        step = self.end_pt
+        while open_paths:
+            _, pt = heappop(open_paths)
+
+            for next_pt in self.cardinal_neighbors(pt):
+                if not self.is_valid_move(pt, next_pt, steps):
+                    continue
+
+                cost = costs[pt] + int(self.grid[next_pt])
+
+                if cost < costs.get(next_pt, 100000):
+                    costs[next_pt] = cost
+                    heappush(open_paths, (cost, next_pt))
+                    steps[next_pt] = pt
+
+        print(costs[self.end_pt], steps)
+        return costs[self.end_pt]
+
+    def is_valid_move(self, pt, npt, steps):
+        MAX_BLOCKS = 4
+
+        path = []
+        step = pt
         while step:
-            route.path.insert(0, step)
-            step = steps[step]
-        return route.heat_loss
+            path.insert(0, step)
 
-    def fast_dijkstra(self, route):
+            if len(path) == MAX_BLOCKS:
+                step = False
+            else:
+                step = steps[step]
+
+
+        if len(path) < MAX_BLOCKS:
+            return True
+
+        if path[-2] == npt:
+            return False
+
+        path.append(npt)
+
+        last_xs = [pt[0] for pt in path]
+        last_ys = [pt[1] for pt in path]
+
+        if len(set(last_xs)) == 1:
+            print('nope', path)
+            return False
+
+        if len(set(last_ys)) == 1:
+            return False
+
+        return True
+
+    def failed_dijkstra(self, route):
         open_routes = [(0, route)]
         steps = {route.pt: None}
         costs = {route.pt: 0}
 
         while open_routes:
+            print('fd', len(open_routes))
             cost, route = heappop(open_routes)
 
             if route.pt == self.end_pt:
-                break
+                print('found', route)
+                continue
 
             for next_pt in route.options:
                 if next_pt in costs:
@@ -67,20 +115,6 @@ class RouteFinder(Grid):
 
         return steps
 
-    def path_options(self, pt):
-        options = []
-        for npt in self.grid.cardinal_neighbors(self.pt):
-            if npt in self.path:
-                continue
-
-            if self.is_fourth_block_in_row(npt):
-                continue
-
-            options.append(npt)
-
-        return options
-
-
     def minimize_heat_loss(self):
         best_route = None
         completed_routes = []
@@ -91,7 +125,7 @@ class RouteFinder(Grid):
 
         while len(queue) > 0:
             route = heappop(queue)
-            print(route, len(queue), route.options, len(completed_routes), best_route)
+            info(f"{route} {len(queue)} {best_route} {len(completed_routes)}", 100)
 
             for next_pt in route.options:
                 clone = route.clone()
@@ -100,22 +134,23 @@ class RouteFinder(Grid):
                 if clone.reached_goal():
                     if not best_route:
                         best_route = clone
-                    elif clone.heat_loss < best_route.heat_loss:
+                    elif clone.heat_loss <= best_route.heat_loss:
                         best_route = clone
                     completed_routes.append(clone)
-                elif self.route_is_plausible(clone, best_route):
+                elif self.route_is_viable(clone, best_route):
                     heappush(queue, clone)
 
+        print(best_route.path)
         return best_route.heat_loss
 
-    def route_is_plausible(self, clone, best_route):
+    def route_is_viable(self, clone, best_route):
         if best_route:
             heat_projection = clone.heat_loss + clone.distance_to_end
             if heat_projection >= best_route.heat_loss:
                 return False
 
-        heat_index = self.heat_index.get(clone.pt)
-        if not heat_index or heat_index >= clone.heat_loss:
+        heat_index = self.heat_index.get(clone.pt, 100000)
+        if clone.heat_loss <= heat_index:
             self.heat_index[clone.pt] = clone.heat_loss
         else:
             return False
@@ -130,7 +165,7 @@ class Route:
         self.x = x
         self.y = y
         self.grid = grid
-        self.path = []
+        self.path = [self.pt]
 
     @property
     def pt(self):
@@ -146,7 +181,7 @@ class Route:
 
     @property
     def priority(self):
-        return (-1 * self.steps, self.heat_loss)
+        return (self.distance_to_end, self.heat_loss)
 
     @property
     def steps(self):
@@ -183,10 +218,11 @@ class Route:
         return self.pt == self.grid.end_pt
 
     def is_fourth_block_in_row(self, npt):
-        if len(self.path) < 4:
+        MAX_BLOCKS = 4
+        if len(self.path) < MAX_BLOCKS:
             return False
 
-        start_index = len(self.path) - 4
+        start_index = len(self.path) - MAX_BLOCKS
         last_pts = self.path[start_index:]
         last_xs = [pt[0] for pt in last_pts]
         last_ys = [pt[1] for pt in last_pts]
@@ -238,7 +274,9 @@ class AdventPuzzle:
     @property
     def first(self):
         input = self.file_input
-
+        router = RouteFinder(input)
+        heat_loss = router.minimize_heat_loss()
+        return heat_loss
 
     @property
     def second(self):
@@ -255,8 +293,10 @@ class AdventPuzzle:
         assert len(router.rows) == 13, len(router.rows)
         assert len(router.pts) == 13 * 13, len(router.pts)
 
-        heat_loss = router.minimize_heat_loss()
-        assert heat_loss == 102, heat_loss
+        dfs_solution = router.minimize_heat_loss()
+        djikstra_solution = router.minimum_heat_loss
+        print(dfs_solution, djikstra_solution)
+        assert dfs_solution == 102, dfs_solution
         return 'passed'
 
     @property
