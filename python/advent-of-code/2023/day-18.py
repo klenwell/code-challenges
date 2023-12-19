@@ -114,32 +114,51 @@ class BigLavaPit(LavaPit):
 
     @cached_property
     def interior_parcels(self):
-        return [parcel for parcel in self.parcels if self.contains(parcel)]
+        return [parcel for parcel in self.parcels if self.contains_parcel(parcel)]
 
     @cached_property
-    def overlapping_edges_count(self):
-        overlapping_edges = {}
+    def edge_counts(self):
+        edge_counts = {}
+        pt_counts = {}
         for parcel in self.interior_parcels:
             for edge in parcel.edges:
-                if edge in overlapping_edges:
-                    overlapping_edges[edge] += 1
+                if edge in edge_counts:
+                    edge_counts[edge] += 1
                 else:
-                    overlapping_edges[edge] = 1
-        return overlapping_edges
+                    edge_counts[edge] = 1
+        return edge_counts
+
+    @cached_property
+    def overlapping_edges(self):
+        edges = []
+        for edge, count in self.edge_counts.items():
+            if count > 1:
+                edges.append(edge)
+                assert count == 2, f"count for edge > 1 ({count})"
+        return edges
+
+    @cached_property
+    def overlapping_corners(self):
+        pt_counts = {}
+        for edge in self.edge_counts.keys():
+            pt1, pt2 = edge
+            pt1_count = pt_counts.get(pt1, 0)
+            pt2_count = pt_counts.get(pt2, 0)
+            pt_counts[pt1] = pt1_count + 1
+            pt_counts[pt2] = pt2_count + 1
+        return pt_counts
 
     @cached_property
     def overlapping_edges_area(self):
         area = 0
-        for edge, count in self.overlapping_edges_count.items():
-            if count < 2:
-                continue
-            assert count == 2, f"count for edge > 1 ({count})"
+        for edge in self.overlapping_edges:
             (x1, y1), (x2, y2) = edge
             dx = abs(x2 - x1)
             dy = abs(y2 - y1)
-            print(dx, dy)
-            area += dx + dy + 1
-        return area
+            assert 0 in [dx, dy], (dx, dy)
+            area += dx + dy
+        overcounted_corners = sum([n-2 for n in self.overlapping_corners.values()]) // 2
+        return area + overcounted_corners
 
     @cached_property
     def parcels(self):
@@ -156,6 +175,7 @@ class BigLavaPit(LavaPit):
                 ]
                 parcel = Parcel(pts)
                 parcels.append(parcel)
+                info(parcel, 1000)
         return parcels
 
     @cached_property
@@ -163,9 +183,7 @@ class BigLavaPit(LavaPit):
         pts = [(0, 0)]
         for _, _, rgb in self.instructions:
             pt = self.rgb_to_next_pt(pts[-1], rgb)
-            #print(rgb, pt)
             pts.append(pt)
-        #breakpoint()
         return pts
 
     @cached_property
@@ -219,12 +237,12 @@ class BigLavaPit(LavaPit):
     def ys(self):
         return sorted(list(set([y for _,y in self.pts])))
 
-    def contains(self, parcel):
+    def contains_parcel(self, parcel):
+        info(f"contains {parcel}", 10000)
         under_top_edge = self.pt_under_top_edge(parcel.mid_pt)
         above_bottom_edge = self.pt_above_bottom_edge(parcel.mid_pt)
         right_of_left_edge = self.pt_right_of_left_edge(parcel.mid_pt)
         left_of_right_edge = self.pt_left_of_right_edge(parcel.mid_pt)
-        #print(parcel, [under_top_edge, above_bottom_edge, right_of_left_edge, left_of_right_edge])
         return all([under_top_edge, above_bottom_edge, right_of_left_edge, left_of_right_edge])
 
     def pt_under_top_edge(self, pt):
@@ -236,7 +254,7 @@ class BigLavaPit(LavaPit):
             assert e1y == e2y, edge
             min_x, max_x = sorted([e1x, e2x])
             between_xs = min_x <= x <= max_x
-            under_edge = y >= e1y
+            under_edge = y > e1y
             if between_xs and under_edge:
                 return True
         return False
@@ -250,8 +268,7 @@ class BigLavaPit(LavaPit):
             assert e1y == e2y, edge
             min_x, max_x = sorted([e1x, e2x])
             between_xs = min_x <= x <= max_x
-            above_edge = y <= e1y
-            #print(pt, edge, between_xs, above_edge)
+            above_edge = y < e1y
             if between_xs and above_edge:
                 return True
         return False
@@ -265,7 +282,7 @@ class BigLavaPit(LavaPit):
             assert e1x == e2x, edge
             min_y, max_y = sorted([e1y, e2y])
             between_ys = min_y <= y <= max_y
-            right_of_edge = x >= e1x
+            right_of_edge = x > e1x
             if between_ys and right_of_edge:
                 return True
         return False
@@ -279,11 +296,10 @@ class BigLavaPit(LavaPit):
             assert e1x == e2x, edge
             min_y, max_y = sorted([e1y, e2y])
             between_ys = min_y <= y <= max_y
-            left_of_edge = x <= e1x
+            left_of_edge = x < e1x
             if between_ys and left_of_edge:
                 return True
         return False
-
 
 
 class Parcel:
@@ -305,6 +321,8 @@ class Parcel:
 
     @cached_property
     def area(self):
+        # Edge case: consider box with pts (0,0) -> (4,0) -> (4,4) -> (0,0). Subtracting
+        # coordinates gives you 4x4 when it should be 5x5.
         width = max(self.xs) - min(self.xs) + 1
         height = max(self.ys) - min(self.ys) + 1
         return width * height
@@ -351,6 +369,8 @@ U 2 (#7a21e3)"""
     def second(self):
         input = self.file_input
         pit = BigLavaPit(input)
+        print(len(pit.parcels))
+        assert pit.cubic_meters != 98956108013068, pit.cubic_meters
         return pit.cubic_meters
 
     #
@@ -367,42 +387,6 @@ U 2 (#7a21e3)"""
     def test2(self):
         input = self.TEST_INPUT
         pit = BigLavaPit(input)
-
-        #print(pit.horizontal_edges, pit.vertical_edges)
-        #print(pit.parcels)
-        #breakpoint()
-
-        #print(len(pit.pts), len(pit.parcels), pit.parcels[0])
-        # print(pit.pts)
-
-        # w = max(pit.xs) - min(pit.xs)
-        # h = max(pit.ys) - min(pit.ys)
-        # area = w * h
-        # outer = sum([p.area for p in pit.parcels if not pit.contains(p)])
-        # print('area', area, w, h, w+h)
-        # print(area - outer, pit.cubic_meters)
-        # #breakpoint()
-
-        # overlapping_edges = {}
-        # in_parcels = [p for p in pit.parcels if pit.contains(p)]
-        # for p in in_parcels:
-        #     for edge in p.edges:
-        #         if edge in overlapping_edges:
-        #             overlapping_edges[edge] += 1
-        #         else:
-        #             overlapping_edges[edge] = 1
-        # print(overlapping_edges)
-
-        # overlaps = [edge for edge, count in overlapping_edges.items() if count > 1]
-        # dupes = []
-        # for overlap in overlaps:
-        #     (x1, y1), (x2, y2) = overlap
-        #     dx = abs(x2 - x1)
-        #     dy = abs(y2 - y1)
-        #     print(overlap, dx, dy, dx+dy)
-        #     dupes.append(dx + dy)
-        # print('sum', sum(dupes), len(overlaps), len(pit.interior_parcels))
-
 
         def errs(val, expected):
             diff = expected - val
