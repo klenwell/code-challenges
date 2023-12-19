@@ -108,9 +108,37 @@ class BigLavaPit(LavaPit):
     @cached_property
     def cubic_meters(self):
         area = 0
-        for parcel in self.parcels:
-            if self.contains(parcel):
-                area += parcel.area
+        for parcel in self.interior_parcels:
+            area += parcel.area
+        return area - self.overlapping_edges_area
+
+    @cached_property
+    def interior_parcels(self):
+        return [parcel for parcel in self.parcels if self.contains(parcel)]
+
+    @cached_property
+    def overlapping_edges_count(self):
+        overlapping_edges = {}
+        for parcel in self.interior_parcels:
+            for edge in parcel.edges:
+                if edge in overlapping_edges:
+                    overlapping_edges[edge] += 1
+                else:
+                    overlapping_edges[edge] = 1
+        return overlapping_edges
+
+    @cached_property
+    def overlapping_edges_area(self):
+        area = 0
+        for edge, count in self.overlapping_edges_count.items():
+            if count < 2:
+                continue
+            assert count == 2, f"count for edge > 1 ({count})"
+            (x1, y1), (x2, y2) = edge
+            dx = abs(x2 - x1)
+            dy = abs(y2 - y1)
+            print(dx, dy)
+            area += dx + dy + 1
         return area
 
     @cached_property
@@ -265,13 +293,26 @@ class Parcel:
         self.ys = [y for _,y in pts]
 
     @cached_property
+    def edges(self):
+        edges = []
+        pts = self.pts + [self.pts[0]]
+        for n, pt in enumerate(pts[:-1]):
+            next_pt = pts[n+1]
+            min_pt, max_pt = sorted([pt, next_pt])
+            edge = (min_pt, max_pt)
+            edges.append(edge)
+        return edges
+
+    @cached_property
     def area(self):
-        return (max(self.xs) - min(self.xs)) * (max(self.ys) - min(self.ys))
+        width = max(self.xs) - min(self.xs) + 1
+        height = max(self.ys) - min(self.ys) + 1
+        return width * height
 
     @cached_property
     def mid_pt(self):
-        x = (max(self.xs) + min(self.xs)) / 2
-        y = (max(self.ys) + min(self.ys)) / 2
+        x = (max(self.xs) + min(self.xs)) // 2
+        y = (max(self.ys) + min(self.ys)) // 2
         return (x, y)
 
     def __repr__(self):
@@ -332,24 +373,42 @@ U 2 (#7a21e3)"""
         #breakpoint()
 
         #print(len(pit.pts), len(pit.parcels), pit.parcels[0])
-        print(pit.pts)
+        # print(pit.pts)
 
-        w = max(pit.xs) - min(pit.xs)
-        h = max(pit.ys) - min(pit.ys)
-        area = w * h
-        outer = sum([p.area for p in pit.parcels if not pit.contains(p)])
-        print('area', area, w, h, w+h)
-        print(area - outer, pit.cubic_meters)
-        breakpoint()
+        # w = max(pit.xs) - min(pit.xs)
+        # h = max(pit.ys) - min(pit.ys)
+        # area = w * h
+        # outer = sum([p.area for p in pit.parcels if not pit.contains(p)])
+        # print('area', area, w, h, w+h)
+        # print(area - outer, pit.cubic_meters)
+        # #breakpoint()
 
-        for parcel in pit.parcels:
-            print(parcel, pit.contains(parcel))
+        # overlapping_edges = {}
+        # in_parcels = [p for p in pit.parcels if pit.contains(p)]
+        # for p in in_parcels:
+        #     for edge in p.edges:
+        #         if edge in overlapping_edges:
+        #             overlapping_edges[edge] += 1
+        #         else:
+        #             overlapping_edges[edge] = 1
+        # print(overlapping_edges)
+
+        # overlaps = [edge for edge, count in overlapping_edges.items() if count > 1]
+        # dupes = []
+        # for overlap in overlaps:
+        #     (x1, y1), (x2, y2) = overlap
+        #     dx = abs(x2 - x1)
+        #     dy = abs(y2 - y1)
+        #     print(overlap, dx, dy, dx+dy)
+        #     dupes.append(dx + dy)
+        # print('sum', sum(dupes), len(overlaps), len(pit.interior_parcels))
+
 
         def errs(val, expected):
             diff = expected - val
             verb = 'over' if diff < 0 else 'under'
             pct = 100.0 * diff / expected
-            return f"got {val} expected {expected} {verb} by {abs(diff)} ({pct}%)"
+            return f"got {val} expected {expected} {verb} by {abs(diff)} ({abs(pct)}%)"
 
         assert pit.cubic_meters == 952408144115, errs(pit.cubic_meters, 952408144115)
         return 'passed'
