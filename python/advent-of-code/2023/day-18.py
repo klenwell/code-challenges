@@ -137,6 +137,7 @@ class BigLavaPit(LavaPit):
             pt = self.rgb_to_next_pt(pts[-1], rgb)
             #print(rgb, pt)
             pts.append(pt)
+        #breakpoint()
         return pts
 
     @cached_property
@@ -174,7 +175,7 @@ class BigLavaPit(LavaPit):
 
         # https://stackoverflow.com/a/209550/1093087
         distance = int(hex, 16)
-        #print(rgb, hex, distance)
+        #print(rgb, dir, distance)
 
         px, py = previous_pt
         x = px + (dx * distance)
@@ -269,15 +270,12 @@ class Parcel:
 
     @cached_property
     def mid_pt(self):
-        x = (max(self.xs) + min(self.xs)) // 2
-        y = (max(self.ys) + min(self.ys)) // 2
+        x = (max(self.xs) + min(self.xs)) / 2
+        y = (max(self.ys) + min(self.ys)) / 2
         return (x, y)
 
     def __repr__(self):
         return f"<Parcel {self.pts} mid_pt={self.mid_pt} area={self.area}>"
-
-
-
 
 
 class AdventPuzzle:
@@ -310,7 +308,9 @@ U 2 (#7a21e3)"""
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        pit = BigLavaPit(input)
+        return pit.cubic_meters
 
     #
     # Tests
@@ -332,8 +332,26 @@ U 2 (#7a21e3)"""
         #breakpoint()
 
         #print(len(pit.pts), len(pit.parcels), pit.parcels[0])
+        print(pit.pts)
 
-        assert pit.cubic_meters == 952408144115, f"{pit.cubic_meters} off by {952408144115 - pit.cubic_meters}"
+        w = max(pit.xs) - min(pit.xs)
+        h = max(pit.ys) - min(pit.ys)
+        area = w * h
+        outer = sum([p.area for p in pit.parcels if not pit.contains(p)])
+        print('area', area, w, h, w+h)
+        print(area - outer, pit.cubic_meters)
+        breakpoint()
+
+        for parcel in pit.parcels:
+            print(parcel, pit.contains(parcel))
+
+        def errs(val, expected):
+            diff = expected - val
+            verb = 'over' if diff < 0 else 'under'
+            pct = 100.0 * diff / expected
+            return f"got {val} expected {expected} {verb} by {abs(diff)} ({pct}%)"
+
+        assert pit.cubic_meters == 952408144115, errs(pit.cubic_meters, 952408144115)
         return 'passed'
 
     #
