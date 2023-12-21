@@ -110,7 +110,7 @@ class BigLavaPit(LavaPit):
         area = 0
         for parcel in self.interior_parcels:
             area += parcel.area
-        return area - self.overlapping_edges_area
+        return area - self.overlapping_edges_area - self.overlapping_panel_corners - 2
 
     @cached_property
     def interior_parcels(self):
@@ -149,6 +149,40 @@ class BigLavaPit(LavaPit):
         return pt_counts
 
     @cached_property
+    def overlapping_panel_corners(self):
+        # These are kitty-cornered panels with a single over-lapping corner hole that will
+        # be overcounted. Or panels that share a corner without sharing an edge.
+        count = 0
+        pt_parcels = {}
+        for parcel in self.interior_parcels:
+            for pt in parcel.pts:
+                if pt in pt_parcels:
+                    pt_parcels[pt].append(parcel)
+                else:
+                    pt_parcels[pt] = [parcel]
+
+        import itertools as it
+        for pt, parcels in pt_parcels.items():
+            if len(parcels) < 2:
+                continue
+
+            compared = []
+            print('ids', [id(p) for p in parcels])
+
+            for p1, p2 in it.permutations(parcels, 2):
+                pair_key = sorted([id(p1), id(p2)])
+                if pair_key in compared:
+                    continue
+
+                compared.append(pair_key)
+                #print(pair_key)
+                if not p1.shares_edge_with(p2):
+                    print('hit', (p1, p2))
+                    count += 1
+        #breakpoint()
+        return count
+
+    @cached_property
     def overlapping_edges_area(self):
         area = 0
         for edge in self.overlapping_edges:
@@ -157,8 +191,7 @@ class BigLavaPit(LavaPit):
             dy = abs(y2 - y1)
             assert 0 in [dx, dy], (dx, dy)
             area += dx + dy
-        overcounted_corners = sum([n-2 for n in self.overlapping_corners.values()]) // 2
-        return area + overcounted_corners
+        return area
 
     @cached_property
     def parcels(self):
@@ -333,6 +366,9 @@ class Parcel:
         y = (max(self.ys) + min(self.ys)) // 2
         return (x, y)
 
+    def shares_edge_with(self, other):
+        return len(set(self.edges).intersection(set(other.edges))) > 0
+
     def __repr__(self):
         return f"<Parcel {self.pts} mid_pt={self.mid_pt} area={self.area}>"
 
@@ -371,6 +407,7 @@ U 2 (#7a21e3)"""
         pit = BigLavaPit(input)
         print(len(pit.parcels))
         assert pit.cubic_meters != 98956108013068, pit.cubic_meters
+        assert pit.cubic_meters != 98956107977040, pit.cubic_meters
         return pit.cubic_meters
 
     #
