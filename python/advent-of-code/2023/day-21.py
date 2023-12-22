@@ -7,6 +7,11 @@ from functools import cached_property
 from common import INPUT_DIR
 
 
+class GardenMap:
+    def __init__(self, input):
+        self.input = input
+
+
 class AdventPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-21.txt')
 
@@ -31,7 +36,9 @@ class AdventPuzzle:
     @property
     def test1(self):
         input = self.TEST_INPUT
-        print(input)
+        steps = 6
+        garden = GardenMap(input)
+        garden.reachable_plots == 16, garden.reachable_plots
         return 'passed'
 
     @property
