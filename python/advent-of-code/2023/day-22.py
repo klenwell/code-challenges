@@ -7,6 +7,16 @@ from functools import cached_property
 from common import INPUT_DIR
 
 
+class BrickStack:
+    def __init__(self, input):
+        self.input = input.strip()
+
+
+class Brick:
+    def __init__(self, pt1, pt2):
+        pass
+
+
 class AdventPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-22.txt')
 
@@ -31,7 +41,8 @@ class AdventPuzzle:
     @property
     def test1(self):
         input = self.TEST_INPUT
-        print(input)
+        stack = BrickStack(input)
+        assert stack.safe_bricks == 5, stack.safe_bricks
         return 'passed'
 
     @property
