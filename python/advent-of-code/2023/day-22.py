@@ -4,7 +4,7 @@ https://adventofcode.com/2023/day/22
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR
+from common import INPUT_DIR, info
 
 
 class BrickStack:
@@ -14,8 +14,8 @@ class BrickStack:
         lines = snapshot.strip().split('\n')
         for line in lines:
             left, right = line.split('~')
-            pt1 = [int(d) for d in left.strip() if d.isdigit()]
-            pt2 = [int(d) for d in right.strip() if d.isdigit()]
+            pt1 = [int(d) for d in left.strip().split(',')]
+            pt2 = [int(d) for d in right.strip().split(',')]
             brick = Brick(pt1, pt2)
             bricks.append(brick)
         return BrickStack(bricks)
@@ -45,7 +45,7 @@ class BrickStack:
             while self.can_drop(brick):
                 brick = brick.drop()
             dropped.append(brick)
-            print(f"{brick} from y={y1} to y={brick.max_z}")
+            #print(f"{brick} from y={y1} to y={brick.max_z}")
         return BrickStack(dropped)
 
     def disintegrate_bricks(self):
@@ -54,7 +54,8 @@ class BrickStack:
         # Sort bricks by max_z asc
         sorted_bricks = sorted(self.bricks, key=lambda b: b.max_z)
 
-        for brick in sorted_bricks:
+        for n, brick in enumerate(sorted_bricks):
+            info(f"testing brick {n} {brick}", 100)
             if self.brick_is_expendable(brick):
                 disintegrated_bricks.append(brick)
 
@@ -128,6 +129,7 @@ class Brick:
         return max([z for _, _, z in self.pts])
 
     def drop(self):
+        #print('drop', self)
         x1, y1, z1 = self.end_pt1
         x2, y2, z2 = self.end_pt2
         return Brick((x1, y1, z1-1), (x2, y2, z2-1))
@@ -158,7 +160,12 @@ class AdventPuzzle:
     @property
     def first(self):
         input = self.file_input
-        return input
+        stack = BrickStack.from_snapshot(input)
+
+        assert stack.brick_count == 1205, stack.brick_count
+        assert stack.expendable_bricks > 152, stack.expendable_bricks
+
+        return stack.expendable_bricks
 
     @property
     def second(self):
