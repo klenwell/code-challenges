@@ -25,8 +25,8 @@ class BrickStack:
 
     @cached_property
     def expendable_bricks(self):
-        stack = self.drop_bricks()
-        expendable_bricks = stack.disintegrate_bricks()
+        self.drop_bricks()
+        expendable_bricks = self.disintegrate_bricks()
         return len(expendable_bricks)
 
     @property
@@ -34,19 +34,20 @@ class BrickStack:
         return len(self.bricks)
 
     def drop_bricks(self):
-        dropped = []
+        #dropped = []
 
         # Sort bricks by min_z asc
-        sorted_bricks = sorted(self.bricks, key=lambda b: b.max_z)
+        sorted_bricks = sorted(self.bricks, key=lambda b: b.min_z)
 
         for brick in sorted_bricks:
-            y1 = brick.max_z
-            #print('falling', brick)
+            print('falling', brick)
+            y1 = brick.min_z
             while self.can_drop(brick):
                 brick = brick.drop()
-            dropped.append(brick)
-            #print(f"{brick} from y={y1} to y={brick.max_z}")
-        return BrickStack(dropped)
+            #dropped.append(brick)
+            print(f"{brick} from y={y1} to y={brick.min_z}")
+
+        return self
 
     def disintegrate_bricks(self):
         disintegrated_bricks = []
@@ -85,7 +86,8 @@ class BrickStack:
 
     def can_drop(self, brick):
         # Drop brick
-        dropped_brick = brick.drop()
+        dropped_brick = brick.clone()
+        dropped_brick = dropped_brick.drop()
         z_level = dropped_brick.min_z
 
         # Was brick already at ground level?
@@ -97,6 +99,7 @@ class BrickStack:
 
         for brick_below in bricks_below:
             if dropped_brick.collides(brick_below):
+                print('collision', dropped_brick, brick_below)
                 return False
         return True
 
@@ -106,7 +109,7 @@ class Brick:
         self.end_pt1 = tuple(end_pt1)
         self.end_pt2 = tuple(end_pt2)
 
-    @cached_property
+    @property
     def pts(self):
         pts = []
         min_x, max_x = sorted([self.end_pt1[0], self.end_pt2[0]])
@@ -132,10 +135,18 @@ class Brick:
         #print('drop', self)
         x1, y1, z1 = self.end_pt1
         x2, y2, z2 = self.end_pt2
-        return Brick((x1, y1, z1-1), (x2, y2, z2-1))
+        self.end_pt1 = (x1, y1, z1-1)
+        self.end_pt2 = (x2, y2, z2-1)
+        return self
+
+    def clone(self):
+        clone = Brick(self.end_pt1, self.end_pt2)
+        return clone
 
     def collides(self, other):
         common_pts = set(self.pts).intersection(set(other.pts))
+        if len(common_pts) > 0:
+            print('collides', self, other, common_pts)
         return len(common_pts) > 0
 
     def __repr__(self):
