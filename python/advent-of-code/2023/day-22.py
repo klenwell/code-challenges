@@ -34,18 +34,15 @@ class BrickStack:
         return len(self.bricks)
 
     def drop_bricks(self):
-        #dropped = []
-
         # Sort bricks by min_z asc
         sorted_bricks = sorted(self.bricks, key=lambda b: b.min_z)
 
-        for brick in sorted_bricks:
-            print('falling', brick)
+        for n, brick in enumerate(sorted_bricks):
             y1 = brick.min_z
+            info(f"dropping brick {n} {brick}", 100)
             while self.can_drop(brick):
                 brick = brick.drop()
-            #dropped.append(brick)
-            print(f"{brick} from y={y1} to y={brick.min_z}")
+            #print(f"{brick} from y={y1} to y={brick.min_z}")
 
         return self
 
@@ -61,7 +58,7 @@ class BrickStack:
                 disintegrated_bricks.append(brick)
 
         # return stack
-        print('expendable', disintegrated_bricks)
+        #print('expendable', disintegrated_bricks)
         return disintegrated_bricks
 
     def brick_is_expendable(self, brick):
@@ -99,7 +96,7 @@ class BrickStack:
 
         for brick_below in bricks_below:
             if dropped_brick.collides(brick_below):
-                print('collision', dropped_brick, brick_below)
+                #print('collision', dropped_brick, brick_below)
                 return False
         return True
 
@@ -108,9 +105,9 @@ class Brick:
     def __init__(self, end_pt1, end_pt2):
         self.end_pt1 = tuple(end_pt1)
         self.end_pt2 = tuple(end_pt2)
+        self.pts = self.extract_pts()
 
-    @property
-    def pts(self):
+    def extract_pts(self):
         pts = []
         min_x, max_x = sorted([self.end_pt1[0], self.end_pt2[0]])
         min_y, max_y = sorted([self.end_pt1[1], self.end_pt2[1]])
@@ -137,6 +134,7 @@ class Brick:
         x2, y2, z2 = self.end_pt2
         self.end_pt1 = (x1, y1, z1-1)
         self.end_pt2 = (x2, y2, z2-1)
+        self.pts = self.extract_pts()
         return self
 
     def clone(self):
@@ -145,8 +143,6 @@ class Brick:
 
     def collides(self, other):
         common_pts = set(self.pts).intersection(set(other.pts))
-        if len(common_pts) > 0:
-            print('collides', self, other, common_pts)
         return len(common_pts) > 0
 
     def __repr__(self):
