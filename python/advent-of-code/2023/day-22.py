@@ -21,7 +21,7 @@ class BrickStack:
         return BrickStack(bricks)
 
     def __init__(self, bricks):
-        self.bricks = list(bricks)
+        self.bricks = sorted(bricks, key=lambda b: (b.min_x, b.xy_pts[0]))
         self.floors = self.set_floors()
 
     def reset(self):
@@ -42,13 +42,15 @@ class BrickStack:
         self.drop_bricks()
         self.freeze_bricks()
         expendable_bricks = self.disintegrate_bricks()
+        reactive_bricks = [b for b in self.bricks if b not in expendable_bricks]
 
-        for brick in self.bricks:
-            if brick in expendable_bricks:
-                continue
-            dropped_bricks = self.drop_bricks()
+        for n, brick in enumerate(reactive_bricks):
+            self.bricks.remove(brick)
+            stack = BrickStack(self.bricks)
+            dropped_bricks = stack.drop_bricks()
             sum += dropped_bricks
-            print('jenga pull', brick, dropped_bricks, sum)
+            info(f"extract brick {n} {brick}: {dropped_bricks} -> {sum}", 1)
+            self.bricks.append(brick)
             self.reset()
 
         return sum
@@ -82,13 +84,13 @@ class BrickStack:
 
         for level in range(1, max_z + 1):
             bricks = [b for b in self.bricks if b.min_z == level]
-            print(f"dropping level {level}: {len(bricks)} bricks", 100)
+            info(f"dropping level {level}: {len(bricks)} bricks", 1000)
 
             for brick in bricks:
                 # Find floor
                 old_floor = brick.min_z
                 new_floor = max([self.floors[pt] for pt in brick.xy_pts]) + 1
-                print(f"move {brick.xy_pts} from floor {old_floor} to {new_floor}")
+                #print(f"move {brick.xy_pts} from floor {old_floor} to {new_floor}")
                 brick.set_min_z(new_floor)
 
                 if old_floor != new_floor:
@@ -289,7 +291,12 @@ class AdventPuzzle:
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        stack = BrickStack.from_snapshot(input)
+
+        assert stack.jenga_sum > 1251, stack.jenga_sum
+
+        return stack.jenga_sum
 
     #
     # Tests
