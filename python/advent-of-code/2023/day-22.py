@@ -24,6 +24,35 @@ class BrickStack:
         self.bricks = list(bricks)
         self.floors = self.set_floors()
 
+    def reset(self):
+        for brick in self.bricks:
+            brick.reset()
+        self.floors = self.set_floors()
+        return self
+
+    def freeze_bricks(self):
+        for brick in self.bricks:
+            brick.freeze()
+        return self
+
+    @cached_property
+    def jenga_sum(self):
+        sum = 0
+
+        self.drop_bricks()
+        self.freeze_bricks()
+        expendable_bricks = self.disintegrate_bricks()
+
+        for brick in self.bricks:
+            if brick in expendable_bricks:
+                continue
+            dropped_bricks = self.drop_bricks()
+            sum += dropped_bricks
+            print('jenga pull', brick, dropped_bricks, sum)
+            self.reset()
+
+        return sum
+
     def set_floors(self):
         floors = {}
 
@@ -48,17 +77,22 @@ class BrickStack:
         return len(self.bricks)
 
     def drop_bricks(self):
+        dropped_bricks = 0
         max_z = max([b.min_z for b in self.bricks])
 
         for level in range(1, max_z + 1):
             bricks = [b for b in self.bricks if b.min_z == level]
-            info(f"dropping level {level}: {len(bricks)} bricks", 1)
+            print(f"dropping level {level}: {len(bricks)} bricks", 100)
 
             for brick in bricks:
                 # Find floor
-                floor = max([self.floors[pt] for pt in brick.xy_pts])
-                print(f"move {brick.xy_pts} from floor {brick.min_z} to {floor}")
-                brick.set_min_z(floor + 1)
+                old_floor = brick.min_z
+                new_floor = max([self.floors[pt] for pt in brick.xy_pts]) + 1
+                print(f"move {brick.xy_pts} from floor {old_floor} to {new_floor}")
+                brick.set_min_z(new_floor)
+
+                if old_floor != new_floor:
+                    dropped_bricks += 1
 
                 # Set new floor for each point
                 for pt in brick.xy_pts:
@@ -67,7 +101,7 @@ class BrickStack:
                     if new_z > old_z:
                         self.floors[pt] = new_z
 
-        return self
+        return dropped_bricks
 
     def slow_drop_bricks(self):
         # Sort bricks by min_z asc
@@ -140,6 +174,16 @@ class Brick:
     def __init__(self, end_pt1, end_pt2):
         self.end_pt1 = tuple(end_pt1)
         self.end_pt2 = tuple(end_pt2)
+        self.pts = self.extract_pts()
+
+    def freeze(self):
+        self.original_end_pt1 = self.end_pt1
+        self.original_end_pt2 = self.end_pt2
+        self.pts = self.extract_pts()
+
+    def reset(self):
+        self.end_pt1 = self.original_end_pt1
+        self.end_pt2 = self.original_end_pt2
         self.pts = self.extract_pts()
 
     @cached_property
@@ -264,7 +308,9 @@ class AdventPuzzle:
     @property
     def test2(self):
         input = self.TEST_INPUT
-        print(input)
+        stack = BrickStack.from_snapshot(input)
+
+        assert stack.jenga_sum == 7, stack.jenga_sum
         return 'passed'
 
     #
