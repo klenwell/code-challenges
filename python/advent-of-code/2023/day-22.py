@@ -22,6 +22,20 @@ class BrickStack:
 
     def __init__(self, bricks):
         self.bricks = list(bricks)
+        self.floors = self.set_floors()
+
+    def set_floors(self):
+        floors = {}
+
+        min_x = min([b.min_x for b in self.bricks])
+        max_y = max([b.max_x for b in self.bricks])
+        min_y = min([b.min_y for b in self.bricks])
+        max_y = max([b.max_y for b in self.bricks])
+
+        for x in range(min_x, max_y + 1):
+            for y in range(min_y, max_y + 1):
+                floors[(x, y)] = 0
+        return floors
 
     @cached_property
     def expendable_bricks(self):
@@ -34,15 +48,36 @@ class BrickStack:
         return len(self.bricks)
 
     def drop_bricks(self):
+        max_z = max([b.min_z for b in self.bricks])
+
+        for level in range(1, max_z + 1):
+            bricks = [b for b in self.bricks if b.min_z == level]
+            info(f"dropping level {level}: {len(bricks)} bricks", 1)
+
+            for brick in bricks:
+                # Find floor
+                floor = max([self.floors[pt] for pt in brick.xy_pts])
+                print(f"move {brick.xy_pts} from floor {brick.min_z} to {floor}")
+                brick.set_min_z(floor + 1)
+
+                # Set new floor for each point
+                for pt in brick.xy_pts:
+                    old_z = self.floors[pt]
+                    new_z = brick.max_z
+                    if new_z > old_z:
+                        self.floors[pt] = new_z
+
+        return self
+
+    def slow_drop_bricks(self):
         # Sort bricks by min_z asc
         sorted_bricks = sorted(self.bricks, key=lambda b: b.min_z)
 
         for n, brick in enumerate(sorted_bricks):
             y1 = brick.min_z
-            info(f"dropping brick {n} {brick}", 100)
             while self.can_drop(brick):
                 brick = brick.drop()
-            #print(f"{brick} from y={y1} to y={brick.min_z}")
+            info(f"dropped brick {n} {brick} from y={y1} to y={brick.min_z}", 100)
 
         return self
 
@@ -107,17 +142,25 @@ class Brick:
         self.end_pt2 = tuple(end_pt2)
         self.pts = self.extract_pts()
 
-    def extract_pts(self):
+    @cached_property
+    def xy_pts(self):
         pts = []
         min_x, max_x = sorted([self.end_pt1[0], self.end_pt2[0]])
         min_y, max_y = sorted([self.end_pt1[1], self.end_pt2[1]])
-        min_z, max_z = sorted([self.end_pt1[2], self.end_pt2[2]])
-
         for x in range(min_x, max_x+1):
             for y in range(min_y, max_y+1):
-                for z in range(min_z, max_z+1):
-                    pt = (x, y, z)
-                    pts.append(pt)
+                pt = (x, y)
+                pts.append(pt)
+        return pts
+
+
+    def extract_pts(self):
+        pts = []
+        min_z, max_z = sorted([self.end_pt1[2], self.end_pt2[2]])
+        for x, y in self.xy_pts:
+            for z in range(min_z, max_z+1):
+                pt = (x, y, z)
+                pts.append(pt)
         return pts
 
     @property
@@ -127,6 +170,32 @@ class Brick:
     @property
     def max_z(self):
         return max([z for _, _, z in self.pts])
+
+    @cached_property
+    def min_x(self):
+        return min([self.end_pt1[0], self.end_pt2[0]])
+
+    @cached_property
+    def max_x(self):
+        return max([self.end_pt1[0], self.end_pt2[0]])
+
+    @cached_property
+    def min_y(self):
+        return min([self.end_pt1[1], self.end_pt2[1]])
+
+    @cached_property
+    def max_y(self):
+        return max([self.end_pt1[1], self.end_pt2[1]])
+
+    def set_min_z(self, z):
+        x1, y1, z1 = self.end_pt1
+        x2, y2, z2 = self.end_pt2
+        min_z = min(z1, z2)
+        dz = min_z - z
+        self.end_pt1 = (x1, y1, z1-dz)
+        self.end_pt2 = (x2, y2, z2-dz)
+        self.pts = self.extract_pts()
+        return self
 
     def drop(self):
         #print('drop', self)
