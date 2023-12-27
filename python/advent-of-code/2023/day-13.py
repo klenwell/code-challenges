@@ -19,6 +19,13 @@ class MirrorScape:
         return sum
 
     @cached_property
+    def smudge_sum(self):
+        sum = 0
+        for pattern in self.patterns:
+            sum += pattern.smudge_summary
+        return sum
+
+    @cached_property
     def patterns(self):
         patterns = []
         blocks = self.input.split('\n\n')
@@ -119,16 +126,6 @@ class MirrorPattern:
         return sum(1 for ic, mc in zip(image, mirror_image) if ic != mc)
 
 
-class SmudgedMirrorScape(MirrorScape):
-    @cached_property
-    def pattern_sum(self):
-        sum = 0
-        for pattern in self.patterns:
-            print(pattern, sum)
-            sum += pattern.smudge_summary
-        return sum
-
-
 class AdventPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-13.txt')
 
@@ -161,8 +158,8 @@ class AdventPuzzle:
     @property
     def second(self):
         input = self.file_input
-        map = SmudgedMirrorScape(input)
-        return map.pattern_sum
+        map = MirrorScape(input)
+        return map.smudge_sum
 
     #
     # Tests
@@ -174,11 +171,11 @@ class AdventPuzzle:
 
         vert_pattern = map.patterns[0]
         assert vert_pattern.vertical_reflection_pivot == 5, vert_pattern.vertical_reflection_pivot
-        assert vert_pattern.horizontal_reflection_pivot == False
+        assert not vert_pattern.horizontal_reflection_pivot
 
-        horz_pattern = map.patterns[1]
-        assert horz_pattern.vertical_reflection_pivot == False, horz_pattern.vertical_reflection_pivot
-        assert horz_pattern.horizontal_reflection_pivot == 4, horz_pattern.horizontal_reflection_pivot
+        horz = map.patterns[1]
+        assert not horz.vertical_reflection_pivot, horz.vertical_reflection_pivot
+        assert horz.horizontal_reflection_pivot == 4, horz.horizontal_reflection_pivot
 
         assert map.pattern_sum == 405, map.pattern_sum
         return 'passed'
@@ -186,8 +183,8 @@ class AdventPuzzle:
     @property
     def test2(self):
         input = self.TEST_INPUT
-        map = SmudgedMirrorScape(input)
-        assert map.pattern_sum == 400, map.pattern_sum
+        map = MirrorScape(input)
+        assert map.smudge_sum == 400, map.smudge_sum
         return 'passed'
 
     #
