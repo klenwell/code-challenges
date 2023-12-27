@@ -15,7 +15,6 @@ class MirrorScape:
     def pattern_sum(self):
         sum = 0
         for pattern in self.patterns:
-            print(pattern, sum)
             sum += pattern.summary
         return sum
 
@@ -43,27 +42,21 @@ class MirrorPattern:
         return sum
 
     @cached_property
+    def smudge_summary(self):
+        sum = 0
+        if self.smudge_pivot(self.cols):
+            sum += self.smudge_pivot(self.cols)
+        if self.smudge_pivot(self.rows):
+            sum += (100 * self.smudge_pivot(self.rows))
+        return sum
+
+    @cached_property
     def vertical_reflection_pivot(self):
         return self.reflection_pivot(self.cols)
 
     @cached_property
     def horizontal_reflection_pivot(self):
         return self.reflection_pivot(self.rows)
-
-    def reflection_pivot(self, seq):
-        max_n = len(seq)
-        for n, col in enumerate(seq[0:-1]):
-            pivot = n+1
-            ref_len = min(pivot, max_n-n-1)
-            i0, i1 = pivot-ref_len, pivot
-            m0, m1 = pivot, pivot+ref_len
-            left_image = ''.join(c for c in seq[i0:i1])
-            right_image = ''.join(c[::-1] for c in seq[m0:m1])
-            print(n, pivot, ref_len, (i0, i1), left_image, (m0, m1), right_image)
-            assert len(left_image) == len(right_image), (len(left_image), len(right_image))
-            if left_image == right_image[::-1]:
-                return pivot
-        return False
 
     @cached_property
     def rows(self):
@@ -85,6 +78,55 @@ class MirrorPattern:
             col = ''.join(vals)
             cols.append(col)
         return cols
+
+    def reflection_pivot(self, seq):
+        max_n = len(seq)
+        for n, _ in enumerate(seq[0:-1]):
+            pivot = n+1
+            ref_len = min(pivot, max_n-n-1)
+            i0, i1 = pivot-ref_len, pivot
+            m0, m1 = pivot, pivot+ref_len
+
+            left_image = ''.join(c for c in seq[i0:i1])
+            right_image = ''.join(c[::-1] for c in seq[m0:m1])
+            mirror_image = right_image[::-1]
+
+            if left_image == mirror_image:
+                return pivot
+
+        return False
+
+    def smudge_pivot(self, seq):
+        max_n = len(seq)
+        for n, _ in enumerate(seq[0:-1]):
+            pivot = n+1
+            ref_len = min(pivot, max_n-n-1)
+            i0, i1 = pivot-ref_len, pivot
+            m0, m1 = pivot, pivot+ref_len
+
+            left_image = ''.join(c for c in seq[i0:i1])
+            right_image = ''.join(c[::-1] for c in seq[m0:m1])
+            mirror_image = right_image[::-1]
+            smudges = self.count_smudges(left_image, mirror_image)
+
+            if smudges == 1:
+                return pivot
+
+        return False
+
+    def count_smudges(self, image, mirror_image):
+        # https://stackoverflow.com/a/12226874/1093087
+        return sum(1 for ic, mc in zip(image, mirror_image) if ic != mc)
+
+
+class SmudgedMirrorScape(MirrorScape):
+    @cached_property
+    def pattern_sum(self):
+        sum = 0
+        for pattern in self.patterns:
+            print(pattern, sum)
+            sum += pattern.smudge_summary
+        return sum
 
 
 class AdventPuzzle:
@@ -118,7 +160,9 @@ class AdventPuzzle:
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        map = SmudgedMirrorScape(input)
+        return map.pattern_sum
 
     #
     # Tests
@@ -142,7 +186,8 @@ class AdventPuzzle:
     @property
     def test2(self):
         input = self.TEST_INPUT
-        print(input)
+        map = SmudgedMirrorScape(input)
+        assert map.pattern_sum == 400, map.pattern_sum
         return 'passed'
 
     #
