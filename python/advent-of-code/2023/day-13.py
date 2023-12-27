@@ -13,7 +13,11 @@ class MirrorScape:
 
     @cached_property
     def pattern_sum(self):
-        return 0
+        sum = 0
+        for pattern in self.patterns:
+            print(pattern, sum)
+            sum += pattern.summary
+        return sum
 
     @cached_property
     def patterns(self):
@@ -34,27 +38,13 @@ class MirrorPattern:
         sum = 0
         if self.vertical_reflection_pivot:
             sum += self.vertical_reflection_pivot
-        if self.horizontal_line_of_reflection:
-            sum += 100 * self.horizontal_line_of_reflection
+        if self.horizontal_reflection_pivot:
+            sum += (100 * self.horizontal_reflection_pivot)
         return sum
 
     @cached_property
     def vertical_reflection_pivot(self):
         return self.reflection_pivot(self.cols)
-        max_x = len(self.cols)
-        print(self.cols)
-        for n, col in enumerate(self.cols[0:-1]):
-            pivot = n+1
-            ref_len = min(pivot, max_x-n-1)
-            i0, i1 = pivot-ref_len, pivot
-            m0, m1 = pivot, pivot+ref_len
-            left_image = ''.join(c for c in self.cols[i0:i1])
-            right_image = ''.join(c[::-1] for c in self.cols[m0:m1])
-            print(n, pivot, ref_len, (i0, i1), left_image, (m0, m1), right_image)
-            assert len(left_image) == len(right_image), (len(left_image), len(right_image))
-            if left_image == right_image[::-1]:
-                return pivot
-        return False
 
     @cached_property
     def horizontal_reflection_pivot(self):
@@ -62,7 +52,6 @@ class MirrorPattern:
 
     def reflection_pivot(self, seq):
         max_n = len(seq)
-        print(seq)
         for n, col in enumerate(seq[0:-1]):
             pivot = n+1
             ref_len = min(pivot, max_n-n-1)
@@ -75,7 +64,6 @@ class MirrorPattern:
             if left_image == right_image[::-1]:
                 return pivot
         return False
-
 
     @cached_property
     def rows(self):
