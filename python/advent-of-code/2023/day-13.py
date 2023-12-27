@@ -113,7 +113,8 @@ class AdventPuzzle:
     @property
     def first(self):
         input = self.file_input
-        return input
+        map = MirrorScape(input)
+        return map.pattern_sum
 
     @property
     def second(self):
