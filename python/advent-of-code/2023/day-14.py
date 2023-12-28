@@ -32,6 +32,66 @@ class ReflectorDish:
     def max_row(self):
         return self.grid.max_y + 1
 
+    def spin(self, cycles):
+        states = []
+        for n in range(cycles):
+            for dir in (N, W, S, E):
+                self.tilt(dir)
+            states.append(self.state)
+
+            if self.detect_pattern(states):
+                breakpoint()
+        return
+
+    def tilt(self, dir):
+        dx, dy = dir
+
+        if dx == 0:
+            seqs = list(self.cols)
+            d1 = dy
+        else:
+            seqs = list(self.rows)
+            d1 = dx
+
+        seqs = self.tilt_seqs(seqs, d1)
+
+        if dx == 0:
+            self.cols_to_pts(seqs)
+        else:
+            self.rows_to_pts(seqs)
+
+        return self
+
+    def tilt_seqs(self, seqs, d1):
+        seqs_out = []
+        for seq in seqs:
+            seq_out = self.tilt_seq(self, seq, d1)
+            seqs_out.append(seq_out)
+        return seqs
+
+    def tilt_seq(self, seq, d1):
+        step = d1
+        seq_out = ['.' for v in seq if v]
+        stop = 0
+
+        if d1 == 1:
+            seq = seq[::-1]
+
+        for n, space in enumerate(seq):
+            if space == 'O':
+                seq_out[stop] = ROCK
+                stop += 1
+            elif space == '#':
+                seq_out[n] = space
+                stop = n + 1
+            else:
+                seq_out[n] = space
+
+        if d1 == 1:
+            seq_out = seq_out[::-1]
+
+        return seq_out
+
     def tilt_north(self, cols):
         cols_in = cols
         cols_out = []
@@ -122,8 +182,22 @@ O.#..O.#.#
     def test2(self):
         input = self.TEST_INPUT
         dish = ReflectorDish(input)
-        dish.spin(CYCLES)
-        assert dish.total_load == 64, dish.total_load
+
+        dx, _ = W
+        seq_in = list('..O.#..OO.#')
+        expect = list('O...#OO...#')
+        seq_out = dish.tilt_seq(seq_in, dx)
+        assert seq_out == expect, (seq_out, expect)
+
+        dx, _ = E
+        seq_in = list('..O.#..OO.#')
+        expect = list('...O#...OO#')
+        seq_out = dish.tilt_seq(seq_in, dx)
+        assert seq_out == expect, (seq_out, expect)
+
+
+        #dish.spin(CYCLES)
+        #assert dish.total_load == 64, dish.total_load
         return 'passed'
 
     #
