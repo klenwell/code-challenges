@@ -6,7 +6,13 @@ from os.path import join as path_join
 from functools import cached_property
 from common import INPUT_DIR, Grid
 
+N = (0, -1)
+S = (0, 1)
+E = (1, 0)
+W = (-1, 0)
 ROCK = 'O'
+CYCLES = 1000000000
+
 
 class ReflectorDish:
     def __init__(self, input):
@@ -16,11 +22,8 @@ class ReflectorDish:
     def total_load(self):
         total_load = 0
         cols = list(self.grid.cols)
-        print(cols)
         cols = self.tilt_north(cols)
-        print(cols)
         for col in cols:
-            print(col)
             col_load = sum([t.load for t in col if type(t) is Rock])
             total_load += col_load
         return total_load
@@ -48,7 +51,7 @@ class ReflectorDish:
             rock = Rock(x, y, self)
             rock.roll_north(col_out)
             col_out[rock.y] = rock
-        print(col_in, col_out)
+        #print(col_in, col_out)
         return col_out
 
 
@@ -98,7 +101,8 @@ O.#..O.#.#
     @property
     def first(self):
         input = self.file_input
-
+        dish = ReflectorDish(input)
+        return dish.total_load
 
     @property
     def second(self):
@@ -111,15 +115,15 @@ O.#..O.#.#
     def test1(self):
         input = self.TEST_INPUT
         dish = ReflectorDish(input)
-
         assert dish.total_load == 136, dish.total_load
-        return input
         return 'passed'
 
     @property
     def test2(self):
         input = self.TEST_INPUT
-        print(input)
+        dish = ReflectorDish(input)
+        dish.spin(CYCLES)
+        assert dish.total_load == 64, dish.total_load
         return 'passed'
 
     #
