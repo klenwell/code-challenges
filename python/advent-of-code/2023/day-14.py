@@ -26,7 +26,7 @@ class ReflectorDish:
             rows.append(row)
         return rows
 
-    @cached_property
+    @property
     def total_load(self):
         total_load = 0
 
@@ -52,15 +52,78 @@ class ReflectorDish:
         return cols
 
     def spin(self, cycles):
-        states = []
-        for n in range(cycles):
+        cycle = 0
+        loads = []
+        pattern_detected = False
+
+        while cycle < cycles:
+            cycle += 1
+            print(cycle)
             for dir in (N, W, S, E):
                 self.tilt(dir)
-            states.append(self.state)
+            loads.append(self.total_load)
 
-            if self.detect_pattern(states):
+            if pattern_detected:
+                continue
+
+            if self.detect_pattern(loads):
+                print(cycle, loads)
+                # fast forward
+                cycles_left = cycles - cycle
+                pattern_length = len(self.extract_pattern(loads))
+                pattern_cycles = cycles_left // pattern_length
+                skip_ahead = pattern_cycles * pattern_length
+                print(cycles_left, pattern_cycles, skip_ahead)
+                cycle += skip_ahead
+                pattern_detected = True
+
                 breakpoint()
         return
+
+    def detect_pattern(self, loads):
+        pattern = self.extract_pattern(loads)
+        print(pattern)
+        return pattern != None
+
+    def extract_pattern(self, loads):
+        if len(loads) < 8:
+            return None
+
+        last_seg = loads[-4:]
+        seq = loads[0:-4]
+        haystack = seq[::-1]
+        needle = last_seg[::-1]
+        #print(loads, needle, haystack)
+
+        for n in range(0, len(haystack)-4):
+            a, b = n, n+4
+            segment = haystack[a:b]
+            #print(needle, segment)
+            if needle == segment:
+                pattern = haystack[0:n][::-1] + needle[::-1]
+                print('found', pattern, (n,a,b), loads, needle, haystack, haystack[0:n])
+                return pattern
+
+        return None
+
+        last_load = loads[-1]
+        min_load = min(loads)
+
+        if last_load == min_load:
+            print(last_load, loads.count(last_load), loads)
+            if loads.count(last_load) > 5:
+                return True
+        return False
+
+    # def extract_pattern(self, loads):
+    #     pattern = []
+    #     seq = loads[::-1]
+    #     head = seq[0]
+
+    #     for v in loads:
+    #         pattern.append(v)
+    #         if pattern.count(head) > 1:
+    #             return pattern[::-1]
 
     def tilt(self, dir):
         dx, dy = dir
@@ -152,7 +215,10 @@ O.#..O.#.#
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        dish = ReflectorDish(input)
+        dish.spin(CYCLES)
+        return dish.total_load
 
     #
     # Tests
@@ -182,8 +248,8 @@ O.#..O.#.#
         seq_out = dish.tilt_seq(seq_in, dx)
         assert seq_out == expect, (seq_out, expect)
 
-        #dish.spin(CYCLES)
-        #assert dish.total_load == 64, dish.total_load
+        dish.spin(CYCLES)
+        assert dish.total_load == 64, dish.total_load
         return 'passed'
 
     #
