@@ -4,7 +4,7 @@ https://adventofcode.com/2023/day/14
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR, Grid
+from common import INPUT_DIR
 
 N = (0, -1)
 S = (0, 1)
@@ -16,21 +16,40 @@ CYCLES = 1000000000
 
 class ReflectorDish:
     def __init__(self, input):
-        self.grid = Grid(input)
+        self.rows = self.input_to_rows(input)
+
+    def input_to_rows(self, input):
+        rows = []
+        lines = input.strip().split('\n')
+        for line in lines:
+            row = list(line)
+            rows.append(row)
+        return rows
 
     @cached_property
     def total_load(self):
         total_load = 0
-        cols = list(self.grid.cols)
-        cols = self.tilt_north(cols)
+
+        cols = list(self.cols)
+        max_col = len(cols[0])
+
         for col in cols:
-            col_load = sum([t.load for t in col if type(t) is Rock])
-            total_load += col_load
+            for n, space in enumerate(col):
+                if space == ROCK:
+                    load = max_col - n
+                    total_load += load
         return total_load
 
-    @cached_property
-    def max_row(self):
-        return self.grid.max_y + 1
+    @property
+    def cols(self):
+        cols = []
+        for n in range(len(self.rows[0])):
+            col = []
+            for row in self.rows:
+                val = row[n]
+                col.append(val)
+            cols.append(col)
+        return cols
 
     def spin(self, cycles):
         states = []
@@ -56,21 +75,33 @@ class ReflectorDish:
         seqs = self.tilt_seqs(seqs, d1)
 
         if dx == 0:
-            self.cols_to_pts(seqs)
+            self.rows = self.cols_to_rows(seqs)
         else:
-            self.rows_to_pts(seqs)
+            self.rows = seqs
 
         return self
+
+    def cols_to_rows(self, cols):
+        rows = []
+        max_y = len(cols[0])
+        for y in range(max_y):
+            row = []
+            for col in cols:
+                val = col[y]
+                row.append(val)
+            rows.append(row)
+        return rows
 
     def tilt_seqs(self, seqs, d1):
         seqs_out = []
         for seq in seqs:
-            seq_out = self.tilt_seq(self, seq, d1)
+            #print(seq)
+            seq_out = self.tilt_seq(seq, d1)
+            #print(seq_out)
             seqs_out.append(seq_out)
-        return seqs
+        return seqs_out
 
     def tilt_seq(self, seq, d1):
-        step = d1
         seq_out = ['.' for v in seq if v]
         stop = 0
 
@@ -78,7 +109,7 @@ class ReflectorDish:
             seq = seq[::-1]
 
         for n, space in enumerate(seq):
-            if space == 'O':
+            if space == ROCK:
                 seq_out[stop] = ROCK
                 stop += 1
             elif space == '#':
@@ -91,53 +122,6 @@ class ReflectorDish:
             seq_out = seq_out[::-1]
 
         return seq_out
-
-    def tilt_north(self, cols):
-        cols_in = cols
-        cols_out = []
-
-        for x, col_in in enumerate(cols_in):
-            col_out = self.tilt_col_north(col_in, x)
-            cols_out.append(col_out)
-
-        return cols_out
-
-    def tilt_col_north(self, col_in, x):
-        col_out = ['.' for _ in col_in]
-        for y,  tile in enumerate(col_in):
-            if tile != ROCK:
-                col_out[y] = tile
-                continue
-            rock = Rock(x, y, self)
-            rock.roll_north(col_out)
-            col_out[rock.y] = rock
-        #print(col_in, col_out)
-        return col_out
-
-
-class Rock:
-    def __init__(self, x, y, dish):
-        self.x = x
-        self.y = y
-        self.dish = dish
-
-    @property
-    def load(self):
-        return self.dish.max_row - self.y
-
-    def roll_north(self, terrain):
-        i = self.y
-        rolling = i > 0
-        while rolling and i > 0:
-            next_tile = terrain[i-1]
-            rolling = next_tile == '.'
-            if rolling:
-                i -= 1
-        self.y = i
-        return self
-
-
-
 
 
 class AdventPuzzle:
@@ -162,6 +146,8 @@ O.#..O.#.#
     def first(self):
         input = self.file_input
         dish = ReflectorDish(input)
+        dish.tilt(N)
+        assert dish.total_load == 110821, dish.total_load
         return dish.total_load
 
     @property
@@ -175,6 +161,7 @@ O.#..O.#.#
     def test1(self):
         input = self.TEST_INPUT
         dish = ReflectorDish(input)
+        dish.tilt(N)
         assert dish.total_load == 136, dish.total_load
         return 'passed'
 
@@ -194,7 +181,6 @@ O.#..O.#.#
         expect = list('...O#...OO#')
         seq_out = dish.tilt_seq(seq_in, dx)
         assert seq_out == expect, (seq_out, expect)
-
 
         #dish.spin(CYCLES)
         #assert dish.total_load == 64, dish.total_load
