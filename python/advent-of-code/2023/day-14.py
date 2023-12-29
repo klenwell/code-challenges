@@ -54,36 +54,27 @@ class ReflectorDish:
     def spin(self, cycles):
         cycle = 0
         loads = []
-        pattern_detected = False
 
         while cycle < cycles:
-            cycle += 1
-            print(cycle)
             for dir in (N, W, S, E):
                 self.tilt(dir)
+
+            cycle += 1
             loads.append(self.total_load)
 
-            if pattern_detected:
-                continue
-
             if self.detect_pattern(loads):
-                print(cycle, loads)
                 # fast forward
                 cycles_left = cycles - cycle
                 pattern_length = len(self.extract_pattern(loads))
                 pattern_cycles = cycles_left // pattern_length
                 skip_ahead = pattern_cycles * pattern_length
-                print(cycles_left, pattern_cycles, skip_ahead)
                 cycle += skip_ahead
-                pattern_detected = True
 
-                breakpoint()
-        return
+        return self
 
     def detect_pattern(self, loads):
         pattern = self.extract_pattern(loads)
-        print(pattern)
-        return pattern != None
+        return pattern is not None
 
     def extract_pattern(self, loads):
         if len(loads) < 8:
@@ -93,37 +84,15 @@ class ReflectorDish:
         seq = loads[0:-4]
         haystack = seq[::-1]
         needle = last_seg[::-1]
-        #print(loads, needle, haystack)
 
         for n in range(0, len(haystack)-4):
             a, b = n, n+4
             segment = haystack[a:b]
-            #print(needle, segment)
             if needle == segment:
                 pattern = haystack[0:n][::-1] + needle[::-1]
-                print('found', pattern, (n,a,b), loads, needle, haystack, haystack[0:n])
                 return pattern
 
         return None
-
-        last_load = loads[-1]
-        min_load = min(loads)
-
-        if last_load == min_load:
-            print(last_load, loads.count(last_load), loads)
-            if loads.count(last_load) > 5:
-                return True
-        return False
-
-    # def extract_pattern(self, loads):
-    #     pattern = []
-    #     seq = loads[::-1]
-    #     head = seq[0]
-
-    #     for v in loads:
-    #         pattern.append(v)
-    #         if pattern.count(head) > 1:
-    #             return pattern[::-1]
 
     def tilt(self, dir):
         dx, dy = dir
@@ -158,9 +127,7 @@ class ReflectorDish:
     def tilt_seqs(self, seqs, d1):
         seqs_out = []
         for seq in seqs:
-            #print(seq)
             seq_out = self.tilt_seq(seq, d1)
-            #print(seq_out)
             seqs_out.append(seq_out)
         return seqs_out
 
@@ -168,6 +135,8 @@ class ReflectorDish:
         seq_out = ['.' for v in seq if v]
         stop = 0
 
+        # Reverse if direction is positive (E or S). Tilt logic
+        # below is leftward or backward.
         if d1 == 1:
             seq = seq[::-1]
 
@@ -181,6 +150,7 @@ class ReflectorDish:
             else:
                 seq_out[n] = space
 
+        # Now that tilting is done, unreverse reversed sequences
         if d1 == 1:
             seq_out = seq_out[::-1]
 
