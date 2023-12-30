@@ -7,11 +7,35 @@ from functools import cached_property
 from common import INPUT_DIR
 
 
+class HolidayHash:
+    def __init__(self, input):
+        self.input = input.strip()
+
+    @cached_property
+    def steps(self):
+        return self.input.split(',')
+
+    @cached_property
+    def sum(self):
+        sum = 0
+        for step in self.steps:
+            hash = self.hash_value(step)
+            sum += hash
+        return sum
+
+    def hash_value(self, input):
+        hash = 0
+        for c in list(input):
+            hash += ord(c)
+            hash *= 17
+            hash = hash % 256
+        return hash
+
+
 class AdventPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-15.txt')
 
-    TEST_INPUT = """\
-"""
+    TEST_INPUT = """rn=1,cm-,qp=3,cm=2,qp-,pc=4,ot=9,ab=5,pc-,pc=6,ot=7"""
 
     #
     # Solutions
@@ -30,8 +54,14 @@ class AdventPuzzle:
     #
     @property
     def test1(self):
+        value = "HASH"
+        hash = HolidayHash('')
+        value = hash.hash_value(value)
+        assert value == 52, value
+
         input = self.TEST_INPUT
-        print(input)
+        hash = HolidayHash(input)
+        assert hash.sum == 1320, hash.sum
         return 'passed'
 
     @property
