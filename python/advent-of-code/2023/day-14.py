@@ -18,14 +18,6 @@ class ReflectorDish:
     def __init__(self, input):
         self.rows = self.input_to_rows(input)
 
-    def input_to_rows(self, input):
-        rows = []
-        lines = input.strip().split('\n')
-        for line in lines:
-            row = list(line)
-            rows.append(row)
-        return rows
-
     @property
     def total_load(self):
         total_load = 0
@@ -113,17 +105,6 @@ class ReflectorDish:
 
         return self
 
-    def cols_to_rows(self, cols):
-        rows = []
-        max_y = len(cols[0])
-        for y in range(max_y):
-            row = []
-            for col in cols:
-                val = col[y]
-                row.append(val)
-            rows.append(row)
-        return rows
-
     def tilt_seqs(self, seqs, d1):
         seqs_out = []
         for seq in seqs:
@@ -155,6 +136,25 @@ class ReflectorDish:
             seq_out = seq_out[::-1]
 
         return seq_out
+
+    def input_to_rows(self, input):
+        rows = []
+        lines = input.strip().split('\n')
+        for line in lines:
+            row = list(line)
+            rows.append(row)
+        return rows
+
+    def cols_to_rows(self, cols):
+        rows = []
+        max_y = len(cols[0])
+        for y in range(max_y):
+            row = []
+            for col in cols:
+                val = col[y]
+                row.append(val)
+            rows.append(row)
+        return rows
 
 
 class AdventPuzzle:
