@@ -43,7 +43,8 @@ class AdventPuzzle:
     @property
     def first(self):
         input = self.file_input
-        return input
+        hash = HolidayHash(input)
+        return hash.sum
 
     @property
     def second(self):
@@ -67,7 +68,8 @@ class AdventPuzzle:
     @property
     def test2(self):
         input = self.TEST_INPUT
-        print(input)
+        hash = HolidayHash(input)
+        assert hash.focusing_power == 145, hash.focusing_power
         return 'passed'
 
     #
