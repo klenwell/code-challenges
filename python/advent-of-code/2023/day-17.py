@@ -14,6 +14,12 @@ from heapq import heappush, heappop
 from functools import total_ordering
 
 
+N = (0, -1)
+S = (0, 1)
+E = (1, 0)
+W = (-1, 0)
+
+
 class RouteFinder(Grid):
     def __init__(self, input):
         self.heat_index = {}
@@ -29,30 +35,84 @@ class RouteFinder(Grid):
 
     @cached_property
     def minimum_heat_loss(self):
-        route = Route(self.start_pt, self)
-        return self.fast_dijkstra(self.start_pt)
+        route = self.find_coolest_route(self.start_pt)
+        return route.total_cost
 
-    def fast_dijkstra(self, start_at):
-        open_paths = [(0, start_at)]
-        steps = {start_at: None}
-        costs = {start_at: 0}
+    def find_coolest_route(self, start_pt):
+        # Use Dijkstra
+        # Because you already start in the top-left block, you don't incur that block's heat loss
+        parent_route = None
+        approach = None
+        first_route = Route(parent_route, self.start_pt, 0)
+        open_routes = [first_route]
+        route_links = {first_route: None}
+        route_costs = {first_route.pt_key: first_route.total_cost}
 
-        while open_paths:
-            _, pt = heappop(open_paths)
+        while open_routes:
+            route = heappop(open_routes)
+            print(len(open_routes), route)
 
-            for next_pt in self.cardinal_neighbors(pt):
-                if not self.is_valid_move(pt, next_pt, steps):
-                    continue
+            for next_route in self.possible_moves(route):
+                # Cost of next move
+                #next_route_cost = route_costs[route.pt_key] + next_route.pt_cost
+                #print('compare costs', next_route_cost, next_route.total_cost)
+                lowest_route_cost = route_costs.get(next_route.pt_key, 1000)
 
-                cost = costs[pt] + int(self.grid[next_pt])
+                # Update costs index for this move if value is lower
+                if next_route.total_cost < lowest_route_cost:
+                    route_costs[next_route.pt_key] = next_route.total_cost
+                    heappush(open_routes, next_route)
+                    route_links[next_route] = route
 
-                if cost < costs.get(next_pt, 100000):
-                    costs[next_pt] = cost
-                    heappush(open_paths, (cost, next_pt))
-                    steps[next_pt] = pt
+        end_costs = [(pt, cost) for (pt, _), cost in route_costs.items() if pt == self.end_pt]
+        end_routes = [route for route in route_links.keys() if route.end_pt == self.end_pt]
+        coolest_route = sorted(end_routes, key=lambda r:r.total_cost)[0]
+        #print(route_links)
+        print(end_routes)
+        print(end_costs)
+        breakpoint()
+        return coolest_route
 
-        print(costs[self.end_pt], steps)
-        return costs[self.end_pt]
+    def possible_moves(self, route):
+        next_routes = []
+
+        for dx, dy in (N, S, E, W):
+            next_pt = (route.x + dx, route.y + dy)
+            if self.is_possible_move(route, next_pt):
+                next_route = Route(route, next_pt, self.grid[next_pt])
+                next_routes.append(next_route)
+
+        return next_routes
+
+    def is_possible_move(self, route, next_pt):
+        # Must be on grid
+        if next_pt not in self.pts:
+            return False
+
+        if self.route_moves_four_steps_in_same_direction(route, next_pt):
+            return False
+
+        if self.route_reverses_direction(route, next_pt):
+            return False
+
+        return True
+
+    def route_moves_four_steps_in_same_direction(self, route, next_pt):
+        # Because it is difficult to keep the top-heavy crucible going in a straight line
+        # for very long, it can move at most three blocks in a single direction before
+        # it must turn 90 degrees left or right.
+        nx, ny = next_pt
+        dx = nx - route.x
+        dy = ny - route.y
+        approach = (dx, dy)
+        print(route, next_pt, route.last_three_steps_in_same_direction, approach == route.approach)
+        return route.last_three_steps_in_same_direction and approach == route.approach
+
+    def route_reverses_direction(self, route, next_pt):
+        # The crucible also can't reverse direction; after entering each city block, it
+        # may only turn left, continue straight, or turn right.
+        return route.prev_pt and next_pt == route.prev_pt
+
 
     def is_valid_move(self, pt, npt, steps):
         MAX_BLOCKS = 4
@@ -88,96 +148,72 @@ class RouteFinder(Grid):
 
         return True
 
-    def failed_dijkstra(self, route):
-        open_routes = [(0, route)]
-        steps = {route.pt: None}
-        costs = {route.pt: 0}
-
-        while open_routes:
-            print('fd', len(open_routes))
-            cost, route = heappop(open_routes)
-
-            if route.pt == self.end_pt:
-                print('found', route)
-                continue
-
-            for next_pt in route.options:
-                if next_pt in costs:
-                    continue
-
-                step_cost = self.grid[next_pt]
-                cost = costs[route.pt] + int(step_cost)
-                costs[next_pt] = cost
-                clone = route.clone()
-                clone.move(next_pt)
-                heappush(open_routes, (cost, clone))
-                steps[next_pt] = route.pt
-
-        return steps
-
-    def minimize_heat_loss(self):
-        best_route = None
-        completed_routes = []
-        queue = []
-
-        route = Route(self.start_pt, self)
-        heappush(queue, route)
-
-        while len(queue) > 0:
-            route = heappop(queue)
-            info(f"{route} {len(queue)} {best_route} {len(completed_routes)}", 100)
-
-            for next_pt in route.options:
-                clone = route.clone()
-                clone.move(next_pt)
-
-                if clone.reached_goal():
-                    if not best_route:
-                        best_route = clone
-                    elif clone.heat_loss <= best_route.heat_loss:
-                        best_route = clone
-                    completed_routes.append(clone)
-                elif self.route_is_viable(clone, best_route):
-                    heappush(queue, clone)
-
-        print(best_route.path)
-        return best_route.heat_loss
-
-    def route_is_viable(self, clone, best_route):
-        if best_route:
-            heat_projection = clone.heat_loss + clone.distance_to_end
-            if heat_projection >= best_route.heat_loss:
-                return False
-
-        heat_index = self.heat_index.get(clone.pt, 100000)
-        if clone.heat_loss <= heat_index:
-            self.heat_index[clone.pt] = clone.heat_loss
-        else:
-            return False
-
-        return True
-
 
 @total_ordering
 class Route:
-    def __init__(self, pt, grid):
-        x, y = pt
-        self.x = x
-        self.y = y
-        self.grid = grid
-        self.path = [self.pt]
+    def __init__(self, parent, end_pt, pt_cost):
+        self.parent = parent
+        self.x, self.y = end_pt
+        self.pt_cost = int(pt_cost)
 
-    @property
-    def pt(self):
+    @cached_property
+    def pt_key(self):
+        return (self.end_pt, self.approach)
+
+    @cached_property
+    def approach(self):
+        if not self.parent:
+            return None
+
+        dx = self.x - self.parent.x
+        dy = self.y - self.parent.y
+        return (dx, dy)
+
+    @cached_property
+    def end_pt(self):
         return (self.x, self.y)
 
-    @property
-    def heat_loss(self):
-        loss = 0
-        for pt in self.path[1:]:
-            value = self.grid.grid[pt]
-            loss += int(value)
-        return loss
+    @cached_property
+    def total_cost(self):
+        if not self.parent:
+            return self.pt_cost
+        return self.parent.total_cost + self.pt_cost
+
+    @cached_property
+    def pts(self):
+        if not self.parent:
+            return [self.end_pt]
+        return self.parent.pts + [self.end_pt]
+
+    @cached_property
+    def prev_pt(self):
+        if not self.parent:
+            return None
+        return self.parent.end_pt
+
+    @cached_property
+    def last_three_steps_in_same_direction(self):
+        last_three_steps = self.pts[-4:]
+
+        if len(last_three_steps) < 4:
+            return False
+
+        last_xs = set()
+        last_ys = set()
+
+        for x, y in last_three_steps:
+            last_xs.add(x)
+            last_ys.add(y)
+
+        return len(last_xs) == 1 or len(last_ys) == 1
+
+    def __lt__(self, other):
+        return self.total_cost < other.total_cost
+
+    def __repr__(self):
+        return f"<Route pt_key={self.pt_key} steps={len(self.pts)} total_cost={self.total_cost}>"
+
+    # -------
 
     @property
     def priority(self):
@@ -243,12 +279,6 @@ class Route:
         clone.path = list(self.path)
         return clone
 
-    def __lt__(self, other):
-        return self.priority < other.priority
-
-    def __repr__(self):
-        return f"<Route {id(self)} {self.pt} steps={self.steps} heat_loss={self.heat_loss}>"
-
 
 class AdventPuzzle:
     INPUT_FILE = path_join(INPUT_DIR, 'day-17.txt')
@@ -292,11 +322,20 @@ class AdventPuzzle:
 
         assert len(router.rows) == 13, len(router.rows)
         assert len(router.pts) == 13 * 13, len(router.pts)
+        assert router.max_y == 12, router.max_y
 
-        dfs_solution = router.minimize_heat_loss()
-        djikstra_solution = router.minimum_heat_loss
-        print(dfs_solution, djikstra_solution)
-        assert dfs_solution == 102, dfs_solution
+        route1 = Route(None, (0,0), 1)
+        route2 = Route(route1, (1,0), 2)
+        route3 = Route(route2, (2,0), 3)
+        route4 = Route(route3, (3,0), 4)
+        assert route3.last_three_steps_in_same_direction == False, route3
+        assert route4.last_three_steps_in_same_direction == True, route4
+        assert not router.route_moves_four_steps_in_same_direction(route3, (3,0))
+        assert router.route_moves_four_steps_in_same_direction(route4, (4,0))
+        assert router.route_reverses_direction(route4, (2,0))
+        assert not router.route_reverses_direction(route4, (4,0))
+
+        assert router.minimum_heat_loss == 102, router.minimum_heat_loss
         return 'passed'
 
     @property
