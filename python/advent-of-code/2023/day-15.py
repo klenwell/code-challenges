@@ -6,14 +6,12 @@ from os.path import join as path_join
 from functools import cached_property
 from common import INPUT_DIR
 
+from dataclasses import dataclass
+
 
 class HolidayHash:
     def __init__(self, input):
         self.input = input.strip()
-
-    @cached_property
-    def steps(self):
-        return self.input.split(',')
 
     @cached_property
     def sum(self):
@@ -23,6 +21,36 @@ class HolidayHash:
             sum += hash
         return sum
 
+    @cached_property
+    def focusing_power(self):
+        boxes = {}
+        for n in range(256):
+            boxes[n] = Box(n)
+
+        for step in self.steps:
+            remove_lens = '-' in step
+            if remove_lens:
+                label = step[0:-1]
+                n = self.hash_value(label)
+                box = boxes[n]
+                box.remove(label)
+            else:
+                label, focal_len = step.split('=')
+                lens = Lens(label, int(focal_len))
+                n = self.hash_value(label)
+                box = boxes[n]
+                box.upsert(lens)
+            print(step, box)
+
+        power = 0
+        for box in boxes.values():
+            power += box.focusing_power
+        return power
+
+    @cached_property
+    def steps(self):
+        return self.input.split(',')
+
     def hash_value(self, input):
         hash = 0
         for c in list(input):
@@ -30,6 +58,46 @@ class HolidayHash:
             hash *= 17
             hash = hash % 256
         return hash
+
+
+class Box:
+    def __init__(self, num):
+        self.number = num
+        self.lenses = []
+        self.labels = []
+
+    @property
+    def focusing_power(self):
+        total_power = 0
+        coeff = self.number+1
+        for slot, lens in enumerate(self.lenses):
+            power = (self.number+1) * (slot+1) * lens.focal_len
+            total_power += power
+        return total_power
+
+    def remove(self, label):
+        if label in self.labels:
+            index = self.labels.index(label)
+            self.labels.pop(index)
+            self.lenses.pop(index)
+        return self
+
+    def upsert(self, lens):
+        if lens.label in self.labels:
+            index = self.labels.index(lens.label)
+            self.lenses[index] = lens
+        else:
+            self.lenses.append(lens)
+            self.labels.append(lens.label)
+
+    def __repr__(self):
+        return f"<Box #{self.number} lenses={self.lenses}>"
+
+
+@dataclass
+class Lens():
+    label: str
+    focal_len: int
 
 
 class AdventPuzzle:
