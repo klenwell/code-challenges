@@ -40,7 +40,6 @@ class HolidayHash:
                 n = self.hash_value(label)
                 box = boxes[n]
                 box.upsert(lens)
-            print(step, box)
 
         power = 0
         for box in boxes.values():
@@ -69,7 +68,6 @@ class Box:
     @property
     def focusing_power(self):
         total_power = 0
-        coeff = self.number+1
         for slot, lens in enumerate(self.lenses):
             power = (self.number+1) * (slot+1) * lens.focal_len
             total_power += power
