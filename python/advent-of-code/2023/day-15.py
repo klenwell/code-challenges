@@ -116,7 +116,9 @@ class AdventPuzzle:
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        hash = HolidayHash(input)
+        return hash.focusing_power
 
     #
     # Tests
