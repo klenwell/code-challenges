@@ -12,12 +12,14 @@ from common import INPUT_DIR, Grid, info
 
 from heapq import heappush, heappop
 from functools import total_ordering
+import time
 
 
 N = (0, -1)
 S = (0, 1)
 E = (1, 0)
 W = (-1, 0)
+MAX_TIME = 60 * 5
 
 
 class RouteFinder(Grid):
@@ -39,30 +41,46 @@ class RouteFinder(Grid):
         return route.total_cost
 
     def find_coolest_route(self, start_pt):
+        t0 = time.time()
+
         # Use Dijkstra
         # Because you already start in the top-left block, you don't incur that block's heat loss
         parent_route = None
-        approach = None
         first_route = Route(parent_route, self.start_pt, 0)
         open_routes = [first_route]
         route_links = {first_route: None}
         route_costs = {first_route.pt_key: first_route.total_cost}
+        possible_routes = 0
+        touched_routes = 0
 
         while open_routes:
+            tt = time.time() - t0
+
             route = heappop(open_routes)
-            print(len(open_routes), route)
+            info(f"touched {touched_routes} of {possible_routes} open={len(open_routes)} {route.end_pt}->{self.end_pt} {route} {tt}", 10000)
 
             for next_route in self.possible_moves(route):
+                possible_routes += 1
                 # Cost of next move
                 #next_route_cost = route_costs[route.pt_key] + next_route.pt_cost
                 #print('compare costs', next_route_cost, next_route.total_cost)
-                lowest_route_cost = route_costs.get(next_route.pt_key, 1000)
+                lowest_route_cost = route_costs.get(next_route.pt_key, 100000)
+
+                if route.end_pt in [(10,10), (35,35), (70,70), (105,105), (125,125)]:
+                    print((route.end_pt, next_route.end_pt,
+                           next_route.total_cost < lowest_route_cost, (next_route.total_cost, lowest_route_cost),
+                           next_route))
 
                 # Update costs index for this move if value is lower
                 if next_route.total_cost < lowest_route_cost:
+                    touched_routes += 1
                     route_costs[next_route.pt_key] = next_route.total_cost
                     heappush(open_routes, next_route)
                     route_links[next_route] = route
+
+            # if tt > MAX_TIME:
+            #     breakpoint()
+            #     raise Exception('Too long!')
 
         end_costs = [(pt, cost) for (pt, _), cost in route_costs.items() if pt == self.end_pt]
         end_routes = [route for route in route_links.keys() if route.end_pt == self.end_pt]
@@ -70,7 +88,6 @@ class RouteFinder(Grid):
         #print(route_links)
         print(end_routes)
         print(end_costs)
-        breakpoint()
         return coolest_route
 
     def possible_moves(self, route):
@@ -105,48 +122,13 @@ class RouteFinder(Grid):
         dx = nx - route.x
         dy = ny - route.y
         approach = (dx, dy)
-        print(route, next_pt, route.last_three_steps_in_same_direction, approach == route.approach)
+        #print(route, next_pt, route.last_three_steps_in_same_direction, approach == route.approach)
         return route.last_three_steps_in_same_direction and approach == route.approach
 
     def route_reverses_direction(self, route, next_pt):
         # The crucible also can't reverse direction; after entering each city block, it
         # may only turn left, continue straight, or turn right.
         return route.prev_pt and next_pt == route.prev_pt
-
-
-    def is_valid_move(self, pt, npt, steps):
-        MAX_BLOCKS = 4
-
-        path = []
-        step = pt
-        while step:
-            path.insert(0, step)
-
-            if len(path) == MAX_BLOCKS:
-                step = False
-            else:
-                step = steps[step]
-
-
-        if len(path) < MAX_BLOCKS:
-            return True
-
-        if path[-2] == npt:
-            return False
-
-        path.append(npt)
-
-        last_xs = [pt[0] for pt in path]
-        last_ys = [pt[1] for pt in path]
-
-        if len(set(last_xs)) == 1:
-            print('nope', path)
-            return False
-
-        if len(set(last_ys)) == 1:
-            return False
-
-        return True
 
 
 @total_ordering
@@ -158,7 +140,8 @@ class Route:
 
     @cached_property
     def pt_key(self):
-        return (self.end_pt, self.approach)
+        #return (self.end_pt, self.last_three_steps[-3:])
+        return (self.end_pt, self.last_three_steps)
 
     @cached_property
     def approach(self):
@@ -192,16 +175,18 @@ class Route:
         return self.parent.end_pt
 
     @cached_property
-    def last_three_steps_in_same_direction(self):
-        last_three_steps = self.pts[-4:]
+    def last_three_steps(self):
+        return tuple(self.pts[-4:])
 
-        if len(last_three_steps) < 4:
+    @cached_property
+    def last_three_steps_in_same_direction(self):
+        if len(self.last_three_steps) < 4:
             return False
 
         last_xs = set()
         last_ys = set()
 
-        for x, y in last_three_steps:
+        for x, y in self.last_three_steps:
             last_xs.add(x)
             last_ys.add(y)
 
@@ -212,72 +197,6 @@ class Route:
 
     def __repr__(self):
         return f"<Route pt_key={self.pt_key} steps={len(self.pts)} total_cost={self.total_cost}>"
-
-    # -------
-
-    @property
-    def priority(self):
-        return (self.distance_to_end, self.heat_loss)
-
-    @property
-    def steps(self):
-        return len(self.path)
-
-    @property
-    def distance_to_end(self):
-        fx, fy = self.grid.end_pt
-        dx = fx - self.x
-        dy = fy - self.y
-        return dx + dy
-
-    @property
-    def options(self):
-        options = []
-        for npt in self.grid.cardinal_neighbors(self.pt):
-            if npt in self.path:
-                continue
-
-            if self.is_fourth_block_in_row(npt):
-                continue
-
-            options.append(npt)
-
-        return options
-
-    def move(self, next_pt):
-        nx, ny = next_pt
-        self.x = nx
-        self.y = ny
-        self.path.append(self.pt)
-
-    def reached_goal(self):
-        return self.pt == self.grid.end_pt
-
-    def is_fourth_block_in_row(self, npt):
-        MAX_BLOCKS = 4
-        if len(self.path) < MAX_BLOCKS:
-            return False
-
-        start_index = len(self.path) - MAX_BLOCKS
-        last_pts = self.path[start_index:]
-        last_xs = [pt[0] for pt in last_pts]
-        last_ys = [pt[1] for pt in last_pts]
-
-        last_xs.append(npt[0])
-        last_ys.append(npt[1])
-
-        if len(set(last_xs)) == 1:
-            return True
-
-        if len(set(last_ys)) == 1:
-            return True
-
-        return False
-
-    def clone(self):
-        clone = Route(self.pt, self.grid)
-        clone.path = list(self.path)
-        return clone
 
 
 class AdventPuzzle:
@@ -305,8 +224,9 @@ class AdventPuzzle:
     def first(self):
         input = self.file_input
         router = RouteFinder(input)
-        heat_loss = router.minimize_heat_loss()
-        return heat_loss
+        answer = router.minimum_heat_loss
+        assert answer < 772, answer
+        return answer
 
     @property
     def second(self):
