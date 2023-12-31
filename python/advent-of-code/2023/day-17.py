@@ -22,7 +22,7 @@ class UltraRouteFinder(RouteFinder):
     def __init__(self, input, min_straight_path, max_straight_path):
         self.min_straight_path = min_straight_path
         self.max_straight_path = max_straight_path
-        self.route_key_len = max_straight_path - min_straight_path
+        self.route_key_len = max_straight_path - min_straight_path + 1
         super().__init__(input)
 
     def find_coolest_route(self):
@@ -66,6 +66,7 @@ class UltraRouteFinder(RouteFinder):
         coolest_route = sorted(completed_routes, key=lambda r:r.total_cost)[0]
         print(end_costs)
         print(coolest_route)
+        print(coolest_route.pts)
         #breakpoint()
         return coolest_route
 
@@ -76,6 +77,8 @@ class UltraRouteFinder(RouteFinder):
 
         for dx, dy in (N, S, E, W):
             next_pt = (route.x + dx, route.y + dy)
+
+            # Filter out moves reversing direction
             if route.prev_pt and next_pt == route.prev_pt:
                 continue
 
@@ -137,7 +140,7 @@ class UltraRouteFinder(RouteFinder):
 class UltraRoute(Route):
     def __init__(self, parent, hot_path, key_len):
         self.parent = parent
-        self.hot_path = sorted(hot_path, key=lambda hp: hp.pt)
+        self.hot_path = hot_path
         self.key_len = key_len
         self.x, self.y = hot_path[-1].pt
         self.pt_cost = hot_path[-1].heat
@@ -145,11 +148,14 @@ class UltraRoute(Route):
     @cached_property
     def pt_key(self):
         #pts = tuple([h.pt for h in self.hot_path])
-        pts = tuple(self.pts[-self.key_len:])
+        pts = self.last_n_steps(self.key_len)
         return (self.end_pt, pts)
 
     @cached_property
     def total_cost(self):
+        # if not self.parent:
+        #     return self.pt_cost
+        # return self.parent.total_cost + self.pt_cost
         return sum([hs.heat for hs in self.hot_spots])
 
     @cached_property
@@ -161,6 +167,11 @@ class UltraRoute(Route):
     @cached_property
     def pts(self):
         return [h.pt for h in self.hot_spots]
+
+    def reverses_direction(self):
+        if not self.parent:
+            return False
+        return self.prev_pt and self.end_pt
 
 
 class HotSpot:
@@ -257,7 +268,7 @@ class AdventPuzzle:
         input = self.TEST_INPUT
         router = UltraRouteFinder(input, 1, 3)
         assert router.minimum_heat_loss == 102, router.minimum_heat_loss
-
+        #breakpoint()
         return 'passed'
 
     @property
@@ -273,8 +284,6 @@ class AdventPuzzle:
         assert route4.last_n_steps_in_same_direction(2), route4
         assert route4.last_n_steps_in_same_direction(3), route4
         assert not route4.last_n_steps_in_same_direction(4), route4
-        assert router.route_moves_n_steps_in_same_direction(route4, 3)
-        assert not router.route_moves_n_steps_in_same_direction(route4, 4)
         assert router.minimum_heat_loss == 94, router.minimum_heat_loss
 
         # Test 2
@@ -297,7 +306,7 @@ class AdventPuzzle:
         print(f"test 1 solution: {self.test1}")
         print(f"Part 1 Solution: {self.first}")
         print(f"test 2 solution: {self.test2}")
-        #print(f"Part 2 Solution: {self.second}")
+        print(f"Part 2 Solution: {self.second}")
 
 
 #

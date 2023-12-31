@@ -94,6 +94,7 @@ class Grid:
         return len(self.rows) - 1
 
     def is_pt_in_grid(self, pt):
+        # This is many times faster than pt in self.pts
         x, y = pt
         if x < self.min_x or x > self.max_x:
             return False
