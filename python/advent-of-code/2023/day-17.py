@@ -19,13 +19,19 @@ from models.day_17.route import Route
 
 
 class UltraRouteFinder(RouteFinder):
-    def find_coolest_route(self, start_pt):
+    def __init__(self, input, min_straight_path, max_straight_path):
+        self.min_straight_path = min_straight_path
+        self.max_straight_path = max_straight_path
+        self.route_key_len = max_straight_path - min_straight_path
+        super().__init__(input)
+
+    def find_coolest_route(self):
         t0 = time.time()
 
         # Use Dijkstra
         # Because you already start in the top-left block, you don't incur that block's heat loss
         hot_path = [HotSpot(self.start_pt, 0)]
-        first_route = UltraRoute(None, hot_path)
+        first_route = UltraRoute(None, hot_path, self.route_key_len)
         open_routes = [first_route]
         route_costs = {first_route.pt_key: first_route.total_cost}
         possible = 0
@@ -65,8 +71,8 @@ class UltraRouteFinder(RouteFinder):
 
     def possible_moves(self, route):
         next_routes = []
-        min_steps = 4
-        max_steps = 10
+        min_steps = self.min_straight_path
+        max_steps = self.max_straight_path
 
         for dx, dy in (N, S, E, W):
             next_pt = (route.x + dx, route.y + dy)
@@ -89,7 +95,6 @@ class UltraRouteFinder(RouteFinder):
                     fill_pts_are_valid = False
                     break
 
-            #print('fill', (dx, dy), fill_pts_are_valid, hot_path)
             if not fill_pts_are_valid:
                 continue
 
@@ -100,7 +105,7 @@ class UltraRouteFinder(RouteFinder):
                 cost = self.grid.get(next_pt, 1000000)
                 hot_spot = HotSpot(next_pt, cost)
                 hot_path.append(hot_spot)
-                next_route = UltraRoute(route, hot_path)
+                next_route = UltraRoute(route, hot_path, self.route_key_len)
 
                 if self.is_possible_move(next_route):
                     #print(hot_path, next_route)
@@ -110,37 +115,38 @@ class UltraRouteFinder(RouteFinder):
 
     def is_possible_move(self, next_route):
         # Must be on grid
-        if next_route.end_pt not in self.pts:
+        if not self.is_pt_in_grid(next_route.end_pt):
             return False
 
         # Once an ultra crucible starts moving in a direction, it needs to move a minimum of
         # four blocks in that direction
-        if not self.route_moves_n_steps_in_same_direction(next_route, 4):
+        if not next_route.last_n_steps_in_same_direction(self.min_straight_path):
             #print('too short')
             return False
 
         # an ultra crucible can move a maximum of ten consecutive blocks without turning
-        if self.route_moves_n_steps_in_same_direction(next_route, 11):
-            #print('too far')
+        if next_route.last_n_steps_in_same_direction(self.max_straight_path+1):
             return False
 
         return True
 
-    def route_moves_n_steps_in_same_direction(self, route, n):
-        return route.last_n_steps_in_same_direction(n)
-        nx, ny = next_pt
-        dx = nx - route.x
-        dy = ny - route.y
-        approach = (dx, dy)
-        return route.last_n_steps_in_same_direction(n-1) and approach == route.approach
+    # def route_moves_n_steps_in_same_direction(self, route, n):
+    #     return route.last_n_steps_in_same_direction(n)
 
 
 class UltraRoute(Route):
-    def __init__(self, parent, hot_path):
+    def __init__(self, parent, hot_path, key_len):
         self.parent = parent
         self.hot_path = sorted(hot_path, key=lambda hp: hp.pt)
+        self.key_len = key_len
         self.x, self.y = hot_path[-1].pt
         self.pt_cost = hot_path[-1].heat
+
+    @cached_property
+    def pt_key(self):
+        #pts = tuple([h.pt for h in self.hot_path])
+        pts = tuple(self.pts[-self.key_len:])
+        return (self.end_pt, pts)
 
     @cached_property
     def total_cost(self):
@@ -155,11 +161,6 @@ class UltraRoute(Route):
     @cached_property
     def pts(self):
         return [h.pt for h in self.hot_spots]
-
-    @cached_property
-    def pt_key(self):
-        pts = tuple([h.pt for h in self.hot_path])
-        return (self.end_pt, pts)
 
 
 class HotSpot:
@@ -213,15 +214,16 @@ class AdventPuzzle:
     @property
     def first(self):
         input = self.file_input
-        router = RouteFinder(input)
+        router = UltraRouteFinder(input, 1, 3)
         answer = router.minimum_heat_loss
         assert answer < 772, answer
+        assert answer == 758, answer
         return answer
 
     @property
     def second(self):
         input = self.file_input
-        router = UltraRouteFinder(input)
+        router = UltraRouteFinder(input, 4, 10)
         answer = router.minimum_heat_loss
         assert answer > 887, answer
         return router.minimum_heat_loss
@@ -250,13 +252,19 @@ class AdventPuzzle:
         assert not router.route_reverses_direction(route4, (4,0))
 
         assert router.minimum_heat_loss == 102, router.minimum_heat_loss
+
+        # Ultra
+        input = self.TEST_INPUT
+        router = UltraRouteFinder(input, 1, 3)
+        assert router.minimum_heat_loss == 102, router.minimum_heat_loss
+
         return 'passed'
 
     @property
     def test2(self):
         # Test 1
         input = self.TEST_INPUT
-        router = UltraRouteFinder(input)
+        router = UltraRouteFinder(input, 4, 10)
 
         route1 = Route(None, (0,0), 1)
         route2 = Route(route1, (1,0), 2)
@@ -271,7 +279,7 @@ class AdventPuzzle:
 
         # Test 2
         input = self.TEST_INPUT_PART_2
-        router = UltraRouteFinder(input)
+        router = UltraRouteFinder(input, 4, 10)
         assert router.minimum_heat_loss == 71, router.minimum_heat_loss
 
         #breakpoint()

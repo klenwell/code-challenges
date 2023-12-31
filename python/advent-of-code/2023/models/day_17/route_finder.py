@@ -26,10 +26,10 @@ class RouteFinder(Grid):
 
     @cached_property
     def minimum_heat_loss(self):
-        route = self.find_coolest_route(self.start_pt)
+        route = self.find_coolest_route()
         return route.total_cost
 
-    def find_coolest_route(self, start_pt):
+    def find_coolest_route(self):
         t0 = time.time()
 
         # Use Dijkstra
@@ -84,7 +84,6 @@ class RouteFinder(Grid):
         return next_routes
 
     def is_possible_move(self, route, next_pt):
-        # Must be on grid
         if not self.is_pt_in_grid(next_pt):
             return False
 
