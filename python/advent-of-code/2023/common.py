@@ -93,6 +93,14 @@ class Grid:
     def max_y(self):
         return len(self.rows) - 1
 
+    def is_pt_in_grid(self, pt):
+        x, y = pt
+        if x < self.min_x or x > self.max_x:
+            return False
+        if y < self.min_y or y > self.max_y:
+            return False
+        return True
+
     def init_grid(self):
         grid = {}
         for y, row in enumerate(self.rows):

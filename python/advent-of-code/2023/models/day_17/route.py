@@ -80,7 +80,6 @@ class Route:
 
         return len(last_xs) == 1 or len(last_ys) == 1
 
-
     def __lt__(self, other):
         return self.total_cost < other.total_cost
 

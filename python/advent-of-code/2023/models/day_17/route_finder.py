@@ -85,7 +85,7 @@ class RouteFinder(Grid):
 
     def is_possible_move(self, route, next_pt):
         # Must be on grid
-        if next_pt not in self.pts:
+        if not self.is_pt_in_grid(next_pt):
             return False
 
         if self.route_moves_four_steps_in_same_direction(route, next_pt):
