@@ -213,7 +213,9 @@ class AdventPuzzle:
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        router = UltraRouteFinder(input)
+        return router.minimum_heat_loss
 
     #
     # Tests
