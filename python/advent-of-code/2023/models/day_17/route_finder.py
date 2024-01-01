@@ -34,42 +34,30 @@ class RouteFinder(Grid):
 
         # Use Dijkstra
         # Because you already start in the top-left block, you don't incur that block's heat loss
-        parent_route = None
-        first_route = Route(parent_route, self.start_pt, 0)
+        first_route = Route(None, self.start_pt, 0)
         open_routes = [first_route]
         route_links = {first_route: None}
         route_costs = {first_route.pt_key: first_route.total_cost}
-        possible_routes = 0
-        touched_routes = 0
 
         while open_routes:
             tt = time.time() - t0
 
             route = heappop(open_routes)
-            info(f"touched {touched_routes} of {possible_routes} open={len(open_routes)} {route.end_pt}->{self.end_pt} {route} {tt}", 10000)
+            info(f"open={len(open_routes)} {route.end_pt}->{self.end_pt} {route} {tt}", 10000)
 
             for next_route in self.possible_moves(route):
-                possible_routes += 1
                 # Cost of next move
                 lowest_route_cost = route_costs.get(next_route.pt_key, 100000)
 
                 # Update costs index for this move if value is lower
                 if next_route.total_cost < lowest_route_cost:
-                    touched_routes += 1
                     route_costs[next_route.pt_key] = next_route.total_cost
                     heappush(open_routes, next_route)
                     route_links[next_route] = route
 
-            # if tt > MAX_TIME:
-            #     breakpoint()
-            #     raise Exception('Too long!')
-
-        end_costs = [(pt, cost) for (pt, _), cost in route_costs.items() if pt == self.end_pt]
         end_routes = [route for route in route_links.keys() if route.end_pt == self.end_pt]
-        coolest_route = sorted(end_routes, key=lambda r:r.total_cost)[0]
-        #print(route_links)
-        print(end_routes)
-        print(end_costs)
+        coolest_route = sorted(end_routes, key=lambda r: r.total_cost)[0]
+        # print(end_routes)
         return coolest_route
 
     def possible_moves(self, route):

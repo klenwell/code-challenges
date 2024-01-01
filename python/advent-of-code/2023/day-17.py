@@ -8,11 +8,9 @@ points in a row or column.
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR, Grid, info
+from common import INPUT_DIR, info
 
 from heapq import heappush, heappop
-from functools import total_ordering
-import time
 
 from models.day_17.route_finder import RouteFinder, N, S, E, W
 from models.day_17.route import Route
@@ -26,48 +24,40 @@ class UltraRouteFinder(RouteFinder):
         super().__init__(input)
 
     def find_coolest_route(self):
-        t0 = time.time()
-
         # Use Dijkstra
         # Because you already start in the top-left block, you don't incur that block's heat loss
         hot_path = [HotSpot(self.start_pt, 0)]
         first_route = UltraRoute(None, hot_path, self.route_key_len)
         open_routes = [first_route]
         route_costs = {first_route.pt_key: first_route.total_cost}
-        possible = 0
-        touched = 0
+        visited_routes = set()
         completed_routes = []
 
-        while open_routes:
-            tt = time.time() - t0
+        def already_visit_pt_key(pt_key):
+            return pt_key in visited_routes
 
+        while open_routes:
             route = heappop(open_routes)
-            info(f"touched {touched} of {possible} open={len(open_routes)} {route.end_pt}->{self.end_pt} {route} {tt}", 1000)
+            visited_routes.add(route.pt_key)
+            info(f"open={len(open_routes)} {route.end_pt}->{self.end_pt} {route}", 10000)
 
             for next_route in self.possible_moves(route):
-                possible += 1
+                # Avoid duplicated
+                if already_visit_pt_key(next_route.pt_key):
+                    continue
+
                 # Cost of next move
                 lowest_route_cost = route_costs.get(next_route.pt_key, 100000)
 
                 # Update costs index for this move if value is lower
                 if next_route.total_cost < lowest_route_cost:
-                    touched += 1
                     route_costs[next_route.pt_key] = next_route.total_cost
                     heappush(open_routes, next_route)
 
                 if next_route.end_pt == self.end_pt:
                     completed_routes.append(next_route)
 
-            # if tt > MAX_TIME:
-            #     breakpoint()
-            #     raise Exception('Too long!')
-
-        end_costs = [(pt, cost) for (pt, _), cost in route_costs.items() if pt == self.end_pt]
-        coolest_route = sorted(completed_routes, key=lambda r:r.total_cost)[0]
-        print(end_costs)
-        print(coolest_route)
-        print(coolest_route.pts)
-        #breakpoint()
+        coolest_route = sorted(completed_routes, key=lambda r: r.total_cost)[0]
         return coolest_route
 
     def possible_moves(self, route):
@@ -111,30 +101,21 @@ class UltraRouteFinder(RouteFinder):
                 next_route = UltraRoute(route, hot_path, self.route_key_len)
 
                 if self.is_possible_move(next_route):
-                    #print(hot_path, next_route)
                     next_routes.append(next_route)
 
         return next_routes
 
     def is_possible_move(self, next_route):
-        # Must be on grid
         if not self.is_pt_in_grid(next_route.end_pt):
             return False
 
-        # Once an ultra crucible starts moving in a direction, it needs to move a minimum of
-        # four blocks in that direction
         if not next_route.last_n_steps_in_same_direction(self.min_straight_path):
-            #print('too short')
             return False
 
-        # an ultra crucible can move a maximum of ten consecutive blocks without turning
         if next_route.last_n_steps_in_same_direction(self.max_straight_path+1):
             return False
 
         return True
-
-    # def route_moves_n_steps_in_same_direction(self, route, n):
-    #     return route.last_n_steps_in_same_direction(n)
 
 
 class UltraRoute(Route):
@@ -147,15 +128,17 @@ class UltraRoute(Route):
 
     @cached_property
     def pt_key(self):
-        #pts = tuple([h.pt for h in self.hot_path])
-        pts = self.last_n_steps(self.key_len)
-        return (self.end_pt, pts)
+        # This was a big bottleneck.
+        # Thanks to https://advent-of-code.xavd.id/writeups/2023/day/17/
+        # Making change below cut from over 5 mins to just over 1
+        # pts = self.last_n_steps(self.key_len)
+        # return (self.end_pt, pts)
+        dir = self.approach
+        steps_in_row = len(self.hot_path)
+        return (self.end_pt, dir, steps_in_row)
 
     @cached_property
     def total_cost(self):
-        # if not self.parent:
-        #     return self.pt_cost
-        # return self.parent.total_cost + self.pt_cost
         return sum([hs.heat for hs in self.hot_spots])
 
     @cached_property
@@ -224,8 +207,9 @@ class AdventPuzzle:
     #
     @property
     def first(self):
+        min_straight_step, max_straight_steps = 1, 3
         input = self.file_input
-        router = UltraRouteFinder(input, 1, 3)
+        router = UltraRouteFinder(input, min_straight_step, max_straight_steps)
         answer = router.minimum_heat_loss
         assert answer < 772, answer
         assert answer == 758, answer
@@ -233,8 +217,12 @@ class AdventPuzzle:
 
     @property
     def second(self):
+        # Once an ultra crucible starts moving in a direction, it needs to move a minimum of
+        # four blocks in that direction... an ultra crucible can move a maximum of ten
+        # consecutive blocks without turning
+        min_straight_step, max_straight_steps = 4, 10
         input = self.file_input
-        router = UltraRouteFinder(input, 4, 10)
+        router = UltraRouteFinder(input, min_straight_step, max_straight_steps)
         answer = router.minimum_heat_loss
         assert answer > 887, answer
         return router.minimum_heat_loss
@@ -251,16 +239,16 @@ class AdventPuzzle:
         assert len(router.pts) == 13 * 13, len(router.pts)
         assert router.max_y == 12, router.max_y
 
-        route1 = Route(None, (0,0), 1)
-        route2 = Route(route1, (1,0), 2)
-        route3 = Route(route2, (2,0), 3)
-        route4 = Route(route3, (3,0), 4)
+        route1 = Route(None, (0, 0), 1)
+        route2 = Route(route1, (1, 0), 2)
+        route3 = Route(route2, (2, 0), 3)
+        route4 = Route(route3, (3, 0), 4)
         assert not route3.last_three_steps_in_same_direction, route3
         assert route4.last_three_steps_in_same_direction, route4
-        assert not router.route_moves_four_steps_in_same_direction(route3, (3,0))
-        assert router.route_moves_four_steps_in_same_direction(route4, (4,0))
-        assert router.route_reverses_direction(route4, (2,0))
-        assert not router.route_reverses_direction(route4, (4,0))
+        assert not router.route_moves_four_steps_in_same_direction(route3, (3, 0))
+        assert router.route_moves_four_steps_in_same_direction(route4, (4, 0))
+        assert router.route_reverses_direction(route4, (2, 0))
+        assert not router.route_reverses_direction(route4, (4, 0))
 
         assert router.minimum_heat_loss == 102, router.minimum_heat_loss
 
@@ -268,7 +256,6 @@ class AdventPuzzle:
         input = self.TEST_INPUT
         router = UltraRouteFinder(input, 1, 3)
         assert router.minimum_heat_loss == 102, router.minimum_heat_loss
-        #breakpoint()
         return 'passed'
 
     @property
@@ -277,10 +264,10 @@ class AdventPuzzle:
         input = self.TEST_INPUT
         router = UltraRouteFinder(input, 4, 10)
 
-        route1 = Route(None, (0,0), 1)
-        route2 = Route(route1, (1,0), 2)
-        route3 = Route(route2, (2,0), 3)
-        route4 = Route(route3, (3,0), 4)
+        route1 = Route(None, (0, 0), 0)
+        route2 = Route(route1, (1, 0), 1)
+        route3 = Route(route2, (2, 0), 2)
+        route4 = Route(route3, (3, 0), 3)
         assert route4.last_n_steps_in_same_direction(2), route4
         assert route4.last_n_steps_in_same_direction(3), route4
         assert not route4.last_n_steps_in_same_direction(4), route4
@@ -291,7 +278,6 @@ class AdventPuzzle:
         router = UltraRouteFinder(input, 4, 10)
         assert router.minimum_heat_loss == 71, router.minimum_heat_loss
 
-        #breakpoint()
         return 'passed'
 
     #

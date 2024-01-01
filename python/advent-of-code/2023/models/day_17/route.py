@@ -14,11 +14,14 @@ class Route:
 
     @cached_property
     def approach(self):
-        if not self.parent:
+        if not len(self.pts) > 1:
             return None
 
-        dx = self.x - self.parent.x
-        dy = self.y - self.parent.y
+        last_pt = self.pts[-2]
+        lx, ly = last_pt
+
+        dx = self.x - lx
+        dy = self.y - ly
         return (dx, dy)
 
     @cached_property
