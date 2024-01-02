@@ -13,7 +13,10 @@ W = (-1, 0)
 
 
 class RouteFinder(Grid):
-    def __init__(self, input):
+    def __init__(self, input, min_straight_path, max_straight_path):
+        self.min_straight_path = min_straight_path
+        self.max_straight_path = max_straight_path
+        self.route_key_len = max_straight_path - min_straight_path + 1
         super().__init__(input)
 
     @cached_property
@@ -30,22 +33,28 @@ class RouteFinder(Grid):
         return route.total_cost
 
     def find_coolest_route(self):
-        t0 = time.time()
-
         # Use Dijkstra
         # Because you already start in the top-left block, you don't incur that block's heat loss
-        first_route = Route(None, self.start_pt, 0)
+        hot_path = [HotSpot(self.start_pt, 0)]
+        first_route = UltraRoute(None, hot_path, self.route_key_len)
         open_routes = [first_route]
-        route_links = {first_route: None}
         route_costs = {first_route.pt_key: first_route.total_cost}
+        visited_routes = set()
+        completed_routes = []
+
+        def already_visit_pt_key(pt_key):
+            return pt_key in visited_routes
 
         while open_routes:
-            tt = time.time() - t0
-
             route = heappop(open_routes)
-            info(f"open={len(open_routes)} {route.end_pt}->{self.end_pt} {route} {tt}", 10000)
+            visited_routes.add(route.pt_key)
+            info(f"open={len(open_routes)} {route.end_pt}->{self.end_pt} {route}", 10000)
 
             for next_route in self.possible_moves(route):
+                # Avoid duplicated
+                if already_visit_pt_key(next_route.pt_key):
+                    continue
+
                 # Cost of next move
                 lowest_route_cost = route_costs.get(next_route.pt_key, 100000)
 
@@ -53,47 +62,66 @@ class RouteFinder(Grid):
                 if next_route.total_cost < lowest_route_cost:
                     route_costs[next_route.pt_key] = next_route.total_cost
                     heappush(open_routes, next_route)
-                    route_links[next_route] = route
 
-        end_routes = [route for route in route_links.keys() if route.end_pt == self.end_pt]
-        coolest_route = sorted(end_routes, key=lambda r: r.total_cost)[0]
-        # print(end_routes)
+                if next_route.end_pt == self.end_pt:
+                    completed_routes.append(next_route)
+
+        coolest_route = sorted(completed_routes, key=lambda r: r.total_cost)[0]
         return coolest_route
 
     def possible_moves(self, route):
         next_routes = []
+        min_steps = self.min_straight_path
+        max_steps = self.max_straight_path
 
         for dx, dy in (N, S, E, W):
             next_pt = (route.x + dx, route.y + dy)
-            if self.is_possible_move(route, next_pt):
-                next_route = Route(route, next_pt, self.grid[next_pt])
-                next_routes.append(next_route)
+
+            # Filter out moves reversing direction
+            if route.prev_pt and next_pt == route.prev_pt:
+                continue
+
+            hot_path = []
+            fill_pts_are_valid = True
+
+            # fill in steps between current and min_steps
+            for n in range(1, min_steps):
+                rx = dx * n
+                ry = dy * n
+                next_pt = (route.x + rx, route.y + ry)
+                heat = self.grid.get(next_pt)
+                if heat:
+                    hot_spot = HotSpot(next_pt, heat)
+                    hot_path.append(hot_spot)
+                else:
+                    fill_pts_are_valid = False
+                    break
+
+            if not fill_pts_are_valid:
+                continue
+
+            for n in range(min_steps, max_steps+1):
+                rx = dx * n
+                ry = dy * n
+                next_pt = (route.x + rx, route.y + ry)
+                cost = self.grid.get(next_pt, 1000000)
+                hot_spot = HotSpot(next_pt, cost)
+                hot_path.append(hot_spot)
+                next_route = UltraRoute(route, hot_path, self.route_key_len)
+
+                if self.is_possible_move(next_route):
+                    next_routes.append(next_route)
 
         return next_routes
 
-    def is_possible_move(self, route, next_pt):
-        if not self.is_pt_in_grid(next_pt):
+    def is_possible_move(self, next_route):
+        if not self.is_pt_in_grid(next_route.end_pt):
             return False
 
-        if self.route_moves_four_steps_in_same_direction(route, next_pt):
+        if not next_route.last_n_steps_in_same_direction(self.min_straight_path):
             return False
 
-        if self.route_reverses_direction(route, next_pt):
+        if next_route.last_n_steps_in_same_direction(self.max_straight_path+1):
             return False
 
         return True
-
-    def route_moves_four_steps_in_same_direction(self, route, next_pt):
-        # Because it is difficult to keep the top-heavy crucible going in a straight line
-        # for very long, it can move at most three blocks in a single direction before
-        # it must turn 90 degrees left or right.
-        nx, ny = next_pt
-        dx = nx - route.x
-        dy = ny - route.y
-        approach = (dx, dy)
-        return route.last_three_steps_in_same_direction and approach == route.approach
-
-    def route_reverses_direction(self, route, next_pt):
-        # The crucible also can't reverse direction; after entering each city block, it
-        # may only turn left, continue straight, or turn right.
-        return route.prev_pt and next_pt == route.prev_pt

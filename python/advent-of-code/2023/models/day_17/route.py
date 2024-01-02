@@ -3,14 +3,37 @@ from functools import cached_property, total_ordering
 
 @total_ordering
 class Route:
-    def __init__(self, parent, end_pt, pt_cost):
+    def __init__(self, parent, hot_path, key_len):
         self.parent = parent
-        self.x, self.y = end_pt
-        self.pt_cost = int(pt_cost)
+        self.hot_path = hot_path
+        self.key_len = key_len
+        self.x, self.y = hot_path[-1].pt
+        self.pt_cost = hot_path[-1].heat
 
     @cached_property
     def pt_key(self):
-        return (self.end_pt, self.last_three_steps)
+        # This was a big bottleneck.
+        # Thanks to https://advent-of-code.xavd.id/writeups/2023/day/17/ found in solution thread.
+        # Making change below cut from over 5 mins to just over 1
+        # pts = self.last_n_steps(self.key_len)
+        # return (self.end_pt, pts)
+        dir = self.approach
+        steps_in_row = len(self.hot_path)
+        return (self.end_pt, dir, steps_in_row)
+
+    @cached_property
+    def total_cost(self):
+        return sum([hs.heat for hs in self.hot_spots])
+
+    @cached_property
+    def hot_spots(self):
+        if not self.parent:
+            return self.hot_path
+        return self.parent.hot_spots + self.hot_path
+
+    @cached_property
+    def pts(self):
+        return [h.pt for h in self.hot_spots]
 
     @cached_property
     def approach(self):
@@ -29,40 +52,15 @@ class Route:
         return (self.x, self.y)
 
     @cached_property
-    def total_cost(self):
-        if not self.parent:
-            return self.pt_cost
-        return self.parent.total_cost + self.pt_cost
-
-    @cached_property
-    def pts(self):
-        if not self.parent:
-            return [self.end_pt]
-        return self.parent.pts + [self.end_pt]
-
-    @cached_property
     def prev_pt(self):
         if not self.parent:
             return None
         return self.parent.end_pt
 
-    @cached_property
-    def last_three_steps(self):
-        return tuple(self.pts[-4:])
-
-    @cached_property
-    def last_three_steps_in_same_direction(self):
-        if len(self.last_three_steps) < 4:
+    def reverses_direction(self):
+        if not self.parent:
             return False
-
-        last_xs = set()
-        last_ys = set()
-
-        for x, y in self.last_three_steps:
-            last_xs.add(x)
-            last_ys.add(y)
-
-        return len(last_xs) == 1 or len(last_ys) == 1
+        return self.prev_pt and self.end_pt
 
     def last_n_steps(self, n):
         start = -1 * n

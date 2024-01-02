@@ -7,27 +7,43 @@ Look at the example and you'll see that this mean you can sometime occupy 4 cons
 points in a row or column.
 """
 from os.path import join as path_join
-from functools import cached_property
-from common import INPUT_DIR, info
+from functools import cached_property, total_ordering
+from common import INPUT_DIR, info, Grid
 
 from heapq import heappush, heappop
 
-from models.day_17.route_finder import RouteFinder, N, S, E, W
-from models.day_17.route import Route
+
+N = (0, -1)
+S = (0, 1)
+E = (1, 0)
+W = (-1, 0)
 
 
-class UltraRouteFinder(RouteFinder):
+class RouteFinder(Grid):
     def __init__(self, input, min_straight_path, max_straight_path):
         self.min_straight_path = min_straight_path
         self.max_straight_path = max_straight_path
         self.route_key_len = max_straight_path - min_straight_path + 1
         super().__init__(input)
 
+    @cached_property
+    def start_pt(self):
+        return (0, 0)
+
+    @cached_property
+    def end_pt(self):
+        return (self.max_x, self.max_y)
+
+    @cached_property
+    def minimum_heat_loss(self):
+        route = self.find_coolest_route()
+        return route.total_cost
+
     def find_coolest_route(self):
         # Use Dijkstra
         # Because you already start in the top-left block, you don't incur that block's heat loss
         hot_path = [HotSpot(self.start_pt, 0)]
-        first_route = UltraRoute(None, hot_path, self.route_key_len)
+        first_route = Route(None, hot_path, self.route_key_len)
         open_routes = [first_route]
         route_costs = {first_route.pt_key: first_route.total_cost}
         visited_routes = set()
@@ -98,7 +114,7 @@ class UltraRouteFinder(RouteFinder):
                 cost = self.grid.get(next_pt, 1000000)
                 hot_spot = HotSpot(next_pt, cost)
                 hot_path.append(hot_spot)
-                next_route = UltraRoute(route, hot_path, self.route_key_len)
+                next_route = Route(route, hot_path, self.route_key_len)
 
                 if self.is_possible_move(next_route):
                     next_routes.append(next_route)
@@ -118,7 +134,8 @@ class UltraRouteFinder(RouteFinder):
         return True
 
 
-class UltraRoute(Route):
+@total_ordering
+class Route:
     def __init__(self, parent, hot_path, key_len):
         self.parent = parent
         self.hot_path = hot_path
@@ -129,7 +146,7 @@ class UltraRoute(Route):
     @cached_property
     def pt_key(self):
         # This was a big bottleneck.
-        # Thanks to https://advent-of-code.xavd.id/writeups/2023/day/17/
+        # Thanks to https://advent-of-code.xavd.id/writeups/2023/day/17/ found in solution thread.
         # Making change below cut from over 5 mins to just over 1
         # pts = self.last_n_steps(self.key_len)
         # return (self.end_pt, pts)
@@ -151,10 +168,57 @@ class UltraRoute(Route):
     def pts(self):
         return [h.pt for h in self.hot_spots]
 
+    @cached_property
+    def approach(self):
+        if not len(self.pts) > 1:
+            return None
+
+        last_pt = self.pts[-2]
+        lx, ly = last_pt
+
+        dx = self.x - lx
+        dy = self.y - ly
+        return (dx, dy)
+
+    @cached_property
+    def end_pt(self):
+        return (self.x, self.y)
+
+    @cached_property
+    def prev_pt(self):
+        if not self.parent:
+            return None
+        return self.parent.end_pt
+
     def reverses_direction(self):
         if not self.parent:
             return False
         return self.prev_pt and self.end_pt
+
+    def last_n_steps(self, n):
+        start = -1 * n
+        return tuple(self.pts[start:])
+
+    def last_n_steps_in_same_direction(self, n):
+        last_n_steps = self.last_n_steps(n+1)
+
+        if len(last_n_steps) < n+1:
+            return False
+
+        last_xs = set()
+        last_ys = set()
+
+        for x, y in last_n_steps:
+            last_xs.add(x)
+            last_ys.add(y)
+
+        return len(last_xs) == 1 or len(last_ys) == 1
+
+    def __lt__(self, other):
+        return self.total_cost < other.total_cost
+
+    def __repr__(self):
+        return f"<Route pt_key={self.pt_key} steps={len(self.pts)} total_cost={self.total_cost}>"
 
 
 class HotSpot:
@@ -172,9 +236,6 @@ class HotSpot:
 
     def __repr__(self):
         return f"<HotSpot {self.pt} heat={self.heat}>"
-
-
-MAX_TIME = 60 * 5
 
 
 class AdventPuzzle:
@@ -209,7 +270,7 @@ class AdventPuzzle:
     def first(self):
         min_straight_step, max_straight_steps = 1, 3
         input = self.file_input
-        router = UltraRouteFinder(input, min_straight_step, max_straight_steps)
+        router = RouteFinder(input, min_straight_step, max_straight_steps)
         answer = router.minimum_heat_loss
         assert answer < 772, answer
         assert answer == 758, answer
@@ -222,7 +283,7 @@ class AdventPuzzle:
         # consecutive blocks without turning
         min_straight_step, max_straight_steps = 4, 10
         input = self.file_input
-        router = UltraRouteFinder(input, min_straight_step, max_straight_steps)
+        router = RouteFinder(input, min_straight_step, max_straight_steps)
         answer = router.minimum_heat_loss
         assert answer > 887, answer
         return router.minimum_heat_loss
@@ -233,28 +294,19 @@ class AdventPuzzle:
     @property
     def test1(self):
         input = self.TEST_INPUT
-        router = RouteFinder(input)
-
+        router = RouteFinder(input, 1, 3)
         assert len(router.rows) == 13, len(router.rows)
         assert len(router.pts) == 13 * 13, len(router.pts)
         assert router.max_y == 12, router.max_y
+        assert router.route_key_len == 3, router.route_key_len
 
-        route1 = Route(None, (0, 0), 1)
-        route2 = Route(route1, (1, 0), 2)
-        route3 = Route(route2, (2, 0), 3)
-        route4 = Route(route3, (3, 0), 4)
-        assert not route3.last_three_steps_in_same_direction, route3
-        assert route4.last_three_steps_in_same_direction, route4
-        assert not router.route_moves_four_steps_in_same_direction(route3, (3, 0))
-        assert router.route_moves_four_steps_in_same_direction(route4, (4, 0))
-        assert router.route_reverses_direction(route4, (2, 0))
-        assert not router.route_reverses_direction(route4, (4, 0))
+        route1 = Route(None, [HotSpot((0, 0), 1)], router.route_key_len)
+        route2 = Route(route1, [HotSpot((1, 0), 2)], router.route_key_len)
+        route3 = Route(route2, [HotSpot((2, 0), 3)], router.route_key_len)
+        route4 = Route(route3, [HotSpot((3, 0), 4)], router.route_key_len)
+        assert not route3.last_n_steps_in_same_direction(3), route3
+        assert route4.last_n_steps_in_same_direction(3), route4
 
-        assert router.minimum_heat_loss == 102, router.minimum_heat_loss
-
-        # Ultra
-        input = self.TEST_INPUT
-        router = UltraRouteFinder(input, 1, 3)
         assert router.minimum_heat_loss == 102, router.minimum_heat_loss
         return 'passed'
 
@@ -262,20 +314,12 @@ class AdventPuzzle:
     def test2(self):
         # Test 1
         input = self.TEST_INPUT
-        router = UltraRouteFinder(input, 4, 10)
-
-        route1 = Route(None, (0, 0), 0)
-        route2 = Route(route1, (1, 0), 1)
-        route3 = Route(route2, (2, 0), 2)
-        route4 = Route(route3, (3, 0), 3)
-        assert route4.last_n_steps_in_same_direction(2), route4
-        assert route4.last_n_steps_in_same_direction(3), route4
-        assert not route4.last_n_steps_in_same_direction(4), route4
+        router = RouteFinder(input, 4, 10)
         assert router.minimum_heat_loss == 94, router.minimum_heat_loss
 
         # Test 2
         input = self.TEST_INPUT_PART_2
-        router = UltraRouteFinder(input, 4, 10)
+        router = RouteFinder(input, 4, 10)
         assert router.minimum_heat_loss == 71, router.minimum_heat_loss
 
         return 'passed'
