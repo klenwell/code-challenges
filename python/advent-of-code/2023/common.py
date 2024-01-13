@@ -9,6 +9,7 @@ $ python -m cProfile -s cumtime 2023/day-00.py
 """
 from os.path import dirname, join as path_join
 from functools import cached_property, reduce
+from pprint import pprint
 import time
 import string
 import re
