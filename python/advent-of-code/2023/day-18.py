@@ -106,7 +106,7 @@ class ParceledLavaPit:
                     (next_x, next_y),
                     (x, next_y)
                 ]
-                parcel = Parcel(pts, self)
+                parcel = Parcel(pts)
                 parcels[(row_num, col_num)] = parcel
         return parcels
 

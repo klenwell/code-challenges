@@ -2,9 +2,8 @@ from functools import cached_property
 
 
 class Parcel:
-    def __init__(self, pts, pit):
+    def __init__(self, pts):
         self.pts = pts
-        self.pit = pit
 
     @cached_property
     def area(self):
@@ -52,28 +51,6 @@ class Parcel:
             edge = (min_pt, max_pt)
             edges.append(edge)
         return edges
-
-    def shift_left(self):
-        pts = []
-        for x, y in self.pts:
-            if x == self.min_x:
-                new_pt = (x+1, y)
-            else:
-                new_pt = (x, y)
-            pts.append(new_pt)
-        self.pts = pts
-        return self
-
-    def shift_down(self):
-        pts = []
-        for x, y in self.pts:
-            if y == self.min_y:
-                new_pt = (x, y+1)
-            else:
-                new_pt = (x, y)
-            pts.append(new_pt)
-        self.pts = pts
-        return self
 
     def shares_edge_with(self, other):
         return len(set(self.edges).intersection(set(other.edges))) > 0
