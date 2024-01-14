@@ -53,24 +53,20 @@ class LavaPit:
             self.dig_hole(hole)
             info(f"filling {hole}", 10000)
 
-
             for npt in self.neighbors(hole.pt):
                 if npt not in self.holes:
                     queue.append(npt)
 
     def find_inner_pt(self):
-        iy = min([y for _,y in self.holes.keys()])
-        ix = min([x for x,y in self.holes.keys() if y == iy])
+        iy = min([y for _, y in self.holes.keys()])
+        ix = min([x for x, y in self.holes.keys() if y == iy])
         hole = self.holes.get((ix, iy), False)
 
         while hole:
-            print(hole)
             ix = hole.x + 1
             iy = hole.y + 1
             hole = self.holes.get((ix, iy), False)
 
-        print('start', ix, iy)
-        #breakpoint()
         return (ix, iy)
 
     def neighbors(self, pt):

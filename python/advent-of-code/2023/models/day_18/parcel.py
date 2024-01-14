@@ -28,11 +28,11 @@ class Parcel:
 
     @cached_property
     def xs(self):
-        return [x for x,_ in self.pts]
+        return [x for x, _ in self.pts]
 
     @cached_property
     def ys(self):
-        return [y for _,y in self.pts]
+        return [y for _, y in self.pts]
 
     @cached_property
     def min_x(self):

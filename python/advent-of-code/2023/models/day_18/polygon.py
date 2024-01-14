@@ -36,7 +36,9 @@ def pt_is_above_edge(pt, edge):
     pt1, pt2 = edge
     e1x, e1y = pt1
     e2x, _ = pt2
-    min_x, max_x = sorted([e1x, e2x])
+
+    # Much faster than: min_x, max_x = sorted([e1x, e2x])
+    min_x, max_x = (e1x, e2x) if e1x < e2x else (e2x, e1x)
 
     between_xs = min_x <= x <= max_x
     above_edge = y < e1y
@@ -48,7 +50,7 @@ def pt_is_under_edge(pt, edge):
     pt1, pt2 = edge
     e1x, e1y = pt1
     e2x, _ = pt2
-    min_x, max_x = sorted([e1x, e2x])
+    min_x, max_x = (e1x, e2x) if e1x < e2x else (e2x, e1x)
 
     between_xs = min_x <= x <= max_x
     under_edge = y > e1y
@@ -60,7 +62,7 @@ def pt_is_right_of_edge(pt, edge):
     pt1, pt2 = edge
     e1x, e1y = pt1
     _, e2y = pt2
-    min_y, max_y = sorted([e1y, e2y])
+    min_y, max_y = (e1y, e2y) if e1y < e2y else (e2y, e1y)
 
     between_ys = min_y <= y <= max_y
     right_of_edge = x > e1x
@@ -72,7 +74,7 @@ def pt_is_left_of_edge(pt, edge):
     pt1, pt2 = edge
     e1x, e1y = pt1
     _, e2y = pt2
-    min_y, max_y = sorted([e1y, e2y])
+    min_y, max_y = (e1y, e2y) if e1y < e2y else (e2y, e1y)
 
     between_ys = min_y <= y <= max_y
     left_of_edge = x < e1x

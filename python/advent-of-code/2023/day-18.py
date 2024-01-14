@@ -4,7 +4,7 @@ https://adventofcode.com/2023/day/18
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR, info, pprint
+from common import INPUT_DIR, info
 
 from models.day_18.blockcraft import LavaPit, DIRS
 from models.day_18.parcel import Parcel
@@ -40,28 +40,30 @@ class ParceledLavaPit:
         x = px + (dx * distance)
         y = py + (dy * distance)
         pt = (x, y)
-        print(dir, distance, pt)
         return pt
 
     @cached_property
     def cubic_meters(self):
+        """Go column by column, row by row for each parcel and compute area. Because parcels
+        will overlap at the borders, it's necessary to do some adjustments to each parcel area
+        depending on neighbors.
+        """
         area = 0
         for key, parcel in self.parcel_grid.items():
-            print(key, parcel)
             row_num, col_num = key
             net_parcel_area = 0
+            info(f"({key}) {parcel}", 10000)
 
+            # Only count those parcels that are inside the pit perimeter
             if not self.is_interior_parcel(parcel):
                 continue
 
+            # Find neighbors to do area adjustments
             left_neighbor = self.parcel_grid.get((row_num, col_num-1))
             upper_neighbor = self.parcel_grid.get((row_num-1, col_num))
-            upper_left_neighbor = self.parcel_grid.get((row_num-1, col_num-1))
             upper_right_neighbor = self.parcel_grid.get((row_num-1, col_num+1))
 
-            if parcel.area < 0:
-                raise ValueError(parcel.area)
-
+            # Compute area and start making adjustments
             net_parcel_area = parcel.area
 
             subtract_left_edge = left_neighbor and self.is_interior_parcel(left_neighbor)
@@ -70,40 +72,26 @@ class ParceledLavaPit:
                 self.is_interior_parcel(upper_right_neighbor)
             add_back_upper_left_corner = subtract_left_edge and subtract_upper_edge
 
-            #if key == (2,1): breakpoint()
-
-            shifted = False
-
             if subtract_left_edge:
                 net_parcel_area -= parcel.height
-                shifted = True
             if subtract_upper_edge:
                 net_parcel_area -= parcel.width
-                shifted = True
             if subtract_upper_right_corner:
-                print('subtract_upper_right_corner', key)
                 net_parcel_area -= 1
             if add_back_upper_left_corner:
-                print('subtract_upper_right_corner', key)
                 net_parcel_area += 1
 
-            if not shifted:
-                if upper_left_neighbor and self.is_interior_parcel(upper_left_neighbor):
-                    print(parcel, upper_left_neighbor)
-                    net_parcel_area -= 1
-                    breakpoint()
-
+            # Update running area total
             area += net_parcel_area
-            print(parcel, net_parcel_area, area)
         return area
 
     @cached_property
     def xs(self):
-        return sorted(list(set([x for x,_ in self.pts])))
+        return sorted(list(set([x for x, _ in self.pts])))
 
     @cached_property
     def ys(self):
-        return sorted(list(set([y for _,y in self.pts])))
+        return sorted(list(set([y for _, y in self.pts])))
 
     @cached_property
     def parcel_grid(self):
@@ -120,7 +108,6 @@ class ParceledLavaPit:
                 ]
                 parcel = Parcel(pts, self)
                 parcels[(row_num, col_num)] = parcel
-                info(parcel, 1000)
         return parcels
 
     @cached_property
@@ -156,21 +143,27 @@ class ParceledLavaPit:
         return edges
 
     def is_interior_parcel(self, parcel):
-        info(f"is_interior_parcel {parcel}", 10000)
         def is_odd(num):
             return num % 2 == 1
+
         edges_above = poly.count_edges_above_pt(self.horizontal_edges, parcel.mid_pt)
-        edges_below = poly.count_edges_below_pt(self.horizontal_edges, parcel.mid_pt)
+        if not is_odd(edges_above):
+            return False
+
         edges_to_left = poly.count_edges_left_of_pt(self.vertical_edges, parcel.mid_pt)
-        edges_to_right = poly.count_edges_right_of_pt(self.vertical_edges, parcel.mid_pt)
-        return all([
-            is_odd(edges_above),
-            is_odd(edges_below),
-            is_odd(edges_to_left),
-            is_odd(edges_to_right)
-        ])
+        if not is_odd(edges_to_left):
+            return False
 
+        # These checks below turned out not to be needed.
+        # edges_below = poly.count_edges_below_pt(self.horizontal_edges, parcel.mid_pt)
+        # if not is_odd(edges_below):
+        #     return False
 
+        # edges_to_right = poly.count_edges_right_of_pt(self.vertical_edges, parcel.mid_pt)
+        # if not is_odd(edges_to_right):
+        #     return False
+
+        return True
 
 
 class ParceledLargePit(ParceledLavaPit):
@@ -212,10 +205,7 @@ class ParceledLargePit(ParceledLavaPit):
         x = px + (dx * distance)
         y = py + (dy * distance)
         pt = (x, y)
-        print(rgb, dir, distance, pt)
         return pt
-
-
 
 
 class AdventPuzzle:
@@ -251,10 +241,10 @@ U 2 (#7a21e3)"""
     def second(self):
         input = self.file_input
         pit = ParceledLargePit(input)
-        #print(len(pit.parcels))
         assert pit.cubic_meters != 98956108013068, pit.cubic_meters
         assert pit.cubic_meters != 98956107977040, pit.cubic_meters
         assert pit.cubic_meters != 87716969654495, pit.cubic_meters
+        assert pit.cubic_meters == 87716969654406, pit.cubic_meters
         return pit.cubic_meters
 
     #
@@ -267,9 +257,7 @@ U 2 (#7a21e3)"""
         assert pit.cubic_meters == 62, pit.cubic_meters
 
         pit = ParceledLavaPit(input)
-        pprint(pit.parcels)
         assert pit.cubic_meters == 62, pit.cubic_meters
-        breakpoint()
         return 'passed'
 
     @property
@@ -296,7 +284,7 @@ U 2 (#7a21e3)"""
 
     def solve(self):
         print(f"test 1 solution: {self.test1}")
-        #print(f"Part 1 Solution: {self.first}")
+        print(f"Part 1 Solution: {self.first}")
         print(f"test 2 solution: {self.test2}")
         print(f"Part 2 Solution: {self.second}")
 
