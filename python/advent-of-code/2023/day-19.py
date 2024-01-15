@@ -171,7 +171,8 @@ hdj{m>838:A,pv}
     @property
     def first(self):
         input = self.file_input
-        return input
+        extract = Extract(input)
+        return extract.sum
 
     @property
     def second(self):
