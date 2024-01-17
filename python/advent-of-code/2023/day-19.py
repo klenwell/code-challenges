@@ -43,7 +43,9 @@ class Extract:
 
     @cached_property
     def distinct_combinations(self):
-        return sum([path.combos for path in self.accepted_paths])
+        import pprint
+        pprint.pprint([path.combos for path in self.accepted_paths])
+        return sum(path.combos for path in self.accepted_paths)
 
     @cached_property
     def accepted_paths(self):
@@ -83,7 +85,39 @@ class Path:
 
     @cached_property
     def combos(self):
-        return math.prod([step.value for step in self.steps])
+        x = self.category_count('x')
+        m = self.category_count('m')
+        a = self.category_count('a')
+        s = self.category_count('s')
+        counts = [x, m, a, s]
+        combos = math.prod(counts)
+        print(combos, counts)
+        return combos
+
+        for step in self.steps:
+            print(step)
+            counts.append(step.count)
+
+        breakpoint()
+        return math.prod(counts)
+
+    def category_count(self, category):
+        low = 1
+        high = 4000
+
+        for step in self.steps:
+            if step.category != category:
+                continue
+            if step.low > low:
+                low = step.low
+            if step.high < high:
+                high = step.high
+            print(category, low, high, step)
+
+        if low > high:
+            return 0
+
+        return high - low + 1
 
     @cached_property
     def end_step(self):
@@ -135,16 +169,29 @@ class Path:
 
 
 class Step:
-    def __init__(self, origin, destination, value):
+    def __init__(self, origin, destination, category=None, lo_hi=None):
         self.origin = origin
         self.destination = destination
-        self.value = value
+        self.category = category
+        self.lo_hi = lo_hi
+
+    @cached_property
+    def low(self):
+        if not self.lo_hi:
+            return None
+        return self.lo_hi[0]
+
+    @cached_property
+    def high(self):
+        if not self.lo_hi:
+            return None
+        return self.lo_hi[1]
 
     def __repr__(self):
         start = getattr(self.origin, 'id', self.origin)
         end = getattr(self.destination, 'id', self.destination)
         route = f"{start}->{end}"
-        return f"<Step {route} value={self.value}>"
+        return f"<Step {route} category={self.category} range={self.lo_hi}>"
 
 
 class ExtractWorkflow:
@@ -173,7 +220,7 @@ class ExtractWorkflow:
 
     @cached_property
     def first_step(self):
-        return Step(self, self.rules[0], 1)
+        return Step(self, self.rules[0])
 
     def rule_after(self, rule):
         index = self.rules.index(rule)
@@ -197,7 +244,7 @@ class WorkflowRule:
     @cached_property
     def id(self):
         index = self.workflow.rules.index(self)
-        return f"r:{self.workflow.name}:{index}"
+        return f"r{index}:{self.workflow.name}"
 
     @cached_property
     def condition(self):
@@ -247,10 +294,40 @@ class WorkflowRule:
         return MAX_VALUE - self.true_cases
 
     @cached_property
+    def true_low_high(self):
+        if not self.condition:
+            return None
+
+        if self.operator == '<':
+            low = 1
+            high = self.value - 1
+        else:
+            low = MAX_VALUE - self.value
+            high = MAX_VALUE
+
+        return (low, high)
+
+    @cached_property
+    def false_low_high(self):
+        if not self.condition:
+            return None
+
+        true_low, true_high = self.true_low_high
+
+        if true_low == 1:
+            low = true_high + 1
+            high = MAX_VALUE
+        else:
+            low = 1
+            high = true_low - 1
+
+        return (low, high)
+
+    @cached_property
     def true_step(self):
         destination = self.workflows.get(self.result)
         result = destination if destination else self.result
-        return Step(self, result, self.true_cases)
+        return Step(self, result, self.category, self.true_low_high)
 
     @cached_property
     def false_step(self):
@@ -258,7 +335,7 @@ class WorkflowRule:
             return None
 
         next_rule = self.workflow.rule_after(self)
-        return Step(self, next_rule, self.false_cases)
+        return Step(self, next_rule, self.category, self.false_low_high)
 
     @cached_property
     def next_steps(self):
