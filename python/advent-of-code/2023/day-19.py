@@ -51,19 +51,19 @@ class Extract:
         # To branch, take last step and find next workflow
         accepted_paths = []
         first_workflow = self.workflows['in']
-        path_heap = [Path(first_workflow)]
+        path_heap = [Path([first_workflow.first_step])]
 
         while path_heap:
             info(len(path_heap), 100)
             path = path_heap.pop()
+            #print(path)
             for new_path in path.branches:
                 if new_path.accepted:
-                    print('ACCEPT', new_path)
+                    print('ACCEPT', new_path.combos, new_path)
                     accepted_paths.append(new_path)
                 elif path.in_progress:
                     path_heap.append(new_path)
 
-        breakpoint()
         return accepted_paths
 
     def rating_is_accepted(self, rating):
@@ -78,63 +78,73 @@ class Extract:
 
 
 class Path:
-    def __init__(self, workflow, steps=None):
-        self.workflow = workflow
-        if not steps:
-            self.steps = []
-        else:
-            self.steps = list(steps)
+    def __init__(self, steps):
+        self.steps = list(steps)
 
     @cached_property
     def combos(self):
-        return math.prod([step.combos for step in self.steps])
+        return math.prod([step.value for step in self.steps])
 
     @cached_property
-    def workflows(self):
-        return self.workflow.extract.workflows
+    def end_step(self):
+        return self.steps[-1]
+
+    @cached_property
+    def destination(self):
+        return self.end_step.destination
+
+    @cached_property
+    def accepted(self):
+        return self.destination == 'A'
+
+    @cached_property
+    def completed(self):
+        return self.destination in ('A', 'R')
+
+    @property
+    def in_progress(self):
+        return not self.completed
 
     @cached_property
     def branches(self):
         new_paths = []
-        continuing_step = None
 
-        for rule in self.workflow.rules:
-            true_step, false_step = rule.to_steps(continuing_step)
-            continuing_step = false_step
-            new_path = self.add_step(true_step)
+        for step in self.next_steps:
+            new_path = self.add_step(step)
             new_paths.append(new_path)
 
         return new_paths
 
-    @property
-    def last_step(self):
-        if not self.steps:
-            return None
-        return self.steps[-1]
-
-    @property
-    def result(self):
-        if not self.last_step:
-            return None
-        return self.last_step.result
-
-    @property
-    def accepted(self):
-        if not self.last_step:
-            return False
-        return self.result == 'A'
-
-    @property
-    def in_progress(self):
-        return self.result not in ('A', 'R')
+    @cached_property
+    def next_steps(self):
+        if self.completed:
+            return []
+        elif type(self.destination) == WorkflowRule:
+            rule = self.destination
+            return rule.next_steps
+        else:
+            workflow = self.destination
+            return [workflow.first_step]
 
     def add_step(self, step):
-        self.steps.append(step)
-        next_workflow = self.workflows.get(step.destination)
-        return Path(next_workflow, self.steps)
+        steps = self.steps + [step]
+        return Path(steps)
 
     def __repr__(self):
-        return f"<Path result={self.result} steps={self.steps}>"
+        return f"<Path result={self.destination} steps={self.steps}>"
+
+
+class Step:
+    def __init__(self, origin, destination, value):
+        self.origin = origin
+        self.destination = destination
+        self.value = value
+
+    def __repr__(self):
+        start = getattr(self.origin, 'id', self.origin)
+        end = getattr(self.destination, 'id', self.destination)
+        route = f"{start}->{end}"
+        return f"<Step {route} value={self.value}>"
 
 
 class ExtractWorkflow:
@@ -148,6 +158,10 @@ class ExtractWorkflow:
         return raw.strip()
 
     @cached_property
+    def id(self):
+        return f"w:{self.name}"
+
+    @cached_property
     def rules(self):
         rules = []
         _, raw = self.input.split('{')
@@ -157,17 +171,33 @@ class ExtractWorkflow:
             rules.append(rule)
         return rules
 
+    @cached_property
+    def first_step(self):
+        return Step(self, self.rules[0], 1)
+
+    def rule_after(self, rule):
+        index = self.rules.index(rule)
+        return self.rules[index+1]
+
     def process_rating(self, rating):
         for rule in self.rules:
             if rule.applies_to_rating(rating):
                     return rule.result
         raise Exception(f"No rules in workflow {self} applied to rating {rating}")
 
+    def __repr__(self):
+        return f"<Workflow {self.name}>"
+
 
 class WorkflowRule:
     def __init__(self, workflow, input):
         self.workflow = workflow
         self.input = input.strip()
+
+    @cached_property
+    def id(self):
+        index = self.workflow.rules.index(self)
+        return f"r:{self.workflow.name}:{index}"
 
     @cached_property
     def condition(self):
@@ -200,8 +230,14 @@ class WorkflowRule:
         return int(self.condition[2:])
 
     @cached_property
+    def workflows(self):
+        return self.workflow.extract.workflows
+
+    @cached_property
     def true_cases(self):
-        if self.operator == '<':
+        if not self.condition:
+            return 1
+        elif self.operator == '<':
             return self.value - 1
         else:
             return MAX_VALUE - self.value
@@ -209,6 +245,27 @@ class WorkflowRule:
     @cached_property
     def false_cases(self):
         return MAX_VALUE - self.true_cases
+
+    @cached_property
+    def true_step(self):
+        destination = self.workflows.get(self.result)
+        result = destination if destination else self.result
+        return Step(self, result, self.true_cases)
+
+    @cached_property
+    def false_step(self):
+        if not self.condition:
+            return None
+
+        next_rule = self.workflow.rule_after(self)
+        return Step(self, next_rule, self.false_cases)
+
+    @cached_property
+    def next_steps(self):
+        steps = [self.true_step]
+        if self.false_step:
+            steps.append(self.false_step)
+        return steps
 
     def applies_to_rating(self, rating):
         if not self.condition:
@@ -222,33 +279,8 @@ class WorkflowRule:
         else:
             return Exception(f"Unexpected rule comparator: {self.operator}")
 
-    def to_steps(self, incomplete_step):
-        combos = 1
-        if incomplete_step:
-            combos = incomplete_step.combos
-        if not self.condition:
-            true_step = RuleStep(self, self.result, combos)
-            false_step = None
-        else:
-            true_step = RuleStep(self, self.result, combos * self.true_cases)
-            false_step = RuleStep(self, None, combos * self.false_cases)
-        return true_step, false_step
-
-
-class RuleStep:
-    def __init__(self, rule, destination, combos):
-        self.rule = rule
-        self.origin = self.rule.workflow.name
-        self.destination = destination
-        self.combos = combos
-
-    @cached_property
-    def result(self):
-        return self.destination
-
     def __repr__(self):
-        route = f"{self.origin}->{self.destination}"
-        return f"<RuleStep {route} combos={self.combos}>"
+        return f"<Rule workflow={self.workflow.name} {self.input}>"
 
 
 class PartRating:
@@ -319,9 +351,18 @@ hdj{m>838:A,pv}
 
     @property
     def test2(self):
+        expected = 167409079868000
         input = self.TEST_INPUT
         extract = Extract(input)
-        assert extract.distinct_combinations == 167409079868000, extract.distinct_combinations
+        result = extract.distinct_combinations
+
+        def errs(val, expected):
+            diff = expected - val
+            verb = 'over' if diff < 0 else 'under'
+            pct = 100.0 * diff / expected
+            return f"got {val} expected {expected} {verb} by {abs(diff)} ({abs(pct)}%)"
+
+        assert result == expected, errs(result, expected)
         return 'passed'
 
     #
