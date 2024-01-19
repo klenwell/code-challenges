@@ -4,7 +4,7 @@ https://adventofcode.com/2023/day/19
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR, info
+from common import INPUT_DIR, info, off_by
 
 from models.day_19.path import Path
 from models.day_19.step import RatingStep
@@ -137,13 +137,7 @@ hdj{m>838:A,pv}
         extract = Extract(input)
         result = extract.distinct_combinations
 
-        def errs(val, expected):
-            diff = expected - val
-            verb = 'over' if diff < 0 else 'under'
-            pct = 100.0 * diff / expected
-            return f"got {val} expected {expected} {verb} by {abs(diff)} ({abs(pct)}%)"
-
-        assert result == expected, errs(result, expected)
+        assert result == expected, off_by(result, expected)
         return 'passed'
 
     #

@@ -42,6 +42,13 @@ def info(msg, freq=1):
     return info
 
 
+def off_by(val, expected):
+    diff = expected - val
+    verb = 'over' if diff < 0 else 'under'
+    pct = 100.0 * diff / expected
+    return f"got {val} expected {expected} {verb} by {abs(diff)} ({abs(pct)}%)"
+
+
 # Extract Numbers
 def extract_numbers(str_value, num_type=int):
     # https://stackoverflow.com/a/63619831/1093087

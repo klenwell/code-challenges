@@ -58,7 +58,7 @@ class WorkflowRule:
             low = 1
             high = self.value - 1
         else:
-            low = self.value
+            low = self.value + 1
             high = MAX_VALUE
 
         return (low, high)
@@ -71,7 +71,7 @@ class WorkflowRule:
         true_low, true_high = self.true_low_high
 
         if self.operator == '<':
-            low = self.value + 1
+            low = self.value
             high = MAX_VALUE
         else:
             low = 1
