@@ -5,10 +5,11 @@ https://adventofcode.com/2023/day/19
 from os.path import join as path_join
 from functools import cached_property
 from common import INPUT_DIR, info
-import math
 
-
-MAX_VALUE = 4000
+from models.day_19.path import Path
+from models.day_19.step import RatingStep
+from models.day_19.workflow import ExtractWorkflow
+from models.day_19.ratings import PartRating, PossibleRatings
 
 
 class Extract:
@@ -43,17 +44,16 @@ class Extract:
 
     @cached_property
     def distinct_combinations(self):
+        accepted = self.accepted_paths
+        breakpoint()
         import pprint
         pprint.pprint([path.combos for path in self.accepted_paths])
         return sum(path.combos for path in self.accepted_paths)
 
     @cached_property
     def accepted_paths(self):
-        # A WorkflowPath is made up of RuleSteps
-        # To branch, take last step and find next workflow
         accepted_paths = []
-        first_workflow = self.workflows['in']
-        path_heap = [Path([first_workflow.first_step])]
+        path_heap = [Path([self.first_step])]
 
         while path_heap:
             info(len(path_heap), 100)
@@ -68,6 +68,12 @@ class Extract:
 
         return accepted_paths
 
+    @property
+    def first_step(self):
+        first_workflow = self.workflows['in']
+        ratings = PossibleRatings.max_ranges()
+        return RatingStep(first_workflow, first_workflow.rules[0], ratings)
+
     def rating_is_accepted(self, rating):
         stops = list('AR')
         result = 'in'
@@ -77,308 +83,6 @@ class Extract:
             result = workflow.process_rating(rating)
 
         return result == 'A'
-
-
-class Path:
-    def __init__(self, steps):
-        self.steps = list(steps)
-
-    @cached_property
-    def combos(self):
-        x = self.category_count('x')
-        m = self.category_count('m')
-        a = self.category_count('a')
-        s = self.category_count('s')
-        counts = [x, m, a, s]
-        combos = math.prod(counts)
-        print(combos, counts)
-        return combos
-
-        for step in self.steps:
-            print(step)
-            counts.append(step.count)
-
-        breakpoint()
-        return math.prod(counts)
-
-    def category_count(self, category):
-        low = 1
-        high = 4000
-
-        for step in self.steps:
-            if step.category != category:
-                continue
-            if step.low > low:
-                low = step.low
-            if step.high < high:
-                high = step.high
-            print(category, low, high, step)
-
-        if low > high:
-            return 0
-
-        return high - low + 1
-
-    @cached_property
-    def end_step(self):
-        return self.steps[-1]
-
-    @cached_property
-    def destination(self):
-        return self.end_step.destination
-
-    @cached_property
-    def accepted(self):
-        return self.destination == 'A'
-
-    @cached_property
-    def completed(self):
-        return self.destination in ('A', 'R')
-
-    @property
-    def in_progress(self):
-        return not self.completed
-
-    @cached_property
-    def branches(self):
-        new_paths = []
-
-        for step in self.next_steps:
-            new_path = self.add_step(step)
-            new_paths.append(new_path)
-
-        return new_paths
-
-    @cached_property
-    def next_steps(self):
-        if self.completed:
-            return []
-        elif type(self.destination) == WorkflowRule:
-            rule = self.destination
-            return rule.next_steps
-        else:
-            workflow = self.destination
-            return [workflow.first_step]
-
-    def add_step(self, step):
-        steps = self.steps + [step]
-        return Path(steps)
-
-    def __repr__(self):
-        return f"<Path result={self.destination} steps={self.steps}>"
-
-
-class Step:
-    def __init__(self, origin, destination, category=None, lo_hi=None):
-        self.origin = origin
-        self.destination = destination
-        self.category = category
-        self.lo_hi = lo_hi
-
-    @cached_property
-    def low(self):
-        if not self.lo_hi:
-            return None
-        return self.lo_hi[0]
-
-    @cached_property
-    def high(self):
-        if not self.lo_hi:
-            return None
-        return self.lo_hi[1]
-
-    def __repr__(self):
-        start = getattr(self.origin, 'id', self.origin)
-        end = getattr(self.destination, 'id', self.destination)
-        route = f"{start}->{end}"
-        return f"<Step {route} category={self.category} range={self.lo_hi}>"
-
-
-class ExtractWorkflow:
-    def __init__(self, extract, input):
-        self.extract = extract
-        self.input = input.strip()
-
-    @cached_property
-    def name(self):
-        raw, _ = self.input.split('{')
-        return raw.strip()
-
-    @cached_property
-    def id(self):
-        return f"w:{self.name}"
-
-    @cached_property
-    def rules(self):
-        rules = []
-        _, raw = self.input.split('{')
-        rules_input = raw[:-1]
-        for rule_input in rules_input.split(','):
-            rule = WorkflowRule(self, rule_input)
-            rules.append(rule)
-        return rules
-
-    @cached_property
-    def first_step(self):
-        return Step(self, self.rules[0])
-
-    def rule_after(self, rule):
-        index = self.rules.index(rule)
-        return self.rules[index+1]
-
-    def process_rating(self, rating):
-        for rule in self.rules:
-            if rule.applies_to_rating(rating):
-                    return rule.result
-        raise Exception(f"No rules in workflow {self} applied to rating {rating}")
-
-    def __repr__(self):
-        return f"<Workflow {self.name}>"
-
-
-class WorkflowRule:
-    def __init__(self, workflow, input):
-        self.workflow = workflow
-        self.input = input.strip()
-
-    @cached_property
-    def id(self):
-        index = self.workflow.rules.index(self)
-        return f"r{index}:{self.workflow.name}"
-
-    @cached_property
-    def condition(self):
-        if ':' not in self.input:
-            return None
-        raw, _ = self.input.split(':')
-        return raw
-
-    @cached_property
-    def result(self):
-        if ':' not in self.input:
-            return self.input
-        _, raw = self.input.split(':')
-        return raw
-
-    @cached_property
-    def operator(self):
-        return self.condition[1]
-
-    @cached_property
-    def category(self):
-        if not self.condition:
-            return None
-        return self.condition[0]
-
-    @cached_property
-    def value(self):
-        if not self.condition:
-            return None
-        return int(self.condition[2:])
-
-    @cached_property
-    def workflows(self):
-        return self.workflow.extract.workflows
-
-    @cached_property
-    def true_cases(self):
-        if not self.condition:
-            return 1
-        elif self.operator == '<':
-            return self.value - 1
-        else:
-            return MAX_VALUE - self.value
-
-    @cached_property
-    def false_cases(self):
-        return MAX_VALUE - self.true_cases
-
-    @cached_property
-    def true_low_high(self):
-        if not self.condition:
-            return None
-
-        if self.operator == '<':
-            low = 1
-            high = self.value - 1
-        else:
-            low = MAX_VALUE - self.value
-            high = MAX_VALUE
-
-        return (low, high)
-
-    @cached_property
-    def false_low_high(self):
-        if not self.condition:
-            return None
-
-        true_low, true_high = self.true_low_high
-
-        if true_low == 1:
-            low = true_high + 1
-            high = MAX_VALUE
-        else:
-            low = 1
-            high = true_low - 1
-
-        return (low, high)
-
-    @cached_property
-    def true_step(self):
-        destination = self.workflows.get(self.result)
-        result = destination if destination else self.result
-        return Step(self, result, self.category, self.true_low_high)
-
-    @cached_property
-    def false_step(self):
-        if not self.condition:
-            return None
-
-        next_rule = self.workflow.rule_after(self)
-        return Step(self, next_rule, self.category, self.false_low_high)
-
-    @cached_property
-    def next_steps(self):
-        steps = [self.true_step]
-        if self.false_step:
-            steps.append(self.false_step)
-        return steps
-
-    def applies_to_rating(self, rating):
-        if not self.condition:
-            return True
-
-        rating_value = rating.categories[self.category]
-        if self.operator == '>':
-            return rating_value > self.value
-        elif self.operator == '<':
-            return rating_value < self.value
-        else:
-            return Exception(f"Unexpected rule comparator: {self.operator}")
-
-    def __repr__(self):
-        return f"<Rule workflow={self.workflow.name} {self.input}>"
-
-
-class PartRating:
-    def __init__(self, input):
-        self.input = input.strip()
-
-    @cached_property
-    def categories(self):
-        key_values = {}
-        assignments = self.input[1:-1]
-        for assignment in assignments.split(','):
-            cat, val = assignment.split('=')
-            key_values[cat] = int(val)
-        return key_values
-
-    @cached_property
-    def sum(self):
-        return sum(self.categories.values())
-
-    def __repr__(self):
-        return f"<PartRating sum={self.sum} {self.ratings}>"
 
 
 class AdventPuzzle:
