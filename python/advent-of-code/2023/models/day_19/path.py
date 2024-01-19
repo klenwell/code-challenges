@@ -10,35 +10,6 @@ class Path:
         self.steps = list(steps)
 
     @cached_property
-    def ___combos(self):
-        x = self.category_count('x')
-        m = self.category_count('m')
-        a = self.category_count('a')
-        s = self.category_count('s')
-        counts = [x, m, a, s]
-        combos = math.prod(counts)
-        print(combos, counts)
-        return combos
-
-    def ___category_count(self, category):
-        low = 1
-        high = 4000
-
-        for step in self.steps:
-            if step.category != category:
-                continue
-            if step.low > low:
-                low = step.low
-            if step.high < high:
-                high = step.high
-            print(category, low, high, step)
-
-        if low > high:
-            return 0
-
-        return high - low + 1
-
-    @cached_property
     def combos(self):
         return self.end_step.ratings.combos
 

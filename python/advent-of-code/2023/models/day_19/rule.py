@@ -67,8 +67,6 @@ class WorkflowRule:
         if not self.condition:
             return None
 
-        true_low, true_high = self.true_low_high
-
         if self.operator == '<':
             low = self.value
             high = MAX_VALUE
