@@ -44,10 +44,6 @@ class Extract:
 
     @cached_property
     def distinct_combinations(self):
-        accepted = self.accepted_paths
-        breakpoint()
-        import pprint
-        pprint.pprint([path.combos for path in self.accepted_paths])
         return sum(path.combos for path in self.accepted_paths)
 
     @cached_property
@@ -58,10 +54,8 @@ class Extract:
         while path_heap:
             info(len(path_heap), 100)
             path = path_heap.pop()
-            #print(path)
             for new_path in path.branches:
                 if new_path.accepted:
-                    print('ACCEPT', new_path.combos, new_path)
                     accepted_paths.append(new_path)
                 elif path.in_progress:
                     path_heap.append(new_path)
@@ -118,7 +112,9 @@ hdj{m>838:A,pv}
 
     @property
     def second(self):
-        pass
+        input = self.file_input
+        extract = Extract(input)
+        return extract.distinct_combinations
 
     #
     # Tests

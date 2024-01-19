@@ -58,7 +58,7 @@ class Path:
 
         if self.completed:
             return []
-        elif type(origin) == WorkflowRule:
+        elif isinstance(origin, WorkflowRule):
             rule = origin
 
             # True Branch

@@ -1,5 +1,4 @@
 from functools import cached_property
-from models.day_19.step import Step
 from models.day_19.ratings import MAX_VALUE
 
 

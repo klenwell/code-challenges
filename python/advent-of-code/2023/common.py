@@ -42,6 +42,10 @@ def info(msg, freq=1):
     return info
 
 
+def pp(value):
+    pprint(value)
+
+
 def off_by(val, expected):
     diff = expected - val
     verb = 'over' if diff < 0 else 'under'

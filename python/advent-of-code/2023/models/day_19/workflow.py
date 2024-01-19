@@ -37,7 +37,7 @@ class ExtractWorkflow:
     def process_rating(self, rating):
         for rule in self.rules:
             if rule.applies_to_rating(rating):
-                    return rule.result
+                return rule.result
         raise Exception(f"No rules in workflow {self} applied to rating {rating}")
 
     def __repr__(self):
