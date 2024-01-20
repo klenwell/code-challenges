@@ -298,7 +298,9 @@ broadcaster -> a
     @property
     def first(self):
         input = self.file_input
-        return input
+        network = PulseNetwork(input)
+        network.mash_button(1000)
+        return network.pulse_product
 
     @property
     def second(self):
