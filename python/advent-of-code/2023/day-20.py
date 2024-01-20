@@ -5,11 +5,39 @@ https://adventofcode.com/2023/day/20
 from os.path import join as path_join
 from functools import cached_property
 from common import INPUT_DIR, info
+import warnings
 
 
 class PulseNetwork:
-    def __init__(self, input):
+    def __init__(self, input, debug=False):
         self.input = input.strip()
+        self.debug = debug
+        self.queue = []
+        self.reset_conjunction_modules()
+
+    def reset_conjunction_modules(self):
+        for mod, input_mods in self.input_map.items():
+            if not isinstance(mod, ConjunctionModule):
+                continue
+            mod.reset_memory(input_mods)
+
+    @cached_property
+    def input_map(self):
+        map = {}
+        for input, output_names in self.cables.items():
+            for name in output_names:
+                output = self.module_name_map.get(name)
+
+                # Untyped modules "for testing purposes"
+                if not output:
+                    warnings.warn(f"terminal module: {name}")
+                    continue
+
+                if output in map:
+                    map[output].append(input)
+                else:
+                    map[output] = [input]
+        return map
 
     @property
     def low_pulses(self):
@@ -51,6 +79,17 @@ class PulseNetwork:
         return map
 
     @cached_property
+    def terminal_mod_map(self):
+        map = {}
+        for mod_names in self.cables.values():
+            for name in mod_names:
+                if not self.module_name_map.get(name):
+                    if name not in map:
+                        mod = TerminalModule(name)
+                        map[name] = mod
+        return map
+
+    @cached_property
     def modules(self):
         return list(self.cables.keys())
 
@@ -70,9 +109,42 @@ class PulseNetwork:
         pulse = 'low'
         button = self.module_name_map['button']
         broadcaster = self.module_name_map['broadcaster']
-        self.relay_pulse_to_module(button, pulse, broadcaster)
+        self.relay_pulse(button, pulse, broadcaster)
+        while self.queue:
+            pulse = self.queue.pop(0)
+            self.transmit_pulse(pulse)
+
+    def relay_pulse(self, origin, pulse_type, destination):
+        pulse = (origin, pulse_type, destination)
+        self.queue.append(pulse)
+        return self
+
+    def transmit_pulse(self, pulse):
+        origin, pulse_type, destination = pulse
+
+        if self.debug:
+            print(f"{origin.name} --{pulse_type}--> {destination.name}")
+
+        pulse_type = origin.send_pulse(pulse_type)
+        next_pulse = destination.receive_pulse_from_mod(pulse_type, origin)
+
+        if next_pulse:
+            mod_names = self.cables[destination]
+            for name in mod_names:
+                next_mod = self.module_name_map.get(name)
+
+                if not next_mod:
+                    next_mod = self.terminal_mod_map[name]
+
+                self.relay_pulse(destination, next_pulse, next_mod)
 
     def relay_pulse_to_module(self, origin, pulse, destination):
+        """Since this is recursive, this will not work. Recursion is stack-based so this ends
+        up transmitting pulses in the wrong order (i.e. depth-first).
+        """
+        if self.debug:
+            print(f"{origin.name} --{pulse}--> {destination.name}")
+
         info(f"{origin.name} --{pulse}--> {destination.name}", 1000)
         pulse = origin.send_pulse(pulse)
         next_pulse = destination.receive_pulse_from_mod(pulse, origin)
@@ -80,7 +152,11 @@ class PulseNetwork:
         if next_pulse:
             mod_names = self.cables[destination]
             for name in mod_names:
-                next_mod = self.module_name_map[name]
+                next_mod = self.module_name_map.get(name)
+
+                if not next_mod:
+                    next_mod = self.terminal_mod_map[name]
+
                 self.relay_pulse_to_module(destination, next_pulse, next_mod)
 
     def __repr__(self):
@@ -163,8 +239,13 @@ class ConjunctionModule(PulseModule):
         else:
             return 'high'
 
-    def receive_pulse_from_mod(self, type, origin_mod):
-        self.last_pulse_from[origin_mod] = type
+    def reset_memory(self, input_mods):
+        for input_mod in input_mods:
+            self.last_pulse_from[input_mod] = 'low'
+        return self
+
+    def receive_pulse_from_mod(self, type, input_mod):
+        self.last_pulse_from[input_mod] = type
         return self.pulse_type
 
 
@@ -183,6 +264,15 @@ class ButtonModule(PulseModule):
     @property
     def name(self):
         return 'button'
+
+
+class TerminalModule(PulseModule):
+    @property
+    def name(self):
+        return self.id
+
+    def receive_pulse_from_mod(self, type, origin_mod):
+       return None
 
 
 class AdventPuzzle:
@@ -236,6 +326,22 @@ broadcaster -> a
         assert network.low_pulses == 8000, network
         assert network.high_pulses == 4000, network
         assert network.pulse_product == 32000000, network.pulse_product
+
+        #
+        # Test B
+        #
+        input = self.INTERESTING_TEST_INPUT
+        network = PulseNetwork(input, True)
+        network.push_button()
+        #breakpoint()
+
+        # In the second example, after pushing the button 1000 times, 4250 low pulses and
+        # 2750 high pulses are sent. Multiplying these together gives 11687500.
+        network = PulseNetwork(input)
+        network.mash_button(1000)
+        assert network.low_pulses == 4250, network
+        assert network.high_pulses == 2750, network
+        assert network.pulse_product == 11687500, network.pulse_product
         return 'passed'
 
     @property
