@@ -1,4 +1,3 @@
-import math
 from functools import cached_property
 
 from models.day_19.step import RatingStep

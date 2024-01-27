@@ -4,10 +4,12 @@ https://adventofcode.com/2023/day/20
 """
 from os.path import join as path_join
 from functools import cached_property
-from common import INPUT_DIR, info
+from common import INPUT_DIR
 import warnings
+import math
 
-from models.day_20.pulse_module import PulseModule, FlipFlopModule, ButtonModule, TerminalModule
+from models.day_20.pulse_module import (PulseModule, FlipFlopModule, ConjunctionModule,
+                                        ButtonModule, TerminalModule)
 
 
 class PulseNetwork:
@@ -63,7 +65,6 @@ class PulseNetwork:
             mod_id, dest_names = line.split(' -> ')
             mod = PulseModule.create(mod_id)
             dest_names = [name.strip() for name in dest_names.split(',')]
-            #print(mod, '>', dest_names)
             cables[mod] = tuple(dest_names)
 
         # Don't forget to wire up the button
@@ -134,49 +135,6 @@ class PulseNetwork:
                 next_mod = self.module_name_map.get(name)
                 self.relay_pulse(destination, next_pulse, next_mod)
 
-    def degrees_from(self, origin):
-        tiers = []
-        stack = [(origin, 0)]
-
-        tiers.append((origin,))
-
-        while stack:
-            mod, degree = stack.pop()
-            inputs = self.input_map[mod]
-            print(mod, inputs, len(stack))
-
-            if degree > 1:
-                breakpoint()
-
-            for input in inputs:
-                stack.append((input, degree+1))
-
-            if len(tiers) < degree + 2:
-                tiers.append(tuple(inputs))
-            else:
-                existing_tier = tiers[degree+1]
-                tiers[degree+1] = existing_tier + tuple(inputs)
-
-
-        return tiers
-
-    def relay_pulse_to_module(self, origin, pulse, destination):
-        """Since this is recursive, this will not work. Recursion is stack-based so this ends
-        up transmitting pulses in the wrong order (i.e. depth-first).
-        """
-        if self.debug:
-            print(f"{origin.name} --{pulse}--> {destination.name}")
-
-        info(f"{origin.name} --{pulse}--> {destination.name}", 1000)
-        pulse = origin.send_pulse(pulse)
-        next_pulse = destination.receive_pulse_from_mod(pulse, origin)
-
-        if next_pulse:
-            mod_names = self.cables[destination]
-            for name in mod_names:
-                next_mod = self.module_name_map.get(name)
-                self.relay_pulse_to_module(destination, next_pulse, next_mod)
-
     def __repr__(self):
         return f"<Network pulse=({self.low_pulses}, {self.high_pulses})>"
 
@@ -191,45 +149,40 @@ class PulseMachine:
     def is_off(self):
         return self.rx_module.pulses_received['low'] == 0
 
-    @cached_property
+    @property
     def rx_module(self):
         return self.network.module_name_map.get('rx')
 
-    def turn_on(self):
-        pushes = 0
-        pulsed_mods = 0
+    @property
+    def rx_input_cycles(self):
+        rx_inputs = self.network.input_map[self.rx_module]
+        rx_input_mod = rx_inputs[0]
 
-        while self.is_off:
+        input_pulses = {}
+
+        for upstream_mod in rx_input_mod.last_pulse_from.keys():
+            input_pulses[upstream_mod] = []
+
+        # Find cycles to emit high pulse needed by rx_input to send low pulse to rx
+        for n in range(100000):
             self.network.push_button()
-            pushes += 1
-            info(f"{pushes} - {self.rx_module.pulses_received} {self.network}", 1000)
 
-            # ons = [self.mod_on('dh'), self.mod_on('mk'), self.mod_on('vf'), self.mod_on('rn')]
-            # on_sum = sum(ons)
-            # if on_sum > 0:
-            #     print(on_sum)
-            #     breakpoint()
+            for upstream_mod, high_pulses in input_pulses.items():
+                is_new_high_pulse = upstream_mod.pulses_sent['high'] > len(high_pulses)
+                if is_new_high_pulse:
+                    high_pulses.append(n)
 
-            last_count = pulsed_mods
-            pulsed_mods = len(self.network.pulsed_mods.keys())
-            if pulsed_mods > last_count:
-                breakpoint()
+            # Collect at least 2 samples
+            have_samples = [len(ips) >= 2 for ips in input_pulses.values()]
 
-            if self.completes_cycle():
-                breakpoint()
+            if all(have_samples):
+                break
 
-        return pushes
+        return [ips[1]-ips[0] for ips in input_pulses.values()]
 
-    def completes_cycle(self):
-        for mod in self.network.modules:
-            if mod.name == 'button':
-                continue
-            if mod.state != mod.initial_state:
-                return False
-        return True
-
-    def mod_on(self, mod):
-        return self.network.module_name_map.get(mod).on
+    @property
+    def button_presses_to_turn_on(self):
+        return math.lcm(*self.rx_input_cycles)
 
 
 class AdventPuzzle:
@@ -261,11 +214,9 @@ broadcaster -> a
 
     @property
     def second(self):
-        presses = 0
         input = self.file_input
         machine = PulseMachine(input)
-        presses = machine.turn_on()
-        return presses
+        return machine.button_presses_to_turn_on
 
     #
     # Tests
@@ -296,7 +247,6 @@ broadcaster -> a
         input = self.INTERESTING_TEST_INPUT
         network = PulseNetwork(input, True)
         network.push_button()
-        #breakpoint()
 
         # In the second example, after pushing the button 1000 times, 4250 low pulses and
         # 2750 high pulses are sent. Multiplying these together gives 11687500.
@@ -309,12 +259,18 @@ broadcaster -> a
 
     @property
     def test2(self):
-        presses = 0
         input = self.file_input
         network = PulseNetwork(input)
 
+        # Confirm there is only one rx input that is ConjunctionModule
         rx = network.module_name_map['rx']
         rx_inputs = network.input_map[rx]
+        assert len(rx_inputs) == 1, rx_inputs
+        assert isinstance(rx_inputs[0], ConjunctionModule), rx_inputs[0]
+        assert rx_inputs[0].name == 'jz', rx_inputs[0]
+
+        # jz is a ConjunctionModule that needs to receive high pulse from all its inputs in
+        # order to send the low pulse to rx that we're looking for
         jz = rx_inputs[0]
 
         upstream_pulses = {}
@@ -324,28 +280,14 @@ broadcaster -> a
         for n in range(100000):
             network.push_button()
             for upstream_mod, high_pulses in upstream_pulses.items():
-                if jz.last_pulse_from[upstream_mod] == 'high':
-                    breakpoint()
                 if upstream_mod.pulses_sent['high'] > len(high_pulses):
                     high_pulses.append(n)
-            three_samples = [len(high_pulses) > 3 for high_pulses in upstream_pulses.values()]
-            if all(three_samples):
+            have_samples = [len(high_pulses) >= 2 for high_pulses in upstream_pulses.values()]
+            if all(have_samples):
                 break
 
-        print(upstream_pulses)
-        breakpoint()
-
-        cycled = False
-
-        while not cycled:
-            machine.network.push_button()
-            presses += 1
-            cycled = machine.completes_cycle()
-            print(presses, cycled, machine.network)
-
-        pulse_product = machine.network.pulse_product * (1000 / presses) * (1000 / presses)
-        assert presses == 4, presses
-        assert pulse_product == 11687500, pulse_product
+        cycles = [ups[-1] - ups[-2] for ups in upstream_pulses.values()]
+        assert all([cycle > 0 for cycle in cycles])
         return 'passed'
 
     #
