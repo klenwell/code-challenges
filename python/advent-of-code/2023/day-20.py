@@ -7,19 +7,20 @@ from functools import cached_property
 from common import INPUT_DIR, info
 import warnings
 
+from models.day_20.pulse_module import PulseModule, FlipFlopModule, ButtonModule, TerminalModule
+
 
 class PulseNetwork:
     def __init__(self, input, debug=False):
         self.input = input.strip()
         self.debug = debug
         self.queue = []
-        self.reset_conjunction_modules()
+        self.wire_up_modules()
 
-    def reset_conjunction_modules(self):
+    def wire_up_modules(self):
         for mod, input_mods in self.input_map.items():
-            if not isinstance(mod, ConjunctionModule):
-                continue
-            mod.reset_memory(input_mods)
+            mod.wire_up_inputs(input_mods)
+        return self
 
     @cached_property
     def input_map(self):
@@ -79,19 +80,18 @@ class PulseNetwork:
         return map
 
     @cached_property
-    def terminal_mod_map(self):
-        map = {}
-        for mod_names in self.cables.values():
-            for name in mod_names:
-                if not self.module_name_map.get(name):
-                    if name not in map:
-                        mod = TerminalModule(name)
-                        map[name] = mod
-        return map
-
-    @cached_property
     def modules(self):
-        return list(self.cables.keys())
+        mods = list(self.cables.keys())
+        mod_names = [m.name for m in mods]
+
+        for cable_mod_names in self.cables.values():
+            for name in cable_mod_names:
+                if name not in mod_names:
+                    mod = TerminalModule(name)
+                    mods.append(mod)
+                    mod_names.append(name)
+
+        return mods
 
     @cached_property
     def flip_flop_modules(self):
@@ -132,11 +132,33 @@ class PulseNetwork:
             mod_names = self.cables[destination]
             for name in mod_names:
                 next_mod = self.module_name_map.get(name)
-
-                if not next_mod:
-                    next_mod = self.terminal_mod_map[name]
-
                 self.relay_pulse(destination, next_pulse, next_mod)
+
+    def degrees_from(self, origin):
+        tiers = []
+        stack = [(origin, 0)]
+
+        tiers.append((origin,))
+
+        while stack:
+            mod, degree = stack.pop()
+            inputs = self.input_map[mod]
+            print(mod, inputs, len(stack))
+
+            if degree > 1:
+                breakpoint()
+
+            for input in inputs:
+                stack.append((input, degree+1))
+
+            if len(tiers) < degree + 2:
+                tiers.append(tuple(inputs))
+            else:
+                existing_tier = tiers[degree+1]
+                tiers[degree+1] = existing_tier + tuple(inputs)
+
+
+        return tiers
 
     def relay_pulse_to_module(self, origin, pulse, destination):
         """Since this is recursive, this will not work. Recursion is stack-based so this ends
@@ -153,126 +175,61 @@ class PulseNetwork:
             mod_names = self.cables[destination]
             for name in mod_names:
                 next_mod = self.module_name_map.get(name)
-
-                if not next_mod:
-                    next_mod = self.terminal_mod_map[name]
-
                 self.relay_pulse_to_module(destination, next_pulse, next_mod)
 
     def __repr__(self):
         return f"<Network pulse=({self.low_pulses}, {self.high_pulses})>"
 
 
-class PulseModule:
-    TYPES = {
-        '%': 'flip-flop',
-        '&': 'conjunction',
-        'b': 'broadcaster'
-    }
-
-    @staticmethod
-    def create(id):
-        mod_type = PulseModule.TYPES.get(id[0])
-        if mod_type == 'flip-flop':
-            return FlipFlopModule(id)
-        elif mod_type == 'conjunction':
-            return ConjunctionModule(id)
-        elif mod_type == 'broadcaster':
-            return BroadcasterModule(id)
-        else:
-            raise Exception(f"Invalid module id: {id}")
-
-    def __init__(self, id):
-        self.id = id
-        self.state = 0
-        self.last_pulse_from = {}
-        self.pulses_sent = {
-            'low': 0,
-            'high': 0
-        }
+class PulseMachine:
+    def __init__(self, input):
+        self.network = PulseNetwork(input)
+        self.off = True
+        self.button_pushes = 0
 
     @property
-    def name(self):
-        return self.id[1:]
+    def is_off(self):
+        return self.rx_module.pulses_received['low'] == 0
 
-    def receive_pulse_from_mod(self, type, origin_mod):
-        # Return type of pulse output
-        raise NotImplementedError('Must be overriden')
+    @cached_property
+    def rx_module(self):
+        return self.network.module_name_map.get('rx')
 
-    def send_pulse(self, type):
-        self.pulses_sent[type] += 1
-        return type
+    def turn_on(self):
+        pushes = 0
+        pulsed_mods = 0
 
-    def __repr__(self):
-        on_off = 'ON' if self.state == 1 else 'off'
-        return f"<{self.__class__.__name__} name={self.name} {on_off} {self.pulses_sent}>"
+        while self.is_off:
+            self.network.push_button()
+            pushes += 1
+            info(f"{pushes} - {self.rx_module.pulses_received} {self.network}", 1000)
 
+            # ons = [self.mod_on('dh'), self.mod_on('mk'), self.mod_on('vf'), self.mod_on('rn')]
+            # on_sum = sum(ons)
+            # if on_sum > 0:
+            #     print(on_sum)
+            #     breakpoint()
 
-class FlipFlopModule(PulseModule):
-    def receive_pulse_from_mod(self, type, origin_mod):
-        # If a flip-flop module receives a high pulse, it is ignored and nothing happens.
-        if type == 'high':
-            return None
+            last_count = pulsed_mods
+            pulsed_mods = len(self.network.pulsed_mods.keys())
+            if pulsed_mods > last_count:
+                breakpoint()
 
-        # However, if a flip-flop module receives a low pulse, it flips between on and off.
-        # If it was off, it turns on and sends a high pulse. If it was on, it turns off and
-        # sends a low pulse.
-        if self.state == 0:
-            self.state = 1
-            return 'high'
-        else:
-            self.state = 0
-            return 'low'
+            if self.completes_cycle():
+                breakpoint()
 
+        return pushes
 
-class ConjunctionModule(PulseModule):
-    @property
-    def pulse_type(self):
-        # Conjunction modules (prefix &) remember the type of the most recent pulse received
-        # from each of their connected input modules; they initially default to remembering a
-        # low pulse for each input. When a pulse is received, the conjunction module first updates
-        # its memory for that input. Then, if it remembers high pulses for all inputs, it sends a
-        # low pulse; otherwise, it sends a high pulse.
-        memory_set = set(list(self.last_pulse_from.values()))
-        if memory_set == set(['high']):
-            return 'low'
-        else:
-            return 'high'
+    def completes_cycle(self):
+        for mod in self.network.modules:
+            if mod.name == 'button':
+                continue
+            if mod.state != mod.initial_state:
+                return False
+        return True
 
-    def reset_memory(self, input_mods):
-        for input_mod in input_mods:
-            self.last_pulse_from[input_mod] = 'low'
-        return self
-
-    def receive_pulse_from_mod(self, type, input_mod):
-        self.last_pulse_from[input_mod] = type
-        return self.pulse_type
-
-
-class BroadcasterModule(PulseModule):
-    @property
-    def name(self):
-        return 'broadcaster'
-
-    def receive_pulse_from_mod(self, type, origin_mod):
-        # There is a single broadcast module (named broadcaster). When it receives a pulse, it
-        # sends the same pulse to all of its destination modules.
-        return type
-
-
-class ButtonModule(PulseModule):
-    @property
-    def name(self):
-        return 'button'
-
-
-class TerminalModule(PulseModule):
-    @property
-    def name(self):
-        return self.id
-
-    def receive_pulse_from_mod(self, type, origin_mod):
-       return None
+    def mod_on(self, mod):
+        return self.network.module_name_map.get(mod).on
 
 
 class AdventPuzzle:
@@ -304,7 +261,11 @@ broadcaster -> a
 
     @property
     def second(self):
-        pass
+        presses = 0
+        input = self.file_input
+        machine = PulseMachine(input)
+        presses = machine.turn_on()
+        return presses
 
     #
     # Tests
@@ -318,7 +279,7 @@ broadcaster -> a
         network = PulseNetwork(input)
         network.push_button()
         for mod in network.flip_flop_modules:
-            assert mod.state == 0, mod
+            assert mod.on == 0, mod
         assert network.pulse_product == 32, network
 
         # In the first example... after pushing the button 1000 times, 8000 low pulses and
@@ -348,8 +309,43 @@ broadcaster -> a
 
     @property
     def test2(self):
-        input = self.TEST_INPUT
-        print(input)
+        presses = 0
+        input = self.file_input
+        network = PulseNetwork(input)
+
+        rx = network.module_name_map['rx']
+        rx_inputs = network.input_map[rx]
+        jz = rx_inputs[0]
+
+        upstream_pulses = {}
+        for upstream_mod in jz.last_pulse_from.keys():
+            upstream_pulses[upstream_mod] = []
+
+        for n in range(100000):
+            network.push_button()
+            for upstream_mod, high_pulses in upstream_pulses.items():
+                if jz.last_pulse_from[upstream_mod] == 'high':
+                    breakpoint()
+                if upstream_mod.pulses_sent['high'] > len(high_pulses):
+                    high_pulses.append(n)
+            three_samples = [len(high_pulses) > 3 for high_pulses in upstream_pulses.values()]
+            if all(three_samples):
+                break
+
+        print(upstream_pulses)
+        breakpoint()
+
+        cycled = False
+
+        while not cycled:
+            machine.network.push_button()
+            presses += 1
+            cycled = machine.completes_cycle()
+            print(presses, cycled, machine.network)
+
+        pulse_product = machine.network.pulse_product * (1000 / presses) * (1000 / presses)
+        assert presses == 4, presses
+        assert pulse_product == 11687500, pulse_product
         return 'passed'
 
     #
